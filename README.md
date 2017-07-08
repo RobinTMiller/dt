@@ -1,4 +1,4 @@
-    dt is a generic data test program used to verify proper operation of
+dt is a generic data test program used to verify proper operation of
 peripherals, file systems, device drivers, or any data stream supported by the
 operating system. In its' simplest mode of operation, dt writes and then
 verifys its' default data pattern, then displays performance statisics and other
