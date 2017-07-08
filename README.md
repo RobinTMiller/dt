@@ -7,13 +7,8 @@ dt can be thought of as a generic diagnostic tool.
 
 Key Features:
 =============
-  Multiple Operating System Support
-  Multiple I/O Direction/Modes/Types
-  I/O History/Data with Optional Timing
-  I/O Monitoring
-  High Data Validation
-  Corruption Analysis
-  Dynamic I/O Throttling
-  Retry Errors or Corruptions
-  Triggering Mechanism
+Multiple Operating System Support, Multiple I/O Direction/Modes/Types,
+I/O History/Data with Optional Timing, I/O Monitoring, High Data Validation,
+Corruption Analysis, Dynamic I/O Throttling, Retry Errors or Corruptions,
+Triggering Mechanism
 
