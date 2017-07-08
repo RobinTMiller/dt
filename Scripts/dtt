@@ -1,0 +1,58 @@
+#! /bin/csh
+#	%Z%%M% %I% %E%
+#
+#	Date:	August 7, 1990
+#	Author:	Robin Miller
+#
+#	Description:
+#
+#	This script file is used to gather tape performance data using
+#	different block sizes.  Please note, the total statistics will
+#	reflect a slower performance due to the timing of tape rewind
+#	between the write and read passes (this is expected).
+#
+# Arguments:
+#	$1	The tape device.
+#	$2	The log file name.
+#	$3	The data limit (bytes).
+#	$4	The block size(s).
+#	$5	The pass count.
+#
+set DEVICE=$1
+set LOG_FILE=$2
+set DATA_LIMIT=$3
+set BLOCK_SIZES=$4
+set PASS_COUNT=$5
+if ($DEVICE == '') then
+    echo "Usage: dtt device [ log_file data_limit block_sizes pass_count ]";
+    exit 1
+endif
+if ($DEVICE != '') then
+    if (`dirname $DEVICE` != '/dev') then
+	set DEVICE=/dev/$DEVICE
+    endif
+endif
+if ($LOG_FILE == '') then
+	set LOG_FILE=dtt.log
+endif
+if ($DATA_LIMIT == '') then
+	set DATA_LIMIT=10m
+endif
+if ($BLOCK_SIZES == '') then
+	set BLOCK_SIZES="10k 16k 32k 64k 126b"
+#	set BLOCK_SIZES="2k 4k 8k 10k 12k 16k"
+endif
+if ($PASS_COUNT == '') then
+	set PASS_COUNT=1
+endif
+#
+# Test the tape device using different block sizes.
+#
+rm -f $LOG_FILE
+foreach bs ($BLOCK_SIZES)
+	dt of=$DEVICE disable=compare limit=$DATA_LIMIT bs=$bs log=$LOG_FILE passes=$PASS_COUNT
+	mt -f $DEVICE rewind
+	echo "" >> $LOG_FILE
+	echo "*** End of Test ***" >> $LOG_FILE
+	echo "" >> $LOG_FILE
+end

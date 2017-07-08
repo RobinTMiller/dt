@@ -1,0 +1,62 @@
+#! /bin/csh
+#
+#	Script file to gather floppy disk performance data.
+#
+set MNT_POINT=$1
+set LOG_FILE=$2
+set DATA_FILE=$3
+set DATA_LIMIT=$4
+set BLOCK_SIZES=$5
+set PASS_COUNT=$6
+set ROT_DELAY=$7
+#
+set RAW_DEVICE=/dev/rfd0c
+set BLOCK_DEVICE=/dev/fd0c
+if ($MNT_POINT == '') then
+	set MNT_POINT=/mnt
+endif
+#
+if ($DATA_LIMIT == '') then
+	set DATA_LIMIT=512k
+endif
+if ($DATA_FILE == '') then
+	set DATA_FILE=$MNT_POINT/dt.data
+endif
+if ($DATA_LIMIT == '') then
+	set DATA_LIMIT=1m
+endif
+if ($LOG_FILE == '') then
+	set LOG_FILE=dtf.log
+endif
+if ($BLOCK_SIZES == '') then
+	set BLOCK_SIZES="4k 8k"
+endif
+if ($PASS_COUNT == '') then
+	set PASS_COUNT=1
+endif
+if ($ROT_DELAY == '') then
+	set ROT_DELAY="0 1 2 3 4"
+endif
+#
+rm -f $LOG_FILE ; rm -f $DATA_FILE
+
+foreach bs ($BLOCK_SIZES)
+    foreach rotdelay ($ROT_DELAY)
+	tunefs -d $rotdelay $RAW_DEVICE >>& $LOG_FILE
+	mount $BLOCK_DEVICE $MNT_POINT
+	dt of=$DATA_FILE disable=verify limit=$DATA_LIMIT bs=$bs log=$LOG_FILE passes=$PASS_COUNT dispose=keep
+	sync ; sync ; sync ; sleep 10
+	#
+	# Unmount to flush the buffer cache.
+	#
+	umount $MNT_POINT
+	mount $BLOCK_DEVICE $MNT_POINT
+	dt if=$DATA_FILE disable=compare limit=$DATA_LIMIT bs=$bs log=$LOG_FILE passes=$PASS_COUNT
+	rm $DATA_FILE
+	sync ; sync ; sync ; sleep 10
+	umount $MNT_POINT
+	echo "" >> $LOG_FILE
+	echo "*** End of Test ***" >> $LOG_FILE
+	echo "" >> $LOG_FILE
+    end
+end

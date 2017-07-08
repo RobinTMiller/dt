@@ -1,0 +1,66 @@
+enable=scriptverify
+version
+
+# A simple script to demonstrate multiple copy operations.
+
+# The slices option creates multiple threads to the same device/file.
+
+$COPY_OPTIONS="bs=32k slices=2 onerr=abort"
+#$DATA_LIMIT="capacity=max"
+$DATA_LIMIT=${DATA_LIMIT:limit=100m}
+
+# First cluster source/destination devices.
+$CLUS1_SRC=${CLUS1_SRC:/dev/dm-0}
+$CLUS1_DST=${CLUS1_DST:/dev/dm-1}
+
+# Second cluster source/destination devices. (no longer)
+#$CLUS2_SRC=/dev/mapper/3600a0980424254574124436968726e41
+#$CLUS2_DST=/dev/mapper/3600a098042425457412b436968733265
+
+# Populate the source disk to be copied.
+
+of=${CLUS1_SRC} bs=32k pattern=iot disable=pstats ${COPY_OPTIONS} ${DATA_LIMIT} tag=clus1_init &
+of=${CLUS1_DST} bs=32k pattern=0 disable=pstats ${COPY_OPTIONS} ${DATA_LIMIT} tag=clus1_init &
+wait tag=clus1_init
+
+# Copy from the source to the destination LUNs, verifying data.
+
+src=${CLUS1_SRC} dst=${CLUS1_DST} ${COPY_OPTIONS} ${DATA_LIMIT} tag=clus1_copy &
+#src=${CLUS2_SRC} dst=${CLUS2_DST} ${COPY_OPTIONS} ${DATA_LIMIT} tag=clus2_copy &
+
+# Give threads a short time to get started.
+msleep=1
+
+# Show active jobs:
+jobs
+
+# Query thread status:
+query
+
+# Wait for both disk copies to complete.
+
+wait tag=clus1_copy
+#wait tag=clus2_copy
+
+# Same copy operation as above, except to files.
+
+$FILE_SRC=${FILE_SRC:/var/tmp/src_test_file.data}
+$FILE_DST=${FILE_DST:/var/tmp/dst_test_file.data}
+
+$COPY_OPTIONS="bs=32k slices=10"
+#$DATA_LIMIT="limit=1g"
+
+# Populate the source file to be copied. (in the foreground)
+
+of=${FILE_SRC} bs=32k dispose=keep disable=pstats ${COPY_OPTIONS} ${DATA_LIMIT}
+
+# Copy and verify the source file to the destination file.
+# Note: Without a data limit, the entire file is copied.
+
+src=${FILE_SRC} dst=${FILE_DST} ${COPY_OPTIONS} flags=direct tag=file_copy &
+
+# Wait for this file copy to complete.
+wait tag=file_copy
+
+# Remove test files so we don't overfill the disk!
+system rm ${FILE_SRC} ${FILE_DST}

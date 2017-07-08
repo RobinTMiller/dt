@@ -1,0 +1,251 @@
+<HTML>
+<HEAD>
+<TITLE>dt Test Recommendations</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#D98719">
+
+<CENTER><H2><STRONG><I>dt</I> Test Recommendations</STRONG></H2></CENTER>
+
+<H2>Test Considerations</H2>
+Oftentimes, folks ask what is the best <i>dt</i> command lines to use.  The
+answer usually depends what you are trying to test, but here are a few guidelines:
+
+<H3>General Test Options</H3>
+The following are options to consider for any type of device under test:
+<DL>
+<DD>Choose a non-repeating data pattern or a prefix to create uniqueness:
+  <UL>
+    <LI>pattern=iot - Encodes block number and seeds block with that LBA.
+	<LI>prefix="string" - Prefix each block with specified string.
+  </UL>
+<DD>Vary the I/O sizes, testing up to the maximum size supported:
+  <UL>
+    <LI>min=value - Minimum record size.
+	<LI>max=value - Maximum record size.
+	<LI>incr=variable - Vary the I/O size between min/max values.
+  </UL>
+<DD>For sequential I/O, consider testing both forward and reverse directions:
+  <UL>
+    <LI>iodir={<b>forward</b>|reverse} - Selects the I/O direction.
+  </UL>
+<DD>For random access devices, test both sequential and random I/O:
+  <UL>
+    <LI>iotype={random|<b>sequential</b>} - Selects the I/O type.
+  </UL>
+<DD>To generate high I/O loads, consider using POSIX AIO or multiple processes:
+  <UL>
+    <LI>aios=value - Queue this many POSIX Asynchronous I/O requests.
+	<LI>procs=value - Create multiple processes (more one this later).
+	<LI>slices=value - Create multiple slices (each proc was own region).
+  </UL>
+<DD>For extended test runs, select either multiple passes or specify a runtime:
+  <UL>
+    <LI>passes=value - Execute multiple passes (a write pass and a read/verify pass).
+	<LI>runtime=time - Continue running until the specified runtime value is reached.
+  </UL>
+</DL>
+Note: Please use AIO's in lieu of multiple processes to reduce system resource consumption.
+AIO's are very similar to multiple threads for generating heavy I/O load, except the POSIX
+AIO subsystem is utilized to queue multiple reads and writes.
+
+<H3>File System Testing</H3>
+Here are a few options to consider for file system testing:
+<DL>
+<DD>Select multiple processes to create multiple files.
+  <UL>
+    <LI>procs=value - Each file has process ID (pid) appended for uniqueness.
+	  <LI>Each process starts with a unique pattern, unless pattern= option used.
+	  <LI>The parent <i>dt</i> monitors all its' children (subprocesses).
+	  <LI>oncerr={abort|<b>continue</b>} - Controls the behaviour on child error.
+  </UL>
+<DD>Select I/O sizes to test byte boundaries and cross block boundaries:
+  <UL>
+    <LI>min=1 max=256k incr=var - Varies I/O between these min/max sizes.
+  </UL>
+<DD>To defeat the effect of the file system buffer cache, use:
+  <UL>
+    <LI>flags=direct - Enable direct I/O (DIO) (bypasses the buffer cache).
+	  <LI>flags={fsync|rsync|sync} - To force write/read/both I/O sync to disk.
+	  <LI>oflags=dsync - Sync data to disk during write operations.
+	  <LI>oflags=trunc -Truncate an existing file on each file open.
+  </UL>
+<DD>To force buffer cache to invalidate its' cache for this file system:
+  <UL>
+    <LI>Use: of=file disable=verify dispose=keep to write files.
+	  <LI>Dismount (Unix <i>umount</i>) the file system then remount it.
+	  <LI>Use: if=file to read previously written file (must manually remove).
+	  <LI>The above sequence forces reads to come from physical media.
+	  <LI>Writing files larger than the buffer cache is an alternative.
+  </UL>
+<DD>Reducing the buffer cache size will help decrease it's buffering effect.
+</DL>
+
+<H3>Direct Disk Testing</H3>
+Direct disk access is commonly referred to as raw (character) device testing
+on Unix based systems.  Here are options to consider for raw testing:
+<DL>
+<DD>Select multiple slices for heavier load and faster testing:
+  <UL>
+    <LI>slices=value - Divide the disk capacity into value slices.
+	  <LI>A separate process is created to operate on each region (slice).
+  </UL>
+<DD>Enable POSIX Asynchronous I/O (AIO) to generate higher I/O loads:
+  <UL>
+    <LI>enable=aio - Enables AIO and with a default of 8 requests.
+	  <LI>aios=value - Enables AIO and uses the specified value.
+	  <LI>POSIX AIO can be used in conjunction with multiple slices.
+  </UL>
+<DD>Note: Linux only provides a block DSF, so DIO or raw(8) is recommended).
+</DL>
+
+<H3>Shared (raw) Disk Testing</H3>
+When performing shared concurrent disk testing from multiple hosts consider:
+<DL>
+<DD>Divide the disk capacity up into multiple slices then choose slice:
+  <UL>
+    <LI>slices=value - Divide the disk capacity into multiple slices (regions).
+	  <LI>slice=value - Tell <i>dt</i> which slice for each host to operate on.
+  </UL>
+<DD>Ensure each block has a unique prefix to track the writing host:
+  <UL>
+    <LI>prefix="%d@%h" - Defines the device name and host name as its' prefix.
+  </UL>
+<DD>Encode the logical block address (LBA) in each block to aid w/corruptions:
+  <UL>
+    <LI>pattern=iot - Encodes the lba in little-endian format (32-bits).
+	  <LI>enable=lbdata - Encodes the lba in big-endian format (32-bits).
+	  <LI>Note: 32-bit LBA's wrap at 2TB with a 512-byte physical block size.
+  </UL>
+</DL>
+
+<H3>Performance Testing</H3>
+<DL>
+<DD>Best performance will be realized with large block sizes:
+  <UL>
+    <LI>bs=256k - Specifies a large fixed block size.
+  </UL>
+<DD>Queuing multiple I/O requests will provide better performance:
+  <UL>
+    <LI>aios=value - Depending on system AIO limits, 32-64 AIO's (or more).
+    <LI>slices=value - Each slice will execute its' own I/O.
+    <LI>Note: Older dt creates multiple processes, newer dt threads.
+	  <LI>Note: For file system testing, increasing the cache size may help.
+  </UL>
+<DD>Best performance will be realized with data verification disabled:
+  <UL>
+    <LI>disable=compare - Disables write buffer filling and read compares.
+	  <LI>disable=verify - Disables the read/verify pass (writes data only).
+  </UL>
+</DL>
+
+<H3>Monitoring I/O Progress</H3>
+A feature was added for detecting and reporting slow or no I/O progress.
+This feature is very useful for storage failover testing, since it lets you
+know how long it takes for I/O to resume.  It can also be helpful for reporting
+hung I/O, assuming the required signal (SIGALRM) can be delivered to <i>dt</i>.
+<DL>
+<DD>Two options control what's called the "no-progress I/O" feature:
+  <UL>
+    <LI>alarm=time - Controls how often to check no-progress time.
+    <LI>noprogt=time - Reports no-progress message when time exceeded.
+	  <LI>noprogtt=time - Controls the no-progress trigger script execution.
+	  <LI>Note: alarm is delivered by a signal (non-interruptable I/O blocks signals).
+	  <LI>The native Windows version uses a monitoring thread to avoid this issue.
+  </UL>
+<DD>What operations are monitored?
+  <UL>
+    <LI>open(), read(), write(), fsync(), close(), and AIO's.
+	  <LI>Note: fsync() is used with file system to flush data written.
+  </UL>
+</DL>
+
+<H3>Trouble-Shooting Aids</H3>
+There are a couple of options to help with troubleshooting problems:
+<DL>
+<DD>To determine when a block was written, blocks can be timestamped:
+  <UL>
+    <LI>enable=timestamp - Writes a timestamp into 1st 4 bytes of each block.
+	  <LI>With IOT or lbdata, the timestamp replaces the normal 32-bit LBA.
+	  <LI>When a data corruption occurs, the time of the write is reported.
+  </UL>
+<DD>For file system testing, keeping a corrupted file for analysis is helpful:
+  <UL>
+    <LI>dispose=keep will prevent deleting the output file.
+	  <LI>dispose=keeponerror will keep the file only on errors.
+  </UL>
+<DD>To report previous I/O information and data on data corruptions:
+  <UL>
+    <LI>history=value - Record I/O history in a circular buffer.
+	  <LI>hdsize=value - Specify how much history data to record.
+	  <LI>enable=htiming - Time each I/O request.
+	  <LI>enable=hdump - Dump the history buffer at end of test.
+  </UL>
+<DD>Executing an external script during errors can be helpful:
+  <UL>
+    <LI>trigger=cmd:script - Specifies a script to execute with arguments.
+	  <LI>The trigger script can be used to trigger an analyzer or panic host.
+	  <LI>The exit status from the trigger script controls dt's next action.
+	  <LI>Beware: The same script can be executed for no-progress monitoring.
+	  <LI>Note: Other trigger actions available but require Scu in your PATH.
+  </UL>
+<DD>Enabling program debug information can be helpful:
+  <UL>
+    <LI>enable=debug - Enables debug of open()/reopen/close/EOF operations.
+	  <LI>enable=edebug - Enables end-of-file (EOF) handling debugging.
+	  <LI>enable=rdebug - Enables random I/O (seek) operation debugging.
+	  <LI>enable=Debug - Enable all of the above plus read()/write() requests.
+  </UL>
+<DD>For long running tests, you may wish to emit a keepalive message:
+  <UL>
+    <LI>alarm=time - Specifiying how often to emit the keepalive message.
+	  <LI>keepalive=string - Specifies the keepalive string to format/emit.
+	  <LI>pkeepalive=string - Specifies the per pass keepalive message.
+	  <LI>tkeepalive=string - Specifies the total stats keepalive message.
+	  <LI>Note: pkeepalive/tkeepalive override the standard statistics.
+  </UL>
+
+</DL>
+
+<H3>Recommended Tests</H3>
+Generally, there's no <i>single</i> best command line for testing.
+Instead, using multiple command lines are necessary to create different I/O
+footprints and to utilize different API's (sync versus async, for example).
+<p>
+As mentioned above, variety is better than running the same fixed tests over and
+over. This includes varying the I/O sizes, the direction, and the I/O type, as
+well as using different data patterns. When doing file system testing with multiple
+passes (passes= or runtime= options), you may wish to truncate files between each
+pass via oflags=trunc to avoid overwriting blocks with the same data (although this
+is a non-issue when using IOT pattern, since pass is factored into the block seeding).
+<DL>
+<DD>For direct (raw) disk I/O, there are several command lines to randomly select:
+  <UL>
+    <LI>dt of=${DSF} aios=8 min=d max=256k incr=var pattern=iot prefix="%d@%h" iodir={forward|reverse} iotype={random|sequential}
+    <LI>dt of=${DSF} aios=8 min=d max=256k incr=d enable=lbdata prefix="%d@%h" iodir={forward|reverse} iotype={random|sequential}
+    <LI>dt of=${DSF} aios=8 bs=256k prefix="%d@%h" iodir={forward|reverse}
+	  <LI>For sequential I/O, randomly choose: iodir={reverse|forward}
+	  <LI>The AIO value and max transfer size should be user settable.
+	  <LI>The max transfer size varies for each host operating system.
+  </UL>
+<DD>For file system testing, here are several command lines to randomly select:
+  <UL>
+    <LI>dt of=${MountPoint} min=1 max=256k incr=var limit=${FileSize} iodir={forward|reverse} iotype={random|sequential}
+    <LI>dt of=${MountPoint} min=d max=256k incr=var limit=${FileSize} pattern=iot iodir={forward|reverse} iotype={random|sequential}
+    <LI>dt of=${MountPoint} min=5 max=256k incr=var limit=${FileSize} enable=lbdata iodir={forward|reverse} iotype={random|sequential}
+    <LI>dt of=${MountPoint} bs=256k limit={FileSize} prefix="%d@%h"
+	  <LI>For sequential I/O, randomly choose: iodir={reverse|forward}
+	  <LI>For clustered file systems, adding prefix="%d@%h" is useful.
+	  <LI>Note: min=5 is necessary to allow space for encoding the lba.
+  </UL>
+</DL>
+<HR>
+<A HREF="mailto:Robin.T.Miller@gmail.com"><IMG SRC="images/mail_icon.gif" ALT="Mail"></A>
+Send mail to admin of this page: <EM>Robin.T.Miller@gmail.com</EM> 
+<A HREF="index.html"><IMG SRC="gifs/home04.gif" ALT="Home"></A>
+To Robin's home page.
+<P>
+Last Modified: June 5th, 2017
+<HR>
+</BODY>
+</HTML>

@@ -1,0 +1,21 @@
+Program Abstract:
+
+    'dt' is a generic data test program used to verify proper operation of
+peripherals and for obtaining performance information.  Since verification
+of data is performed, 'dt' can be thought of as a generic diagnostic tool.
+
+    'dt' command lines are similar to the 'dd' program, which is popular on
+most UNIX systems.  It contains numerous options to give the user complete
+control of the test parameters.
+
+    'dt' has been used to successfully test disks, tapes, serial lines,
+parallel lines, pipes, and memory mapped files.  In fact, 'dt' can be used
+for any device which allows the standard open, read, write, & close system
+calls.  Special support is necessary for some devices, such as serial lines,
+for setting up the speed, parity, data bits, etc.
+
+Have fun,
+Robin Miller
+The Author of 'dt',
+Robin T. Miller
+Robin.T.Miller@gmail.com

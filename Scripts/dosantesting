@@ -1,0 +1,25 @@
+#!/bin/ksh
+
+. ./.myfuncs
+
+export DT_PATH=${DT_PATH:-"./dt"}
+
+# First cluster source/destination devices.
+CLUS1_SRC=${CLUS1_SRC:-/dev/dm-0}
+CLUS1_DST=${CLUS1_DST:-/dev/dm-1}
+
+# Second cluster source/destination devices.
+CLUS2_SRC=${CLUS2_SRC:-/dev/dm-2}
+CLUS2_DST=${CLUS2_DST:-/dev/dm-3}
+
+${DT_PATH} workload=san_interop_lun of=${CLUS1_SRC},${CLUS2_SRC} runtime=3m
+check_error
+
+${DT_PATH} script=doluncopy.dt
+check_error
+
+WRITER=${WRITER:-/dev/sde}
+MIRROR=${MIRROR:-/dev/sdg}
+
+${DT_PATH} script=domirror.dt
+check_error

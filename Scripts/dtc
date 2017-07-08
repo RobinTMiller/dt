@@ -1,0 +1,140 @@
+#!/bin/csh
+#	%Z%%M% %I% %E%
+#
+#	Date:	August 7, 1990
+#	Author:	Robin Miller
+#
+#	Description:
+#
+#	This script is used for testing CD-ROM's using the Digital Data
+#	Test Disk.  The format of this disk is:
+#
+#	First block has ASCII information at the beginning (DEC Copyright).
+#
+#	Each pattern is 300 blocks in length and the same pattern is
+#	repeated in each block.  This is true of the first 6 patterns,
+#	but the last 4 patterns repeat every 4 or 8 blocks.
+#
+#	There is a total of 10 data patterns.  The pattern files were
+#	created by using the 'dd' utility.  These files are used by the
+#	'dt' program for comparing the various patterns on the test disk.
+#
+# Arguments:
+#	$1	The device name.
+#	$2	The log file name.
+#	$3	The block limit.
+#	$4	The block size(s).
+#	$5	The pass count.
+#	$6	Enable debug flag.
+#
+##set echo
+set DEVICE=$1
+set LOG_FILE=$2
+set DATA_LIMIT=$3
+set BLOCK_SIZES="$4"
+set PASS_COUNT=$5
+set DEBUG_FLAG=$6
+#
+set BLOCK_SIZE=512
+set END_OF_FILE="-2"
+set PAT_PREFIX="pattern_"
+set PAT_BLOCKS=300
+set PAT_LENGTH=`expr $PAT_BLOCKS \* $BLOCK_SIZE`
+set NUM_PATTERNS=10
+#
+# Although a read capacity returns 1170568 blocks, the test patterns
+# stop repeating at block 1169100.  I need info on the RRD Test Disc.
+#
+#set CAPACITY=1170568
+set CAPACITY=1169100
+if ($DEVICE == '') then
+    echo "Usage: dtc device [ log_file block_limit block_sizes pass_count debug ]";
+    echo "Example: dtc rrz4c rrd42.dtc 30000 &"
+    exit 1
+endif
+if ($DEVICE != '') then
+    if (`dirname $DEVICE` != '/dev') then
+	set DEVICE=/dev/$DEVICE
+    endif
+endif
+if ($LOG_FILE == '') then
+	set LOG_FILE=dtc.log
+endif
+if ($DATA_LIMIT == '') then
+	set DATA_LIMIT=$CAPACITY
+endif
+#
+# Please Note:  The block sizes used must divide evenly into the
+#		pattern length to properly calculate the seek count.
+#
+if ("$BLOCK_SIZES" == '') then
+#	set BLOCK_SIZES="512 1024 2048 5120 10240"
+	set BLOCK_SIZES="10240 5120 2048 1024 512"
+endif
+if ($PASS_COUNT == '') then
+	set PASS_COUNT=1
+endif
+#
+# Setup the debug options:
+#	Default: dump - dumps buffers on compare errors.
+#
+if ($DEBUG_FLAG == 'none') then
+	set DEBUG_OPTS=""
+else if ($DEBUG_FLAG == 'debug') then
+	set DEBUG_OPTS="enable=coredump,debug,dump"
+else
+	set DEBUG_OPTS="enable=dump"
+endif
+if (-f $LOG_FILE) then
+	rm -f $LOG_FILE
+endif
+#
+# Main Test Loop
+#
+foreach bs ($BLOCK_SIZES)
+  date >> $LOG_FILE
+  echo "" >> $LOG_FILE
+  set RECORD_COUNT=`expr \( $PAT_LENGTH / $bs \)`
+  set data_limit=0
+  set pattern_count=0
+  while ($data_limit < $DATA_LIMIT)  
+    set pattern_num=0
+    while ($pattern_num != $NUM_PATTERNS)
+	set PATTERN_NAME="$PAT_PREFIX$pattern_num"
+	set SEEK_COUNT=`expr \( $pattern_count + $pattern_num \) \* \( $PAT_LENGTH / $bs \)`
+	# If this is the first block, then skip the DEC Copyright.
+	if ($SEEK_COUNT == 0) then
+	    set SEEK_COUNT=1
+	    set record_count=`expr $RECORD_COUNT - 1`
+	else
+	    set record_count=$RECORD_COUNT
+	endif
+	set cmd_line="dt if=$DEVICE records=$record_count bs=$bs log=$LOG_FILE pf=$PATTERN_NAME seek=$SEEK_COUNT align=rotate disable=header,stats passes=$PASS_COUNT $DEBUG_OPTS"
+	echo $cmd_line >> $LOG_FILE
+	$cmd_line
+	set exit_status=$status
+	if ($exit_status) then
+	    if ($exit_status == $END_OF_FILE) then
+		break ; break
+	    else
+		file $DEVICE
+		echo "" >> $LOG_FILE
+		date >> $LOG_FILE
+		echo "" >> $LOG_FILE
+		exit ($exit_status)
+	    endif
+	endif
+	set pattern_num=`expr $pattern_num + 1`
+	set block_count=`expr \( $record_count \* $bs \) / $BLOCK_SIZE`
+	set data_limit=`expr $data_limit + $block_count`
+	if ($data_limit >= $DATA_LIMIT) then
+	    break
+	endif
+    end
+    set pattern_count=`expr $pattern_count + $NUM_PATTERNS`
+  end
+  echo "" >> $LOG_FILE
+  echo "*** End of Test ***" >> $LOG_FILE
+  echo "" >> $LOG_FILE
+end
+date >> $LOG_FILE

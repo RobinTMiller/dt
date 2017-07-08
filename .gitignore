@@ -1,0 +1,5 @@
+*.o
+*.obj
+*.tlog
+windows/*.h
+windows/*.c

@@ -1,0 +1,32 @@
+﻿  scsilib.c
+  scsidata.c
+  libscsi.c
+  dtwrite.c
+  dtworkloads.c
+  dtwin.c
+  dtverify.c
+  dtutil.c
+  dtusage.c
+  dtstats.c
+  dtscsi.c
+  dtread.c
+  dtprocs.c
+  dtprint.c
+  dtmtrand64.c
+  dtmem.c
+  dtjobs.c
+  dtiot.c
+  dtinfo.c
+  dthist.c
+  Generating Code...
+  Compiling...
+  dtgen.c
+  dtfs.c
+  dtfmt.c
+  dtbtag.c
+  dtaio.c
+  dt.c
+  Generating Code...
+dt.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/SAFESEH' specification
+  dt.vcxproj -> C:\cygwin64\home\RMill7198650\dt.v21\windows\.\Debug\dt.exe
+  dt.vcxproj -> .\Debug/dt.pdb (Full PDB)

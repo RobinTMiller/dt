@@ -1,0 +1,30 @@
+enable=scriptverify
+version
+
+$DIR=${DIR:/var/tmp}
+$BS=${BS:"4k"}
+$COUNT=${COUNT:"100m/4k"}
+$OPTS=${OPTS:"enable=btags flags=direct disable=pstats log=/var/tmp/dt-thread-j%jobt%thread.log"}
+$DEBUG=${DEBUG:"history=10"}
+
+system rm -f ${DIR}/dt.data ${DIR}/dt-thread*.log
+
+mlog=/var/tmp/master.log 
+
+# Normal dt first
+
+of=${DIR}/dt.data bs=${BS} count=${COUNT} step=${BS} pattern=0xaaaaaaaa dispose=keep ${DEBUG} ${OPTS}
+if=${DIR}/dt.data bs=${BS} count=${COUNT} step=${BS} pattern=0xaaaaaaaa ${DEBUG} ${OPTS}
+# Spare part of the file should return zero (0). (never written)
+if=${DIR}/dt.data bs=${BS} count=${COUNT} offset=${BS} step=${BS} \
+                  pattern=0x00000000 ${DEBUG} ${OPTS} disable=btags slices=0
+
+of=${DIR}/dt.data bs=${BS} count=${COUNT} offset=${BS} step=${BS} pattern=0xbbbbbbbb dispose=keep ${DEBUG} ${OPTS}
+if=${DIR}/dt.data bs=${BS} count=${COUNT} step=${BS} pattern=0xaaaaaaaa ${DEBUG} ${OPTS}
+if=${DIR}/dt.data bs=${BS} offset=${BS} count=${COUNT} step=${BS} pattern=0xbbbbbbbb ${DEBUG} ${OPTS}
+
+# Async I/O
+if=${DIR}/dt.data bs=${BS} count=${COUNT} step=${BS} pattern=0xaaaaaaaa ${DEBUG} ${OPTS} aios=4
+if=${DIR}/dt.data bs=${BS} offset=${BS} count=${COUNT} step=${BS} pattern=0xbbbbbbbb ${DEBUG} ${OPTS} aios=4
+
+system rm -rf ${DIR}/dt.data

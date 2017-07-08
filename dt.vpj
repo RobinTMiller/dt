@@ -1,0 +1,336 @@
+<!DOCTYPE Project SYSTEM "http://www.slickedit.com/dtd/vse/10.0/vpj.dtd">
+<Project
+    Version="10.0"
+    VendorName="SlickEdit"
+    TemplateName="GNU C/C++"
+    WorkingDir="."
+    BuildSystem="vsbuild">
+    <Config
+        Name="Debug"
+        Type="gnuc"
+        DebugCallbackName="gdb"
+        Version="1"
+        OutputFile="%bddt.exe"
+        CompilerConfigName="Latest Version">
+        <Menu>
+            <Target
+                Name="Compile"
+                MenuCaption="&amp;Compile"
+                Dialog="_gnuc_options_form Compile"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                OutputExts="*.o"
+                SaveOption="SaveCurrent"
+                RunFromDir="%rw">
+                <Exec CmdLine='gcc -ansi -c %xup  %defd -g -o "%bd%n%oe" %i "%f"'/>
+            </Target>
+            <Target
+                Name="Link"
+                MenuCaption="&amp;Link"
+                ShowOnMenu="Never"
+                Dialog="_gnuc_options_form Link"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveCurrent"
+                RunFromDir="%rw">
+                <Exec CmdLine='gcc -ansi %xup -g -o "%o" %f %libs'/>
+            </Target>
+            <Target
+                Name="Build"
+                MenuCaption="&amp;Build"
+                Dialog="_gnuc_options_form Compile"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveWorkspaceFiles"
+                RunFromDir="%rw">
+                <Exec CmdLine='"%(VSLICKBIN1)vsbuild" "%w" "%r" -t build'/>
+            </Target>
+            <Target
+                Name="Rebuild"
+                MenuCaption="&amp;Rebuild"
+                Dialog="_gnuc_options_form Compile"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveWorkspaceFiles"
+                RunFromDir="%rw">
+                <Exec CmdLine='"%(VSLICKBIN1)vsbuild" "%w" "%r" -t rebuild'/>
+            </Target>
+            <Target
+                Name="Debug"
+                MenuCaption="&amp;Debug"
+                Dialog="_gnuc_options_form Run/Debug"
+                BuildFirst="1"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveNone"
+                RunFromDir="%rw">
+                <Exec CmdLine='vsdebugio -prog "%o"'/>
+            </Target>
+            <Target
+                Name="Execute"
+                MenuCaption="E&amp;xecute"
+                Dialog="_gnuc_options_form Run/Debug"
+                BuildFirst="1"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveWorkspaceFiles"
+                RunFromDir="%rw">
+                <Exec CmdLine='"%o"'/>
+            </Target>
+            <Target
+                Name="dash"
+                MenuCaption="-"
+                Deletable="0">
+                <Exec/>
+            </Target>
+            <Target
+                Name="GNU C Options"
+                MenuCaption="GNU C &amp;Options..."
+                ShowOnMenu="HideIfNoCmdLine"
+                Deletable="0"
+                SaveOption="SaveNone">
+                <Exec
+                    CmdLine="gnucoptions"
+                    Type="Slick-C"/>
+            </Target>
+        </Menu>
+        <Rules Name="Compile">
+            <Rule
+                InputExts="*.ada"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gnat -g -c -o "%bd%n.o" "%f"'/>
+            </Rule>
+            <Rule
+                InputExts="*.adb"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gnat -g -c -o "%bd%n.o" "%f"'/>
+            </Rule>
+            <Rule
+                InputExts="*.f"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gfortran -c -g -o "%bd%n.o" "%f"'/>
+            </Rule>
+            <Rule
+                InputExts="*.f90"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gfortran -c -g -o "%bd%n.o" "%f"'/>
+            </Rule>
+            <Rule
+                InputExts="*.d"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gdc -c -g -o "%bd%n.o" "%f"'/>
+            </Rule>
+        </Rules>
+        <List Name="GNUC Options">
+            <Item
+                Name="LinkerOutputType"
+                Value="Executable"/>
+        </List>
+    </Config>
+    <Config
+        Name="Release"
+        Type="gnuc"
+        DebugCallbackName="gdb"
+        Version="1"
+        OutputFile="%bddt.exe"
+        CompilerConfigName="Latest Version">
+        <Menu>
+            <Target
+                Name="Compile"
+                MenuCaption="&amp;Compile"
+                Dialog="_gnuc_options_form Compile"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                OutputExts="*.o"
+                SaveOption="SaveCurrent"
+                RunFromDir="%rw">
+                <Exec CmdLine='gcc -ansi -c %xup %defd -o "%bd%n%oe" %i "%f"'/>
+            </Target>
+            <Target
+                Name="Link"
+                MenuCaption="&amp;Link"
+                ShowOnMenu="Never"
+                Dialog="_gnuc_options_form Link"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveCurrent"
+                RunFromDir="%rw">
+                <Exec CmdLine='gcc -ansi %xup -o "%o" %f %libs'/>
+            </Target>
+            <Target
+                Name="Build"
+                MenuCaption="&amp;Build"
+                Dialog="_gnuc_options_form Compile"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveWorkspaceFiles"
+                RunFromDir="%rw">
+                <Exec CmdLine='"%(VSLICKBIN1)vsbuild" "%w" "%r" -t build'/>
+            </Target>
+            <Target
+                Name="Rebuild"
+                MenuCaption="&amp;Rebuild"
+                Dialog="_gnuc_options_form Compile"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveWorkspaceFiles"
+                RunFromDir="%rw">
+                <Exec CmdLine='"%(VSLICKBIN1)vsbuild" "%w" "%r" -t rebuild'/>
+            </Target>
+            <Target
+                Name="Debug"
+                MenuCaption="&amp;Debug"
+                Dialog="_gnuc_options_form Run/Debug"
+                BuildFirst="1"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveNone"
+                RunFromDir="%rw">
+                <Exec CmdLine='vsdebugio -prog "%o"'/>
+            </Target>
+            <Target
+                Name="Execute"
+                MenuCaption="E&amp;xecute"
+                Dialog="_gnuc_options_form Run/Debug"
+                BuildFirst="1"
+                CaptureOutputWith="ProcessBuffer"
+                Deletable="0"
+                SaveOption="SaveWorkspaceFiles"
+                RunFromDir="%rw">
+                <Exec CmdLine='"%o"'/>
+            </Target>
+            <Target
+                Name="dash"
+                MenuCaption="-"
+                Deletable="0">
+                <Exec/>
+            </Target>
+            <Target
+                Name="GNU C Options"
+                MenuCaption="GNU C &amp;Options..."
+                ShowOnMenu="HideIfNoCmdLine"
+                Deletable="0"
+                SaveOption="SaveNone">
+                <Exec
+                    CmdLine="gnucoptions"
+                    Type="Slick-C"/>
+            </Target>
+        </Menu>
+        <Rules Name="Compile">
+            <Rule
+                InputExts="*.ada"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gnat -O -c -o "%bd%n.o" "%f"'/>
+            </Rule>
+            <Rule
+                InputExts="*.adb"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gnat -O -c -o "%bd%n.o" "%f"'/>
+            </Rule>
+            <Rule
+                InputExts="*.f"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gfortran -O -g -o "%bd%n.o" "%f"'/>
+            </Rule>
+            <Rule
+                InputExts="*.f90"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gfortran -O -g -o "%bd%n.o" "%f"'/>
+            </Rule>
+            <Rule
+                InputExts="*.d"
+                OutputExts="*.o"
+                LinkObject="1">
+                <Exec CmdLine='gdc -c -g -o "%bd%n.o" "%f"'/>
+            </Rule>
+        </Rules>
+        <List Name="GNUC Options">
+            <Item
+                Name="LinkerOutputType"
+                Value="Executable"/>
+        </List>
+    </Config>
+    <Files>
+        <Folder
+            Name="Source Files"
+            Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d;*.m;*.mm;*.go"
+            GUID="{C347210D-EBF6-4384-F8AC-F61A6E9D8E9A}">
+            <F N="crc32.c"/>
+            <F N="dt.c"/>
+            <F N="dtaio.c"/>
+            <F N="dtapp.c"/>
+            <F N="dtbtag.c"/>
+            <F N="dtfmt.c"/>
+            <F N="dtfs.c"/>
+            <F N="dtgen.c"/>
+            <F N="dthist.c"/>
+            <F N="dtinfo.c"/>
+            <F N="dtiobtemplate.c"/>
+            <F N="dtiot.c"/>
+            <F N="dtjobs.c"/>
+            <F N="dtmem.c"/>
+            <F N="dtmmap.c"/>
+            <F N="dtmtrand64.c"/>
+            <F N="dtprint.c"/>
+            <F N="dtprocs.c"/>
+            <F N="dtread.c"/>
+            <F N="dtscsi.c"/>
+            <F N="dtstats.c"/>
+            <F N="dttape.c"/>
+            <F N="dtunix.c"/>
+            <F N="dtusage.c"/>
+            <F N="dtutil.c"/>
+            <F N="dtverify.c"/>
+            <F N="dtwin.c"/>
+            <F N="dtworkloads.c"/>
+            <F N="dtwrite.c"/>
+            <F N="libscsi.c"/>
+            <F N="parson.c"/>
+            <F N="scsidata.c"/>
+            <F N="scsilib-aix.c"/>
+            <F N="scsilib-hpux.c"/>
+            <F N="scsilib-linux.c"/>
+            <F N="scsilib-solaris.c"/>
+            <F N="scsilib-windows.c"/>
+        </Folder>
+        <Folder
+            Name="Header Files"
+            Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.h++;*.inc;*.sh;*.cpy;*.if"
+            GUID="{639B4F77-D8E5-470C-8BF3-D39BFEFF1291}">
+            <F N="aix_workaround.h"/>
+            <F N="common.h"/>
+            <F N="dt.h"/>
+            <F N="dtbtag.h"/>
+            <F N="dtmtrand64.h"/>
+            <F N="dtunix.h"/>
+            <F N="dtwin.h"/>
+            <F N="inquiry.h"/>
+            <F N="libscsi.h"/>
+            <F N="parson.h"/>
+            <F N="scsi_cdbs.h"/>
+            <F N="scsi_opcodes.h"/>
+            <F N="scsilib.h"/>
+        </Folder>
+        <Folder
+            Name="Resource Files"
+            Filters="*.ico;*.cur;*.dlg"
+            GUID="{6B038F67-EBC6-4759-2B42-A0A5FAD78FB0}"/>
+        <Folder
+            Name="Bitmaps"
+            Filters="*.bmp"
+            GUID="{2171D6A7-0F5D-445E-BD1C-D9576B9A4A9A}"/>
+        <Folder
+            Name="Other Files"
+            Filters=""
+            GUID="{5DBA1A1B-CFA0-4EBE-65F4-9202859BFE91}"/>
+    </Files>
+</Project>

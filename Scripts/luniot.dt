@@ -1,0 +1,19 @@
+enable=scriptverify
+version
+
+# Background jobs via &, bg, or enable=async
+# Each job has an ID, but a tag can be specified.
+
+of=${SPT_DEVICE} bs=random slices=3 enable=mdebug fdelay=25 keepalivet=15m runtime=24h prefix="(tid:%T j:%j t:%t) %d@%h" pattern=iot onerr=abort iotype=random history=1500 enable=hdump,htiming job_log=/var/tmp/job.log log=/var/tmp/thread.log tag=lun_iot &
+
+# Give threads a short time to get started.
+sleep=1
+
+# Show active jobs:
+jobs:full
+
+# Query thread status:
+query
+
+# Wait for jobs/threads to complete
+wait tag=lun_iot

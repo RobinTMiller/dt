@@ -1,0 +1,10 @@
+# pattern_0 - psuedo-random pattern.
+# pattern_1 - psuedo-random pattern alternating with 0's.
+# pattern_2 - all 0s.
+# pattern_3 - all 1s (FFH).
+# pattern_4 - 16 bit shifting 1 in a field of 0s.
+# pattern_5 - 16 bit shifting 0 in a field of 1s.
+# pattern_6 - alternating 01 pattern (AAH).
+# pattern_7 - byte incrementing (OOH - FFH).
+# pattern_8 - encrypted data pattern.
+# pattern_9 - psuedo-random pattern1 alternating with 0's.

@@ -1,0 +1,207 @@
+#
+# %Z%%M% %I% %E% 1990 by Robin Miller
+#
+#/****************************************************************************
+# *									     *
+# *			  COPYRIGHT (c) 1990 - 2017			     *
+# *			   This Software Provided			     *
+# *				     By					     *
+# *			  Robin's Nest Software Inc.			     *
+# *									     *
+# * Permission to use, copy, modify, distribute and sell this software and   *
+# * its documentation for any purpose and without fee is hereby granted	     *
+# * provided that the above copyright notice appear in all copies and that   *
+# * both that copyright notice and this permission notice appear in the	     *
+# * supporting documentation, and that the name of the author not be used    *
+# * in advertising or publicity pertaining to distribution of the software   *
+# * without specific, written prior permission.				     *
+# *									     *
+# * THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, 	     *
+# * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN	     *
+# * NO EVENT SHALL HE BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL   *
+# * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR    *
+# * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS  *
+# * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF   *
+# * THIS SOFTWARE.							     *
+# *									     *
+# ****************************************************************************/
+#
+# Makefile -- makefile for program 'dt'
+#	
+
+# System makefile definitions for program makefiles
+
+#.SUFFIXES:	.ln
+#
+#.c.ln:
+#		@lint -c $(LINTFLAGS) $<
+#
+#.c~.ln:
+#		@echo $<
+#		@$(GET) -G$*.c $(GFLAGS) $<
+#		@lint -c $(LINTFLAGS) $*.c
+#		@rm -f $*.c
+
+PRINTER=	lpr
+
+PR_FLAGS=	-p -P28
+
+TR_PRINTER=	$(PRINTER)
+
+TR_FLAGS=	-t -P28
+
+# Libraries the program links to which are considered volatile
+
+LIBS=
+
+# Libraries considered static
+
+# Note: Libm required for math API's and compat for ftime(), both for sio!
+EXTLIBS= -lpthread -lm -lcompat
+#
+# This library is necessary for AIO functions, but it is being
+# omitted (for now), since AIO isn't working quite right (yet)!
+# [ Note: I'm pretty sure the AIO failures are not 'dt's fault. ]
+# BTW:  The failure is showing up as a data compare error, when
+#	32-bit file offsets are used, or a get a premature EOF
+#	when _FILE_OFFSET_BITS=64 is defined :-) damn!
+#
+#EXTLIBS= -lrt
+
+LINTLIBS=
+
+# P or G flag ( override on command line by invoking make PORG=-g )
+
+PORG      = -O3
+
+AWK=	awk
+#CFLAGS+= $(PORG) -DAIO -DMMAP -DTAPE -DFreeBSD -D_BSD_SOURCE
+CFLAGS+= $(PORG) -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE
+CPP=	/usr/bin/cpp
+CPPOPTS= 
+# Build *without* shared libraries since ONTAP's FreeBSD lacks libpthread.so!
+LDFLAGS="-static"
+
+# end of system makefile definitions
+
+HDRS=		dt.h common.h dtmtrand64.h dtunix.h
+
+### MKMF:SOURCES ###
+
+CFILES=		\
+		dt.c		\
+		dtaio.c		\
+		dtbtag.c	\
+		dtfs.c		\
+		dtfmt.c		\
+		dtgen.c		\
+		dthist.c	\
+		dtiot.c		\
+		dtinfo.c	\
+		dtjobs.c	\
+		dtmem.c		\
+		dtmmap.c	\
+		dtmtrand64.c	\
+		dtprint.c	\
+		dtprocs.c	\
+		dtread.c	\
+		dtwrite.c	\
+		dtscsi.c	\
+		dtstats.c	\
+		dttape.c	\
+                dtunix.c        \
+		dtutil.c	\
+		dtusage.c	\
+		dtverify.c	\
+		dtworkloads.c
+
+### MKMF:OBJECTS ###
+
+OBJS=		${CFILES:.c=.o}
+
+
+### MKMF:LINTOBJS ###
+
+LINTOBJS=	${CFILES:.c=.ln}
+
+
+PROGRAM=	dt
+
+# system targets for program makefile
+
+$(PROGRAM):	$(OBJS) $(XOBJS) $(LIBS)
+		@echo -n loading $(PROGRAM) ... 
+		@echo $(CC) -o $(PROGRAM) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) $(EXTLIBS)
+		@$(CC) -o $(PROGRAM) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) $(EXTLIBS)
+		@file dt
+		@echo done
+
+print:;
+		@$(PRINTER) $(PRINTFLAGS) $(CFILES)
+
+prettyprint:;
+		@vgrind $(CFILES) | $(TROFFPRINTER) $(TROFFPRINTERFLAGS)
+
+lint:		$(LINTOBJS)
+		lint $(LINTFLAGS) $(LINTOBJS) $(LINTLIBS)
+		touch lint
+
+clean:;
+		@rm -f $(OBJS) $(PROGRAM)
+
+tags:	$(CFILES) $(HDRS)
+	ctags $(CFILES) $(HDRS)
+	etags $(CFILES) $(HDRS)
+
+# end of system targets for program makefile
+
+depend: makedep
+	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
+	rm eddep makedep makedep1 makedeperrs
+
+makedep: ${CFILES}
+	@cat /dev/null >makedep
+	-(for i in ${CFILES} ; do \
+		${CPP} -M ${CPPOPTS} $(CFLAGS) $$i >> makedep; done) \
+		2>makedeperrs
+	sed \
+		-e 's,^.*genassym\.o:,assym.s assym.L:,' \
+		-e 's,^\(.*\)\.o:,\1.o \1.ln:,' makedep > makedep1
+	${AWK} ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$3) > 78) { print rec; rec = $$0; } \
+		       else rec = rec " " $$3 } } \
+	      END { print rec } ' makedep1 > makedep
+	@cat makedeperrs
+	@(if [ -s makedeperrs ]; then false; fi)
+
+
+# DO NOT DELETE THIS LINE
+
+dt.o: dt.c $(HDRS)
+dtaio.o: dtaio.c $(HDRS)
+dtbtag.o: dtbtag.c $(HDRS)
+dtfs.o: dtfs.c $(HDRS)
+dtfmt.o: dtfmt.c $(HDRS)
+dtgen.o: dtgen.c $(HDRS)
+dthist.o: dthist.c $(HDRS)
+dtiot.o: dtiot.c $(HDRS)
+dtinfo.o: dtinfo.c $(HDRS)
+dtjobs.o: dtjobs.c $(HDRS)
+dtmem.o: dtmem.c $(HDRS)
+dtmmap.o: dtmmap.c $(HDRS)
+dtmtrand64.o: dtmtrand64.c $(HDRS)
+dtprint.o: dtprint.c $(HDRS)
+dtprocs.o: dtprocs.c $(HDRS)
+dtread.o: dtread.c $(HDRS)
+dtwrite.o: dtwrite.c $(HDRS)
+dtstats.o: dtstats.c $(HDRS)
+dttape.o: dttape.c $(HDRS)
+dtunix.o: dtunix.c $(HDRS)
+dtutil.o: dtutil.c $(HDRS)
+dtusage.o: dtusage.c $(HDRS)
+dtverify.o: dtverify.c $(HDRS)
+dtworkloads.o: dtworkloads.c $(HDRS)

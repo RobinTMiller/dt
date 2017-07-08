@@ -1,0 +1,18 @@
+#
+# First block has ASCII information at the beginning.
+#
+# Each pattern is 300 blocks in length and the same pattern is
+# repeated in each block.  This is true of the first 6 patterns,
+# but the last 4 patterns repeat every 4 or 8 blocks (see below).
+#
+#dd if=/dev/rrz8c bs=512 skip=0 count=1 of=pattern_0
+dd if=/dev/rrz8c bs=512 skip=300 count=1 of=pattern_1
+dd if=/dev/rrz8c bs=512 skip=600 count=1 of=pattern_2
+dd if=/dev/rrz8c bs=512 skip=900 count=1 of=pattern_3
+dd if=/dev/rrz8c bs=512 skip=1200 count=1 of=pattern_4
+dd if=/dev/rrz8c bs=512 skip=1500 count=1 of=pattern_5
+dd if=/dev/rrz8c bs=512 skip=1800 count=4 of=pattern_6
+dd if=/dev/rrz8c bs=512 skip=2100 count=8 of=pattern_7
+dd if=/dev/rrz8c bs=512 skip=2400 count=4 of=pattern_8
+dd if=/dev/rrz8c bs=512 skip=2700 count=8 of=pattern_9
+dd if=/dev/rrz8c bs=512 skip=3000 count=1 of=pattern_0

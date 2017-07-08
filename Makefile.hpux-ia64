@@ -1,0 +1,235 @@
+#
+# %Z%%M% %I% %E% 1990 by Robin Miller
+#
+#/****************************************************************************
+# *									     *
+# *			  COPYRIGHT (c) 1990 - 2017			     *
+# *			   This Software Provided			     *
+# *				     By					     *
+# *			  Robin's Nest Software Inc.			     *
+# *									     *
+# * Permission to use, copy, modify, distribute and sell this software and   *
+# * its documentation for any purpose and without fee is hereby granted	     *
+# * provided that the above copyright notice appear in all copies and that   *
+# * both that copyright notice and this permission notice appear in the	     *
+# * supporting documentation, and that the name of the author not be used    *
+# * in advertising or publicity pertaining to distribution of the software   *
+# * without specific, written prior permission.				     *
+# *									     *
+# * THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, 	     *
+# * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN	     *
+# * NO EVENT SHALL HE BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL   *
+# * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR    *
+# * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS  *
+# * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF   *
+# * THIS SOFTWARE.							     *
+# *									     *
+# ****************************************************************************/
+#
+# Makefile -- makefile for program 'dt'
+#	
+
+### MKMF:DEFINITIONS ###
+
+
+# System makefile definitions for program makefiles
+
+.SUFFIXES:	.ln
+
+.c.ln:
+#		@lint -i $(LINTFLAGS) $<
+		@lint -c $(LINTFLAGS) $<
+
+#.c~.ln:
+#		@echo $<
+#		@$(GET) -G$*.c $(GFLAGS) $<
+#		@lint -i $(LINTFLAGS) $*.c
+#		@lint -c $(LINTFLAGS) $*.c
+#		@rm -f $*.c
+
+PRINTER=	lpr
+
+PR_FLAGS=	-p -P28
+
+TR_PRINTER=	$(PRINTER)
+
+TR_FLAGS=	-t -P28
+
+# Libraries the program links to which are considered volatile
+
+LIBS=
+
+# Libraries considered static
+
+EXTLIBS= -lrt -lpthread -lm
+
+LINTLIBS=
+
+# P or G flag ( override on command line by invoking make PORG=-g )
+
+PORG=	-O3
+
+AWK=	awk
+CC=cc
+#
+# Note: Assumption made that _FILE_OFFSET_BITS=64 enables O_LARGEFILE!
+#
+CFLAGS= $(PORG) -mt -I.. -DAIO -DMMAP -DRAND48 \
+	-D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI
+#CPP=	/lib/cpp
+#
+# 'gcc' is used for "make depend", since HP-UX's compiler has no '-M' option :-)
+#
+CPP=	/usr/local/bin/gcc
+CPPOPTS= -M -DAIO -DMMAP -DRAND48 -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64
+#
+# Note:  Threads library requires 'dt' to be built shared (dynamic libraries)!
+#
+LDFLAGS= 
+#LDFLAGS= -Bstatic
+LINTFLAGS=
+
+# end of system makefile definitions
+
+HDRS=		dt.h common.h dtmtrand64.h dtunix.h
+SCSI_HDRS=	libscsi.h scsilib.h inquiry.h scsi_cdbs.h
+ALL_HDRS=       ${HDRS} ${SCSI_HDRS}
+
+### MKMF:SOURCES ###
+
+SCSI_CFILES=	libscsi.c	\
+		scsidata.c	\
+		scsilib.c
+
+CFILES=		\
+		dt.c		\
+		dtaio.c		\
+		dtbtag.c	\
+		dtfs.c		\
+		dtfmt.c		\
+		dtgen.c		\
+		dthist.c	\
+		dtiot.c		\
+		dtinfo.c	\
+		dtjobs.c	\
+		dtmem.c		\
+		dtmmap.c	\
+		dtmtrand64.c	\
+		dtprint.c	\
+		dtprocs.c	\
+		dtread.c	\
+		dtwrite.c	\
+		dtscsi.c	\
+		dtstats.c	\
+		dttape.c	\
+                dtunix.c        \
+		dtutil.c	\
+		dtusage.c	\
+		dtverify.c	\
+		dtworkloads.c
+
+ALL_CFILES=	${CFILES} ${SCSI_CFILES}
+
+### MKMF:OBJECTS ###
+
+OBJS=		${CFILES:.c=.o}
+SCSI_OBJS=	${SCSI_CFILES:.c=.o}
+
+### MKMF:LINTOBJS ###
+
+LINTOBJS=	${ALL_CFILES:.c=.ln}
+
+
+### MKMF:TARGETS ###
+
+PROGRAM=	dt
+
+# system targets for program makefile
+
+$(PROGRAM):	$(OBJS) $(SCSI_OBJS) $(XOBJS)
+#		@echo -n loading $(PROGRAM) ... 
+		$(CC) -o $(PROGRAM) $(CFLAGS) $(LDFLAGS) $(OBJS) $(SCSI_OBJS) $(LIBS) $(EXTLIBS)
+		@echo done
+
+scsilib.c:
+	@if [ "$(OS)" = "" ] ; then \
+	    echo "Please specify OS={aix,linux,hpux,solaris,windows}"; \
+	    exit 1; \
+	fi; \
+	ln -sf ../scsilib-$(OS).c scsilib.c
+
+print:;
+		@$(PRINTER) $(PRINTFLAGS) $(ALL_CFILES)
+
+prettyprint:;
+		@vgrind $(ALL_CFILES) | $(TROFFPRINTER) $(TROFFPRINTERFLAGS)
+
+lint:		$(LINTOBJS)
+		lint $(LINTFLAGS) $(LINTOBJS) $(LINTLIBS)
+		touch lint
+
+clean:;
+		@rm -f $(OBJS) $(SCSI_OBJS) $(PROGRAM)
+
+tags:	$(ALL_CFILES) $(ALL_HDRS)
+	ctags -wt $(ALL_CFILES) $(ALL_HDRS)
+
+# end of system targets for program makefile
+
+
+depend: makedep
+	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ex - Makefile < eddep
+	rm eddep makedep makedep1 makedeperrs
+
+# Kinda Micky Mouse, but it's better than nothing (IMHO) :-)
+makedep: ${ALL_CFILES}
+	@cat /dev/null >makedep
+	-(for i in ${ALL_CFILES} ; do \
+		${CPP} ${CPPOPTS} $$i >> makedep; done) \
+		2>makedeperrs
+	sed \
+		-e 's,\/local\/lib\/gcc-lib/\(.*\)\/include,\/include,' \
+		-e 's,^\(.*\)\.o:,\1.o \1.ln:,' makedep > makedep1
+	${AWK} ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$3) > 78) { print rec; rec = $$0; } \
+		       else rec = rec " " $$3 } } \
+	      END { print rec } ' makedep1 > makedep
+	@cat makedeperrs
+	@(if [ -s makedeperrs ]; then false; fi)
+
+
+# DO NOT DELETE THIS LINE
+
+dt.o: dt.c $(HDRS)
+dtaio.o: dtaio.c $(HDRS)
+dtbtag.o: dtbtag.c $(HDRS)
+dtfs.o: dtfs.c $(HDRS)
+dtfmt.o: dtfmt.c $(HDRS)
+dtgen.o: dtgen.c $(HDRS)
+dthist.o: dthist.c $(HDRS)
+dtiot.o: dtiot.c $(HDRS)
+dtinfo.o: dtinfo.c $(HDRS)
+dtjobs.o: dtjobs.c $(HDRS)
+dtmem.o: dtmem.c $(HDRS)
+dtmmap.o: dtmmap.c $(HDRS)
+dtmtrand64.o: dtmtrand64.c $(HDRS)
+dtprint.o: dtprint.c $(HDRS)
+dtprocs.o: dtprocs.c $(HDRS)
+dtread.o: dtread.c $(HDRS)
+dtwrite.o: dtwrite.c $(HDRS)
+dtscsi.o: dtscsi.c $(HDRS) $(SCSI_HDRS)
+dtstats.o: dtstats.c $(HDRS)
+dttape.o: dttape.c $(HDRS)
+dtunix.o: dtunix.c $(HDRS)
+dtutil.o: dtutil.c $(HDRS)
+dtusage.o: dtusage.c $(HDRS)
+dtverify.o: dtverify.c $(HDRS)
+dtworkloads.o: dtworkloads.c $(HDRS)
+
+libscsi.o: libscsi.c $(HDRS) $(SCSI_HDRS)
+scsidata.o: scsidata.c $(SCSI_HDRS)
+scsilib.o: scsilib.c $(SCSI_HDRS)

@@ -1,0 +1,2070 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=PowerPoint.Slide>
+<meta name=Generator content="Microsoft PowerPoint 12">
+<link id=Main-File rel=Main-File href="../dt-Overview.htm">
+<link rel=Preview href=preview.wmf>
+<meta name=Robots content=NoIndex>
+<script src=script.js></script><script><!--
+if( !(IsWin("PPTOtl")||IsWin("PPTNav")||IsWin("PPTOtlNav")) )
+{
+	obj = GetObj("Main-File")
+	parent.location.href=obj.href
+}
+var gOtlHiliteClr="#ffffff",gOtlNormalClr="#000000",gOtlActiveClr="#ffff00",gSelected="",gTxtState=false,gChildEntryTable=new Array()
+function Load()
+{
+	if( IsWin("PPTOtl" ) ){ LoadOtl(); parent.gOtlLoaded=true; return }
+	if( g_supportsPPTHTML ) {
+		if( IsWin("PPTNav" ) ){ LoadNav("NavObj",UpdNav); parent.gNavLoaded=true; return }
+		if( IsWin("PPTOtlNav" ) ){ LoadNav("OtlNavObj",UpdOtlNav); parent.gOtlNavLoaded=true; return }
+	}
+}
+function Upd(){ if( IsWin("PPTNav") ) LoadNav("NavObj",UpdNav) }
+function LoadNav( oId,UpdFunc )
+{
+	document.ondragstart=CancelDrag
+	document.onselectstart=CancelDrag
+	document.body.style.margin=2
+	UpdFunc()
+	obj=document.all.item(oId)
+	obj.style.display="block"
+	obj.style.visibility="visible"
+	document.bgColor="threedface"
+	if( parent.frames["PPTNts"] )
+		notesBtn.style.display = ""
+	if( parent.gHasNarration )
+		nb_voiceBorder.style.display = ""
+}
+function LoadOtl()
+{
+	var otl=GetObj("OtlObj")
+	otl.style.display="block"
+	otl.style.visibility="visible"
+	if( gOtlActiveClr == "" ) gOtlActiveClr=document.linkColor
+	if( gOtlHiliteClr == "" ) gOtlHiliteClr=document.fgColor
+	if( gOtlNormalClr == "" )
+		gOtlNormalClr=document.bgColor
+	else
+		document.bgColor=gOtlNormalClr
+	InitArray()
+	if( ObjExists( parent.gCurSld ) ) {
+		ChangeState( parent.gCurSld,gOtlNormalClr,gOtlHiliteClr )
+		gSelected=parent.gCurSld
+	}
+	else gSelected = -1
+	UpdOtl()
+}
+function UpdOtl(){ UpdIdx(parent.gCurSld) }
+function UpdIdx( idx )
+{
+	if( gSelected != idx ) {
+		if( gSelected > 0 )
+			ChangeState( gSelected,gOtlHiliteClr,gOtlNormalClr )
+		if( ObjExists( idx ) ) {
+			gSelected = idx
+			ChangeState( gSelected,gOtlNormalClr,gOtlHiliteClr )
+		}
+		else gSelected = -1
+	}
+	if( gTxtState != parent.gOtlTxtExp ) {
+		state = "block"
+		if( !parent.gOtlTxtExp )
+			state="none"
+		for(ii=0; ii<gChildEntryTable.length; ii++) {
+			obj=gChildEntryTable[ii];
+			if( obj.id == null ) continue;
+			if( obj.id.indexOf("PPTC") >= 0 )
+				obj.style.display=state;
+		}
+		gTxtState=parent.gOtlTxtExp
+		if( ObjExists( gSelected ) )
+			ChangeState( gSelected,gOtlNormalClr,gOtlHiliteClr )
+	}
+}
+function InitArray()
+{
+	count=0
+	var list=GetTags(document,"DIV");
+	for(ii=0; ii<list.length; ii++) {
+		obj=list.item(ii)
+		if( obj.id == null ) continue
+		if( obj.id.indexOf("PPTC") >= 0 )
+			gChildEntryTable[count++]=obj
+	}
+}
+function ChangeState( idx,fgColor,bgColor )
+{
+	obj=GetObj("PPTL"+idx)
+	obj.style.color=fgColor
+	obj=GetObj("PPTP"+idx)
+	obj.style.backgroundColor=bgColor
+}
+function ChgClr( o,clr ){ if( o.id != "PPTL"+gSelected ) o.style.color=clr }
+function Over( src ){ ChgClr(GetLink(src),gOtlActiveClr) }
+function Out( src ){ ChgClr(GetLink(src),gOtlHiliteClr) }
+function Follow(src){ window.location.href = GetLink(src).href; }
+function ObjExists( ii ) { obj=GetObj("PPTP"+ii ); return( obj ) }
+function GoToSld( href ){ UpdIdx(parent.GetSldNum(href)); parent.GoToSld( href ) }
+function CancelDrag(){ window.event.cancelBubble=true;window.event.returnValue=false}
+function GetLink(src)
+{
+   if(src.tagName=="A") return src
+   else return GetTags(src,"A").item(0)
+}
+function UpdNav()
+{
+	txt = "<center>";
+	if( parent.GetHrefObj( parent.gCurSld ).mOrigVis == 1 )
+		txt += "Slide " + parent.GetCurSldNum() + " of " + parent.GetNumSlds()
+	else
+		txt += "Hidden Slide"
+	txt += "</center>";
+	nav_text.innerHTML = txt;
+	if( !parent.HasPrevSld() )
+		gBtnArr["nb_prev"].Enabled(0)
+	else
+		gBtnArr["nb_prev"].Enabled(1)
+	if( !parent.HasNextSld() )
+		gBtnArr["nb_next"].Enabled(0)
+	else
+		gBtnArr["nb_next"].Enabled(1)
+	gBtnArr["nb_nts"].Enabled(1)
+	gBtnArr["nb_ntsBorder"].SetFlag( parent.gHasNts )
+	gBtnArr["nb_sldshw"].Enabled(1)
+	gBtnArr["nb_voice"].Enabled(1)
+}
+function ExecBtn()
+{
+	if (event.keyCode == 13)
+	{
+		BtnOnDown();
+		BtnOnUp();
+	}
+}
+function UpdOtlNav()
+{
+	gBtnArr["nb_otl"].SetEnabled();
+	if( parent.gOtlOpen )
+		gBtnArr["nb_otlTxt"].Enabled( true );
+	else
+		document.all.item("nb_otlTxtBorder").style.visibility = "hidden";
+}
+
+//--></script>
+<style>
+<!--.PTxt
+	{position:relative;
+	width:100%;
+	margin-top:5px;
+	padding-left:2px;
+	font-weight:bold;}
+.CTxt
+	{position:relative;
+	width:100%;
+	margin-top:5px;}
+a
+	{color:white;
+	text-decoration:none;}
+ul
+	{color:white;
+	margin-bottom:0px;
+	margin-left:20px;}
+.sldNum
+	{margin-top:5px;
+	color:white;}
+.button
+	{position:absolute;
+	width:32px;
+	height:20px;
+	border-style:solid;
+	border-width:1px;
+	border-color:threedface;}
+-->
+</style>
+</head>
+
+<body onload="Load()" style='margin:2px'>
+
+<div id=NavObj onload="Load()" onmouseover="BtnOnOver()"
+onmousedown="BtnOnDown()" onmouseout="BtnOnOut()" onmouseup="BtnOnUp()"
+onkeypress="ExecBtn()" style='display:none;visibility:hidden'>
+<table id="notesBtn" style='display:none;position:relative;width:55px' align=left cellpadding=0
+ cellspacing=0>
+ <td nowrap>
+ <div id="nb_ntsElem" title="Show/Hide
+Notes" align=center style='position:relative;margin-left:5px;margin-right:5px;padding:3px;
+ font-family:Arial;color:buttontext;font-size:9pt; cursor:default'>
+ <img src="notes_flag.gif" id="nb_nts" style='display:none'> &nbsp;Notes</div>
+ <div id="nb_ntsBorder" title ="Show/Hide
+Notes" onfocus="BtnOnOver()" onblur="BtnOnOut()" TABINDEX=1 style='position:absolute;top:0%;left:0%;width:100%;height:20px'>
+
+ </div>
+ </td>
+</table>
+
+
+<table style='position:relative;width:70px' align=right cellpadding=0 cellspacing=0>
+ <td nowrap>
+ <div id="nb_sldshwText" title="Full Screen Slide Show" align=center style='position:relative;margin-left:20px;padding:3px;
+ font-family:Arial;color:buttontext;font-size:9pt;cursor:default'>Slide
+Show</div>
+ <div id="nb_sldshwBorder" title="Full Screen Slide Show" onfocus="BtnOnOver()" onblur="BtnOnOut()" TABINDEX=5 style='position:absolute;top:0%;left:0%;width:100%;height:20px'>
+ <div style='position:absolute;clip:rect(0px, 18px, 18px, 0px)'><img
+ src="buttons.gif" id="nb_sldshw" style='position:relative;left:-254px'></div>
+ </div>
+ </td>
+ <td>
+ <div id="nb_voiceBorder" style='display:none;position:absolute;top:0;left:-40px;
+ width:20px;height:20px' onfocus="BtnOnOver()" onblur="BtnOnOut()" TABINDEX=4 class=button>
+ <div style='position:absolute;clip:rect(0px, 18px, 18px, 0px)'><img
+ src="buttons.gif" id="nb_voice" title="Pause/Play Narration" style='position:
+ relative;left:-290px'></div>
+ </div>
+ </td>
+</table>
+
+<table style='position:relative' align=center cellpadding=0 cellspacing=0>
+ <td nowrap>
+ <div id="nb_prevBorder" onfocus="BtnOnOver()" onblur="BtnOnOut()" TABINDEX=2 class=button style='left:-30px'>
+ <div style='position:absolute;clip:rect(0px, 30px, 18px, 0px)'><img
+ src="buttons.gif" id="nb_prev" title="Previous Slide" style='position:relative;
+ left:0px'></div>
+ </div>
+ <span id="nav_text" style='position:relative;top:3px;width:100px;font-family:
+ Arial;color:buttontext;font-size:9pt'></span>
+ <div id="nb_nextBorder" onfocus="BtnOnOver()" onblur="BtnOnOut()" TABINDEX=3 class=button>
+ <div style='position:absolute;clip:rect(0px, 30px, 18px, 0px)'><img
+ src="buttons.gif" id="nb_next" title="Next Slide" style='position:relative;
+ left:-90px'></div>
+ </div>
+ </td>
+</table>
+</div>
+
+<div id=OtlNavObj onload="Load()" onmouseover="BtnOnOver()"
+onmousedown="BtnOnDown()" onmouseout="BtnOnOut()" onmouseup="BtnOnUp()"
+onkeypress="ExecBtn()" style='display:none;visibility:hidden'>
+
+<table style='position:relative;width:70px' align=left cellpadding=0 cellspacing=0>
+ <td nowrap><div title="Show/Hide
+Outline" id="nb_otl" onfocus="BtnOnOver()" onblur="BtnOnOut()" TABINDEX=11
+ style='position:absolute;top:0%;left:0%;width:100%;height:100%;cursor:default'>
+ <div id="nb_otlElem" align=center style='position:relative;padding:3px;font-family:Arial;
+ color:buttontext;font-size:9pt'>Outline</div></div>
+ </td>
+</table>
+
+<table style='position:relative' align=center cellpadding=0 cellspacing=0>
+ <td>
+ <div style='position:absolute;left:-18px;width:24px;height:20px;border-style:
+ solid;border-width:1px;border-color:threedface' onfocus="BtnOnOver()" onblur="BtnOnOut()" TABINDEX=12 id="nb_otlTxtBorder">
+ <div style='position:absolute;clip:rect(0px, 22px, 18px, 0px)'><img
+ src=buttons.gif id="nb_otlTxt" title="Expand/Collapse Outline"
+ style='position:relative;left:-157px'></div>
+ </div>
+ </td>
+</table>
+
+</div>
+
+<div id=OtlObj style='display:none;visibility:hidden;'>
+
+
+<table width="100%" style='font-family:Arial;font-size:9pt'>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>1</font></div>
+  </td>
+  <td width="100%">
+  <div id=PPTP1 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0001.htm');" id=PPTL1>Overview of Data Test
+  Program (dt)</a></font></div>
+  <div id=PPTC1 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <br>
+   <li>Robin T. Miller</li>
+   <li>This Software is Provided</li>
+   <li>By</li>
+   <li>Robin’s Nest Software Inc.</li>
+   <li>752 Pinnacle Court</li>
+   <li>Mesquite, NV 89027</li>
+   <li>(702) 345-2236</li>
+   <br>
+   <br>
+   <li>WARNING!!!</li>
+   <li>This software MUST BE CONSIDERED DESTRUCTIVE to any data stored</li>
+   <li><span style='mso-spacerun:yes'> </span>on the device under test.<span
+       style='mso-spacerun:yes'>  </span>NO safety precautions are taken</li>
+   <li><span style='mso-spacerun:yes'> </span>to ensure existing data is
+       preserved during testing!!!</li>
+   <br>
+   <br>
+   <li>Please Note</li>
+   <li>DT is Open Source.<span style='mso-spacerun:yes'>  </span>You are free
+       to copy and distribute it!</li>
+   <li>Please see copyright notice/disclaimer for details.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>2</font></div>
+  </td>
+  <td>
+  <div id=PPTP2 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0002.htm');" id=PPTL2>Introduction</a></font></div>
+  <div id=PPTC2 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>The data test program (dt), has become very popular over the last 22+
+       years! (showing my age <font face=Wingdings>J</font><font face=Arial>)</font></li>
+   <li>This overview describes dt’s history, device support, options, and
+       various examples to help get you started with developing tests.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>3</font></div>
+  </td>
+  <td>
+  <div id=PPTP3 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0039.htm');" id=PPTL3>Short History of DT</a></font></div>
+  <div id=PPTC3 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Originally developed while working at Compugraphic in the late 1980’s
+       initially for testing tape drives on SUN/OS.</li>
+   <li>Written to replace Unix dd/cmp utilities.</li>
+   <li>Command syntax is similar to Unix dd.</li>
+   <li>Later disks, serial/parallel lines, and other device type support was
+       added.</li>
+   <li>Developed to verify device drivers and for device qualification (new
+       hardware).</li>
+   <li>Goal was to be generic yet flexible enough to customize tests.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>4</font></div>
+  </td>
+  <td>
+  <div id=PPTP4 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0045.htm');" id=PPTL4>Operating Systems
+  Supported</a></font></div>
+  <div id=PPTC4 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>List of OS’s supported:</li>
+   <ul>
+    <li>AIX</li>
+    <li>HP-UX</li>
+    <li>Linux</li>
+    <li>Solaris</li>
+    <li>FreeBSD</li>
+    <li>Mac OS</li>
+    <li>SCO Unixware</li>
+    <li>Tru64 Unix</li>
+    <li>QNX</li>
+    <li>Windows (Cygwin and native)</li>
+    <li>most OS’s supporting POSIX API’s</li>
+   </ul>
+   <li>Features supported vary by OS (e.g., AIO, etc)</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>5</font></div>
+  </td>
+  <td>
+  <div id=PPTP5 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0046.htm');" id=PPTL5>What Can Be Tested?</a></font></div>
+  <div id=PPTC5 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Device drivers (disks, tapes, adapters, etc)</li>
+   <li>File systems (UFS/VxFS/JFS/NFS, etc)</li>
+   <li>Network interfaces (via rsh/ssh/NAS traffic)</li>
+   <li>Virtual Memory via memory mapped files.</li>
+   <li>Serial or parallel lines.</li>
+   <li>Pipes (regular or named).</li>
+   <li>Most any device capable of supporting standard open/read/write/close()
+       API’s.</li>
+   <li>Exclude non-essential features by removing:</li>
+   <ul>
+    <li>compilation flags: -DMMAP -DFIFO -DTTY</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>6</font></div>
+  </td>
+  <td>
+  <div id=PPTP6 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0003.htm');" id=PPTL6>General Command Format</a></font></div>
+  <div id=PPTC6 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>To write then read/verify data:</li>
+   <ul>
+    <li># dt of=filename bs=value limit=value …</li>
+   </ul>
+   <li>The read/verify previously written data:</li>
+   <ul>
+    <li># dt if=filename bs=value limit=value …</li>
+   </ul>
+   <li>To write without doing read/verify pass:</li>
+   <ul>
+    <li># dt of=filename bs=value disable=verify …</li>
+   </ul>
+   <li>To read without doing data comparison:</li>
+   <ul>
+    <li># dt if=filename bs=value disable=compare …</li>
+   </ul>
+   <li>To specify the device type and device size:</li>
+   <ul>
+    <li># dt of=filename dtype=type dsize=value …</li>
+   </ul>
+   <li>Note: filename is a valid path for your OS.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>7</font></div>
+  </td>
+  <td>
+  <div id=PPTP7 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0062.htm');" id=PPTL7>General I/O Flow</a></font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>8</font></div>
+  </td>
+  <td>
+  <div id=PPTP8 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0064.htm');" id=PPTL8>General I/O Loop</a></font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>9</font></div>
+  </td>
+  <td>
+  <div id=PPTP9 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0040.htm');" id=PPTL9>Data Limit Controls</a></font></div>
+  <div id=PPTC9 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>For sequential, do I/O until data limit, record limit, runtime, or end
+       of file / beginning of file/media is reached.</li>
+   <li>For random, do I/O until data limit, record limit, or runtime is
+       reached.</li>
+   <li>Options:</li>
+   <ul>
+    <li>limit=value – the data limit (in bytes)</li>
+    <li>records=value – the record limit</li>
+    <li>capacity=value – user set capacity</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>10</font></div>
+  </td>
+  <td>
+  <div id=PPTP10 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0041.htm');" id=PPTL10>Data Transfer Sizes</a></font></div>
+  <div id=PPTC10 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>bs=value – sets a fixed block size</li>
+   <li>min=value – sets the minimum size</li>
+   <li>max=value – sets the maximum size</li>
+   <li>incr=value – sets the increment size</li>
+   <ul>
+    <li>incr=var enables variable increments between the min/max values</li>
+   </ul>
+   <li>dsize=value – sets the device size</li>
+   <ul>
+    <li>default is 512 bytes for disks</li>
+    <li>obtained via IOCTL on some OS’s</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>11</font></div>
+  </td>
+  <td>
+  <div id=PPTP11 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0042.htm');" id=PPTL11>Controlling Execution
+  Time</a></font></div>
+  <div id=PPTC11 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Normally each pass is controlled by the capacity or one of these
+       options:</li>
+   <ul>
+    <li>limit=value – Specifies the data limit.</li>
+    <li>records=value – Specifies record count.</li>
+    <li>for sequential I/O, stop at EOF/EOM.</li>
+    <li>for random I/O, loop until limit reached.</li>
+   </ul>
+   <li>runtime=time – Runtime in seconds.</li>
+   <ul>
+    <li>Careful: Short runtimes may prevent read/verify pass depending on
+        limits.</li>
+   </ul>
+   <li>passes=value – Specifies pass limit.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>12</font></div>
+  </td>
+  <td>
+  <div id=PPTP12 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0043.htm');" id=PPTL12>Program Features</a></font></div>
+  <div id=PPTC12 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Data buffers are page aligned by default</li>
+   <ul>
+    <li>align=value to misalign (e.g. align=rotate)</li>
+   </ul>
+   <li>Pad bytes are allocated for data buffers</li>
+   <ul>
+    <li>Initialized with inverted pattern (1<sup>st</sup> 4 bytes)</li>
+    <li>On reads, verified after normal data</li>
+   </ul>
+   <li>Capacity is set via seek/reads or IOCTL</li>
+   <ul>
+    <li>capacity=value – sets user capacity</li>
+   </ul>
+   <li>Data verification is enabled by default</li>
+   <ul>
+    <br>
+    <br>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>13</font></div>
+  </td>
+  <td>
+  <div id=PPTP13 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0061.htm');" id=PPTL13>Unique Features</a></font></div>
+  <div id=PPTC13 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Report no or slow I/O progress</li>
+   <ul>
+    <li>can disable timing individual system calls</li>
+   </ul>
+   <li>Retries data corruptions</li>
+   <ul>
+    <li>for file systems via Direct I/O (DIO)</li>
+    <li>may also loop on corruption with interval</li>
+   </ul>
+   <li>History for recording I/O’s</li>
+   <ul>
+    <li>data bytes saved</li>
+    <li>optionally with timing</li>
+   </ul>
+   <li>Log test info/errors to system logger</li>
+   <li>Report periodic statistics via keepalive</li>
+   <li>Trigger mechanism for troubleshooting</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>14</font></div>
+  </td>
+  <td>
+  <div id=PPTP14 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0063.htm');" id=PPTL14>Process Threads</a></font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>15</font></div>
+  </td>
+  <td>
+  <div id=PPTP15 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0068.htm');" id=PPTL15>Monitor Thread</a></font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>16</font></div>
+  </td>
+  <td>
+  <div id=PPTP16 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0017.htm');" id=PPTL16>Numeric Input Formats</a></font></div>
+  <div id=PPTC16 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>q = quadwords (8 bytes)</li>
+   <li>k = kilobytes (1024 bytes)</li>
+   <li>p = page size (varies)</li>
+   <li>Simple arithmetic allowed.</li>
+   <li>Bitwise operations allowed.</li>
+   <li>use ‘expr’ for complex math.</li>
+   <li>w = words (4 bytes)</li>
+   <li>b = blocks (512 bytes)</li>
+   <li>m = megabytes</li>
+   <li>g = gigabytes</li>
+   <li>t = terabytes</li>
+   <li>inf or INF = Infinite</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>17</font></div>
+  </td>
+  <td>
+  <div id=PPTP17 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0035.htm');" id=PPTL17>Time Input Format</a></font></div>
+  <div id=PPTC17 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li><span style='mso-spacerun:yes'> </span>Time Input:</li>
+   <li><span style='mso-spacerun:yes'>    </span>d = days (86400 seconds),<span
+       style='mso-spacerun:yes'>      </span>h = hours (3600 seconds)</li>
+   <li><span style='mso-spacerun:yes'>    </span>m = minutes (60 seconds),<span
+       style='mso-spacerun:yes'>      </span>s = seconds (the default)</li>
+   <br>
+   <br>
+   <li><span style='mso-spacerun:yes'>    </span>Arithmetic characters are
+       permitted, and implicit addition is performed on strings of the form
+       '1d5h10m30s'.</li>
+   <br>
+   <br>
+   <li>Example:</li>
+   <li>	# dt ... alarm=10s noprogt=1m runtime=24h30m15s</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>18</font></div>
+  </td>
+  <td>
+  <div id=PPTP18 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0025.htm');" id=PPTL18>Pattern String Input</a></font></div>
+  <div id=PPTC18 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>pattern=string format controls supported:</li>
+   <br>
+   <br>
+   <li>Pattern String Input:</li>
+   <li><span style='mso-spacerun:yes'>    </span>\\ = Backslash<span
+       style='mso-spacerun:yes'>   </span>\a = Alert (bell)<span
+       style='mso-spacerun:yes'>   </span>\b = Backspace</li>
+   <li><span style='mso-spacerun:yes'>    </span>\f = Formfeed<span
+       style='mso-spacerun:yes'>    </span>\n = Newline<span
+       style='mso-spacerun:yes'>        </span>\r = Carriage Return</li>
+   <li><span style='mso-spacerun:yes'>    </span>\t = Tab<span
+       style='mso-spacerun:yes'>         </span>\v = Vertical Tab<span
+       style='mso-spacerun:yes'>   </span>\e or \E = Escape</li>
+   <li><span style='mso-spacerun:yes'>    </span>\ddd = Octal Value<span
+       style='mso-spacerun:yes'>    </span>\xdd or \Xdd = Hexadecimal Value</li>
+   <br>
+   <br>
+   <li>Example:</li>
+   <ul>
+    <li># dt of=- pattern=&quot;Robin’s test message\n\a&quot; count=1
+        stats=none | head -2</li>
+    <li>Robin’s test message</li>
+    <li>Robin’s test message</li>
+    <li>#</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>19</font></div>
+  </td>
+  <td>
+  <div id=PPTP19 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0005.htm');" id=PPTL19>Generic DT Features</a></font></div>
+  <div id=PPTC19 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Assortment of data patterns (pattern= or pf= options).</li>
+   <li>Control of I/O request sizes (min=, max=, incr=, bs= opts).</li>
+   <li>Checks for buffer overwrites (pad bytes w/inverted pattern).</li>
+   <li>Allows misaligned data buffers (align= option vs. page aligned).</li>
+   <li>Allows block number encoding (enable=lbdata or pattern=iot).</li>
+   <ul>
+    <li>LBA’s are 32-bits</li>
+    <li>lbdata is big-endian LBA’s</li>
+    <li>iot encodes little-endian LBA’s</li>
+   </ul>
+   <li>Reports performance statistics (total stats after test complete).</li>
+   <li>Variable I/O request sizes (incr=variable option).</li>
+   <li>Various flags to control program behavior (debug, verify, etc).</li>
+   <li>Intuitive numeric and runtime string input formats.</li>
+   <li>Flags to control test operation (flags=direct,excl,sync etc).</li>
+   <li>No I/O progress options to detect and report slow or no I/O.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>20</font></div>
+  </td>
+  <td>
+  <div id=PPTP20 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0012.htm');" id=PPTL20>Generic DT Options</a></font></div>
+  <div id=PPTC20 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Limit I/O by data limit (limit= option).</li>
+   <li>Limit I/O by record limit (count= or records= options).</li>
+   <li>Limit I/O by volume limit (volumes= and vrecords= options).</li>
+   <li>Limit I/O by runtime limit (runtime=timeString option).</li>
+   <li>Control of error limit (errors= option, default is 1).</li>
+   <li>Control of pass limit (passes= option, default is 1).</li>
+   <li>Control of multiple processes (procs= option).</li>
+   <li>Control of process behavior (oncerr=abort or continue).</li>
+   <li>Control of device types, size, etc. (dtype= and dsize= options).</li>
+   <li>POSIX Asynchronous I/O (enable=aio or aios=value options).</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>21</font></div>
+  </td>
+  <td>
+  <div id=PPTP21 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0026.htm');" id=PPTL21>Data Patterns</a></font></div>
+  <div id=PPTC21 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>32 bit hex data pattern (pattern=value).</li>
+   <ul>
+    <li>13 internal data patterns cycled through for each write/read pass.</li>
+   </ul>
+   <li>IOT test pattern (pattern=iot).</li>
+   <li>Incrementing data pattern:</li>
+   <ul>
+    <li>0, 1, 2, … 255 (pattern=incr)</li>
+   </ul>
+   <li>Pattern string (pattern=“string”)</li>
+   <li>Pattern file (pf=filename)</li>
+   <ul>
+    <li>whole file read into memory</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>22</font></div>
+  </td>
+  <td>
+  <div id=PPTP22 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0065.htm');" id=PPTL22>Data Pattern Layout</a></font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>23</font></div>
+  </td>
+  <td>
+  <div id=PPTP23 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0027.htm');" id=PPTL23>Internal Data Patterns</a></font></div>
+  <div id=PPTC23 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Data patterns cycled through for each pass:</li>
+   <ul>
+    <li>0x39c39c39U</li>
+    <li>0x00ff00ffU</li>
+    <li>0x0f0f0f0fU</li>
+    <li>0xc6dec6deU</li>
+    <li>0x6db6db6dU</li>
+    <li>0x55555555U</li>
+    <li>0xaaaaaaaaU Complement of previous data pattern.</li>
+    <li>0x33333333U Continuous worst case pattern (media defects)</li>
+    <li>0x26673333U Frequency burst worst case pattern #1.</li>
+    <li>0x66673326U Frequency burst worst case pattern #2.</li>
+    <li>0x71c7c71cU Dibit worst case data pattern.</li>
+    <li>0x00000000U</li>
+    <li>0xffffffffU</li>
+   </ul>
+   <li>Multiple slices also cycle through these data patterns.</li>
+   <ul>
+    <br>
+    <br>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>24</font></div>
+  </td>
+  <td>
+  <div id=PPTP24 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0056.htm');" id=PPTL24>Data Pattern Files</a></font></div>
+  <div id=PPTC24 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>There are several predefined data pattern files included in the source
+       kit, containing the following data patterns:</li>
+   <ul>
+    <li>pattern_0 - psuedo-random pattern.</li>
+    <li>pattern_1 - psuedo-random pattern alternating with 0's.</li>
+    <li>pattern_2 - all 0s.</li>
+    <li>pattern_3 - all 1s (FFH).</li>
+    <li>pattern_4 - 16 bit shifting 1 in a field of 0s.</li>
+    <li>pattern_5 - 16 bit shifting 0 in a field of 1s.</li>
+    <li>pattern_6 - alternating 01 pattern (AAH).</li>
+    <li>pattern_7 - byte incrementing (OOH - FFH).</li>
+    <li>pattern_8 - encrypted data pattern.</li>
+    <li>pattern_9 - psuedo-random pattern1 alternating with 0's.</li>
+    <li>pattern_all – concatenation of all of the above patterns.</li>
+    <li>pattern_dedup - each pattern file written (bs=4k records=5).</li>
+   </ul>
+   <li>These files are specified with the pattern file (pf=file) option.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>25</font></div>
+  </td>
+  <td>
+  <div id=PPTP25 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0028.htm');" id=PPTL25>IOT Data Pattern</a></font></div>
+  <div id=PPTC25 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>The Logical Block Address (LBA) is encoded in the first 4 bytes of each
+       data block (little-endian byte ordering).</li>
+   <li>The constant value 0x01010101 is added to the LBA as a seed for
+       subsequent words to generate uniqueness throughout the entire data
+       block.</li>
+   <li>Seed multiplied by pass count so unique for each pass.</li>
+   <br>
+   <br>
+   <li>Example:</li>
+   <ul>
+    <li># dt of=- count=1 pattern=iot stats=none | od -X</li>
+    <li>0000000<span style='mso-spacerun:yes'>  </span>00000000 01010101
+        02020202 03030303</li>
+    <li>0000020<span style='mso-spacerun:yes'>  </span>04040404 05050505
+        06060606 07070707</li>
+    <ul>
+     <ul>
+      <li>			…</li>
+     </ul>
+    </ul>
+    <li>0000740<span style='mso-spacerun:yes'>  </span>78787878 79797979
+        7a7a7a7a 7b7b7b7b</li>
+    <li>0000760<span style='mso-spacerun:yes'>  </span>7c7c7c7c 7d7d7d7d
+        7e7e7e7e 7f7f7f7f</li>
+    <li>0001000</li>
+    <li>#</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>26</font></div>
+  </td>
+  <td>
+  <div id=PPTP26 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0038.htm');" id=PPTL26>Open Flags</a></font></div>
+  <div id=PPTC26 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Common Open Flags:</li>
+   <ul>
+    <li>excl (O_EXCL)<span style='mso-spacerun:yes'>         </span>Exclusive
+        open. (don't share)</li>
+    <li>ndelay (O_NDELAY)<span style='mso-spacerun:yes'>     </span>Non-delay
+        open. (don't block)</li>
+    <li>nonblock (O_NONBLOCK) Non-blocking open/read/write.</li>
+    <li>direct (O_DIRECT)<span style='mso-spacerun:yes'>     </span>Direct I/O
+        (bypasses the buffer cache).</li>
+    <li>rsync (O_RSYNC)<span style='mso-spacerun:yes'>       </span>Synchronize
+        read operations.</li>
+    <li>sync (O_SYNC)<span style='mso-spacerun:yes'>         </span>Sync
+        updates for data/file attributes.</li>
+    <li>large (O_LARGEFILE)<span style='mso-spacerun:yes'>   </span>Enable
+        large (64-bit) file system support.</li>
+    <br>
+    <br>
+   </ul>
+   <li>Output Open Flags:</li>
+   <ul>
+    <li>append (O_APPEND)<span style='mso-spacerun:yes'>     </span>Append data
+        to end of existing file.</li>
+    <li>defer (O_DEFER)<span style='mso-spacerun:yes'>       </span>Defer
+        updates to file during writes.</li>
+    <li>dsync (O_DSYNC)<span style='mso-spacerun:yes'>       </span>Sync data
+        to disk during write operations.</li>
+    <li>trunc (O_TRUNC)<span style='mso-spacerun:yes'>       </span>Truncate an
+        existing file before writing.</li>
+   </ul>
+   <br>
+   <li>Example:</li>
+   <ul>
+    <li># dt of=dt.data flags=direct oflags=trunc passes=3 ...</li>
+   </ul>
+   <br>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>27</font></div>
+  </td>
+  <td>
+  <div id=PPTP27 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0006.htm');" id=PPTL27>Disk Specific Features</a></font></div>
+  <div id=PPTC27 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Random &amp; Sequential I/O (iotype=sequential or random)</li>
+   <li>Supports raw &amp; block devices (gleaned from stat() or IOCTL)</li>
+   <li>Multiple procs creates multiple files (unique files using child PID)</li>
+   <li>Supports copy/verify of disks (iomode=copy, test, or verify)</li>
+   <ul>
+    <li>copy/verify is for image mode copy operations</li>
+   </ul>
+   <li>Supports reverse direction (iodir=forward or reverse)</li>
+   <ul>
+    <li>reverse I/O is a variant of random I/O</li>
+   </ul>
+   <li>Supports multiple disk slices (slices= options)</li>
+   <ul>
+    <li>shared LUN testing via slices=hosts slice=host#</li>
+   </ul>
+   <li>Supports skipping blocks (step=value option)</li>
+   <ul>
+    <li>creates holes (empty space) in FS file. (aka sparse)</li>
+   </ul>
+   <li>Control FS output file disposition (dispose=delete or keep or
+       keeponerror). Note: Has no affect on existing files! (always keeps)</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>28</font></div>
+  </td>
+  <td>
+  <div id=PPTP28 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0048.htm');" id=PPTL28>Slice and Dice</a></font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>29</font></div>
+  </td>
+  <td>
+  <div id=PPTP29 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0069.htm');" id=PPTL29>Shared LUN Testing</a></font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>30</font></div>
+  </td>
+  <td>
+  <div id=PPTP30 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0072.htm');" id=PPTL30>File System Features</a></font></div>
+  <div id=PPTC30 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>dir=dirpath – top level directory</li>
+   <li>files=value – files per directory</li>
+   <li>sdirs=value – subdirs per directory</li>
+   <li>depth=value – subdirectory depth</li>
+   <li>enable=fdebug – file system debugging</li>
+   <li>procs=value – each process gets own tree</li>
+   <ul>
+    <li>PID appended to directory path</li>
+   </ul>
+   <li>More details here</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>31</font></div>
+  </td>
+  <td>
+  <div id=PPTP31 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0073.htm');" id=PPTL31>File System Features</a></font></div>
+  <div id=PPTC31 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Ideas taken from IBM Blast tool:</li>
+   <ul>
+    <li>maxdata=value – max data for all files</li>
+    <li>maxfiles=value – max files for all dirs</li>
+   </ul>
+   <li>More details here</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>32</font></div>
+  </td>
+  <td>
+  <div id=PPTP32 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0074.htm');" id=PPTL32>File System Caching</a></font></div>
+  <div id=PPTC32 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Beware of host OS buffer cache</li>
+   <li>How to overcome?</li>
+   <ul>
+    <li>reducing buffer cache size</li>
+    <li>truncate files (reallocates blocks)</li>
+    <li>Direct I/O (DIO) (bypass cache)</li>
+    <li>remount FS (invalidates cache)</li>
+    <li>alternate between:</li>
+    <ul>
+     <li>normal I/O, DIO, MMAP I/O</li>
+    </ul>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>33</font></div>
+  </td>
+  <td>
+  <div id=PPTP36 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0044.htm');" id=PPTL36>Troubleshooting Aids</a></font></div>
+  <div id=PPTC36 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>enable=flag options:</li>
+   <ul>
+    <li>debug – 1<sup>st</sup> level debug (open, etc)</li>
+    <li>Debug – full debug output (verbose)</li>
+    <li>edebug – end of file/media debug</li>
+    <li>fdebug – file system debug</li>
+    <li>rdebug – random I/O debug</li>
+    <li>tdebug – timer debug output</li>
+    <li>syslog – write messages to syslog</li>
+    <li>timestamps – timestamp blocks</li>
+   </ul>
+   <li>dispose=keep – don’t delete FS files</li>
+   <li>history=value – I/O history mechanism</li>
+   <li>trigger=type – specifies trigger type</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>34</font></div>
+  </td>
+  <td>
+  <div id=PPTP37 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0058.htm');" id=PPTL37>History Mechanism</a></font></div>
+  <div id=PPTC37 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>history=value (disabled by default)</li>
+   <ul>
+    <li>Sets the number of history request entries</li>
+   </ul>
+   <li><span style='mso-spacerun:yes'> </span>hdsize=value (default is 32
+       bytes)</li>
+   <ul>
+    <li>Set the history data size (data bytes to save)</li>
+   </ul>
+   <li><span style='mso-spacerun:yes'> </span>enable=hdump (default is
+       disabled)</li>
+   <ul>
+    <li>Dumps history entries when exiting</li>
+   </ul>
+   <li><span style='mso-spacerun:yes'> </span>enable=htiming (default is
+       disabled)</li>
+   <ul>
+    <li>Enables timing history entries</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>35</font></div>
+  </td>
+  <td>
+  <div id=PPTP38 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0059.htm');" id=PPTL38>Example History Output</a></font></div>
+  <div id=PPTC38 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Options: history=5 enable=hdump,htiming</li>
+   <br>
+   <br>
+   <li>dt: Dumping History Data (5 entries):</li>
+   <br>
+   <br>
+   <li>1221852698.397315 (0.004768) Record #759 - Read 105472 bytes (206
+       blocks) lba's 204594 - 204799 (pos 104752128)</li>
+   <li>Offset</li>
+   <li>000000<span style='mso-spacerun:yes'>  </span>00031f32 01042033 02052134
+       03062235</li>
+   <li>000016<span style='mso-spacerun:yes'>  </span>04072336 05082437 06092538
+       070a2639</li>
+   <br>
+   <br>
+   <li>1221852698.392547 (0.002549) Record #758 - Read 240640 bytes (470
+       blocks) lba's 204124 - 204593 (pos 104511488)</li>
+   <li>Offset</li>
+   <li>000000<span style='mso-spacerun:yes'>  </span>00031d5c 01041e5d 02051f5e
+       0306205f</li>
+   <li>000016<span style='mso-spacerun:yes'>  </span>04072160 05082261 06092362
+       070a2463</li>
+   <br>
+   <br>
+   <li>1221852698.389998 (0.004830) Record #757 - Read 119808 bytes (234
+       blocks) lba's 203890 - 204123 (pos 104391680)</li>
+   <li>Offset</li>
+   <li>000000<span style='mso-spacerun:yes'>  </span>00031c72 01041d73 02051e74
+       03061f75</li>
+   <li>000016<span style='mso-spacerun:yes'>  </span>04072076 05082177 06092278
+       070a2379</li>
+   <br>
+   <br>
+   <li>1221852698.385168 (0.004725) Record #756 - Read 242688 bytes (474
+       blocks) lba's 203416 - 203889 (pos 104148992)</li>
+   <li>Offset</li>
+   <li>000000<span style='mso-spacerun:yes'>  </span>00031a98 01041b99 02051c9a
+       03061d9b</li>
+   <li>000016<span style='mso-spacerun:yes'>  </span>04071e9c 05081f9d 0609209e
+       070a219f</li>
+   <br>
+   <br>
+   <li>1221852698.380443 Record #755 - Read 231424 bytes (452 blocks) lba's
+       202964 - 203415 (pos 103917568)</li>
+   <li>Offset</li>
+   <li>000000<span style='mso-spacerun:yes'>  </span>000318d4 010419d5 02051ad6
+       03061bd7</li>
+   <li>000016<span style='mso-spacerun:yes'>  </span>04071cd8 05081dd9 06091eda
+       070a1fdb</li>
+   <br>
+   <br>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>36</font></div>
+  </td>
+  <td>
+  <div id=PPTP39 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0020.htm');" id=PPTL39>Error Triggers</a></font></div>
+  <div id=PPTC39 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Option: trigger=type</li>
+   <li>Executed on failures or no-progress</li>
+   <li>Trigger Types:</li>
+   <ul>
+    <li>br = Execute a bus reset.</li>
+    <li>bdr = Execute a bus device reset.</li>
+    <li>seek = Issue a seek to the failing lba.</li>
+    <li>cmd:string = Execute string w/these args:</li>
+    <li>string dname op dsize offset position lba errno noprogt</li>
+    <br>
+    <br>
+    <li>The first three options require Scu in your PATH.</li>
+    <li>( will replace this with SCSI library in the future )</li>
+   </ul>
+   <br>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>37</font></div>
+  </td>
+  <td>
+  <div id=PPTP40 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0036.htm');" id=PPTL40>Trigger Script
+  Arguments</a></font></div>
+  <div id=PPTC40 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>string dname op dsize offset position lba errno noprogt</li>
+   <ul>
+    <li>string = executable program or script</li>
+    <li>dname = The device or file name</li>
+    <li>op = The operation in error</li>
+    <li>dsize = The device size</li>
+    <li>offset = The 64-bit file offset</li>
+    <li>position = Position in block of data corruption (DC)</li>
+    <li>lba = The logical block address (real or relative LBA)</li>
+    <li>errno = The error number</li>
+    <li>noprogt = The no-progress time value (in seconds)</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>38</font></div>
+  </td>
+  <td>
+  <div id=PPTP41 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0037.htm');" id=PPTL41>Trigger Script Exit
+  Value</a></font></div>
+  <div id=PPTC41 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Trigger script exit value action (only pertains to no-progress I/O
+       feature):</li>
+   <ul>
+    <li>0 = continue</li>
+    <li>1 = terminate</li>
+    <li>2 = sleep</li>
+    <li>3 = abort</li>
+   </ul>
+   <br>
+   <li>Simple Example:</li>
+   <ul>
+    <li>% cat trigger</li>
+    <li>echo $*</li>
+    <li>exit 2</li>
+    <li>% dt of=/var/tmp/dt.data alarm=3s trigger=&quot;cmd:trigger&quot;
+        disable=stats flags=direct bs=32k noprogt=1s limit=1m procs=100</li>
+    <li>dt (16308): No progress made for 2 seconds!</li>
+    <li>dt (16308): Executing: trigger /var/tmp/dt.data-16308 noprog 512 131072
+        0 0 0</li>
+    <li>/var/tmp/dt.data-16308 noprog 512 131072 0 0 0</li>
+    <li>dt (16308): Trigger exited with status 2!</li>
+    <li>dt (16308): Sleeping forever...</li>
+    <li>	<span style='mso-spacerun:yes'>    </span>...</li>
+   </ul>
+   <li>Example no-progress trigger script.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>39</font></div>
+  </td>
+  <td>
+  <div id=PPTP42 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0024.htm');" id=PPTL42>Trigger Op Strings</a></font></div>
+  <div id=PPTC42 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>When executing a trigger script, the op argument is set to one of the
+       following:</li>
+   <ul>
+    <li>open – device open failed</li>
+    <li>close – close operation failed</li>
+    <li>read – read operation failed</li>
+    <li>write – write operation failed</li>
+    <li>noprog – no progress time exceeded</li>
+    <li>miscompare – data compare error</li>
+    <li>&lt;various tape operations&gt;, i.e. rewind, etc</li>
+   </ul>
+   <br>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>40</font></div>
+  </td>
+  <td>
+  <div id=PPTP43 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0066.htm');" id=PPTL43>Log File Strings</a></font></div>
+  <div id=PPTC43 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Used with log=“format-string”:</li>
+   <ul>
+    <li>%iodir = The I/O direction</li>
+    <li>%iotype = The I/O type</li>
+    <li>%host = The host name</li>
+    <li>%pid = The process ID</li>
+    <li>%user = The user (login) name</li>
+   </ul>
+   <li>Example: log=“dt-%iodir-%iotype.log”</li>
+   <li>Recently added, may be augmented.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>41</font></div>
+  </td>
+  <td>
+  <div id=PPTP44 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0023.htm');" id=PPTL44>Prefix Strings</a></font></div>
+  <div id=PPTC44 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Prefix strings copied to start of each block.</li>
+   <li>Used to create uniqueness between hosts and/or devices/files.</li>
+   <li>Prefix Format Control Strings:</li>
+   <ul>
+    <li>%d = The device name.<span style='mso-spacerun:yes'>          
+        </span>%D = The real device name.</li>
+    <li>%h = The host name.<span style='mso-spacerun:yes'>            
+        </span>%H = The full host name.</li>
+    <li>%p = The process ID.<span style='mso-spacerun:yes'>           
+        </span>%P = The parent PID.</li>
+    <li>%u = The user name.</li>
+   </ul>
+   <li><span style='mso-spacerun:yes'>    </span>Example: prefix=&quot;%u@%h
+       (pid %p)&quot;</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>42</font></div>
+  </td>
+  <td>
+  <div id=PPTP45 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0022.htm');" id=PPTL45>KeepAlive Messages</a></font></div>
+  <div id=PPTC45 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Originally added for HP’s Hazard to avoid PTO’s.</li>
+   <li>Emits user defined message during long test runs.</li>
+   <li>Allows you to roll your own pass/total messages.</li>
+   <li>alarm=time controls frequency of keepalive msgs.</li>
+   <li>keepalive=string - defines the runtime message.</li>
+   <li>pkeepalive=string - defines per pass message.</li>
+   <li>tkeepalive=string - defines the totals message.</li>
+   <li>keepalivet=time - keepalive message frequency.</li>
+   <li>Used when brief statistics are enabled (stats=brief):</li>
+   <ul>
+    <li>Per Pass Default:</li>
+    <ul>
+     <li>%d Stats: mode %i, blocks %l, %m Mbytes, pass %p/%P, elapsed %t</li>
+    </ul>
+   </ul>
+   <li><span style='mso-spacerun:yes'>      </span>Totals Default:</li>
+   <ul>
+    <ul>
+     <li>%d Totals: %L blocks, %M Mbytes, errors %e/%E, passes %p/%P, elapsed
+         %T</li>
+    </ul>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>43</font></div>
+  </td>
+  <td>
+  <div id=PPTP46 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0021.htm');" id=PPTL46>Keepalive Format
+  Control</a></font></div>
+  <div id=PPTC46 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <br>
+   <li><span style='mso-spacerun:yes'>            </span>%b = The bytes read or
+       written.<span style='mso-spacerun:yes'>  </span>%B = Total bytes read
+       and written.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%c = Record count for
+       this pass. %C = Total records for this test.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%d = The device
+       name.<span style='mso-spacerun:yes'>            </span>%D = The real
+       device name.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%e = The number of
+       errors.<span style='mso-spacerun:yes'>       </span>%E = The error
+       limit.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%f = The files read or
+       written.<span style='mso-spacerun:yes'>  </span>%F = Total files read
+       and written.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%h = The host
+       name.<span style='mso-spacerun:yes'>              </span>%H = The full
+       host name.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%k = The kilobytes
+       this pass.<span style='mso-spacerun:yes'>    </span>%K = Total kilobytes
+       for this test.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%l = Blocks read or
+       written.<span style='mso-spacerun:yes'>     </span>%L = Total blocks
+       read and written.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%m = The megabytes
+       this pass.<span style='mso-spacerun:yes'>    </span>%M = Total megabytes
+       for this test.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%p = The pass
+       count.<span style='mso-spacerun:yes'>             </span>%P = The pass
+       limit.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%r = Records read this
+       pass.<span style='mso-spacerun:yes'>     </span>%R = Total records read
+       this test.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%s = The seconds this
+       pass.<span style='mso-spacerun:yes'>      </span>%S = The total seconds
+       this test.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%t = The pass elapsed
+       time.<span style='mso-spacerun:yes'>      </span>%T = The total elapsed
+       time.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%i = The I/O mode
+       (read/write)<span style='mso-spacerun:yes'>   </span>%u = The user
+       (login) name.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%w = Records written
+       this pass.<span style='mso-spacerun:yes'>  </span>%W = Total records
+       written this test.</li>
+   <br>
+   <br>
+   <li><span style='mso-spacerun:yes'>    </span>Performance Keywords:</li>
+   <li><span style='mso-spacerun:yes'>            </span>%bps<span
+       style='mso-spacerun:yes'>  </span>= The bytes per second.<span
+       style='mso-spacerun:yes'>    </span>%lbps = Logical blocks per second.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%kbps = Kilobytes per
+       second.<span style='mso-spacerun:yes'>    </span>%mbps = The megabytes
+       per second.</li>
+   <li><span style='mso-spacerun:yes'>            </span>%iops = The I/O's per
+       second.<span style='mso-spacerun:yes'>    </span>%spio = The seconds per
+       I/O.</li>
+   <br>
+   <br>
+   <li><span style='mso-spacerun:yes'>      </span>Lowercase means per pass
+       stats, while uppercase means total stats.</li>
+   <br>
+   <br>
+   <li></li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>44</font></div>
+  </td>
+  <td>
+  <div id=PPTP47 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0067.htm');" id=PPTL47>Keepalive Example</a></font></div>
+  <div id=PPTC47 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Keep alive strings used by Hazards’ dt disk wrapper:</li>
+   <br>
+   <br>
+   <li>% dt of=dt.data bs=32k limit=1g disable=pstats,verbose stats=brief<span
+       style='mso-spacerun:yes'>      </span>\</li>
+   <li><span style='mso-spacerun:yes'>     </span>keepalive=“count = %C; e =
+       %e; t = %S; IOpS = %IOPS; SpIO = %SPIO” \</li>
+   <li><span style='mso-spacerun:yes'>     </span>tkeepalive=“STAT +RawMbytes
+       %MBPS +RawReads %R +RawWrites %W”<span style='mso-spacerun:yes'>     
+       </span>\</li>
+   <li><span style='mso-spacerun:yes'>     </span>alarm=15s runtime=1m3s</li>
+   <li>dt: count = 32768; e = 0; t = 15; IOpS = 2184.533; SpIO = 0.0005</li>
+   <li>dt: count = 45077; e = 0; t = 30; IOpS = 1502.567; SpIO = 0.0007</li>
+   <li>dt: count = 80049; e = 0; t = 45; IOpS = 1778.867; SpIO = 0.0006</li>
+   <li>dt: count = 98304; e = 0; t = 60; IOpS = 1638.400; SpIO = 0.0006</li>
+   <li>dt: STAT +RawMbytes 46.574 +RawReads 46242 +RawWrites 65536</li>
+   <li>%</li>
+   <li>External tools/scripts can monitor statistics during runs.</li>
+   <li>Note: alarm option also used by I/O monitoring feature.</li>
+   <ul>
+    <li>keepalivet=value – Controls keepalive time (in seconds).</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>45</font></div>
+  </td>
+  <td>
+  <div id=PPTP48 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0008.htm');" id=PPTL48>Special Notes</a></font></div>
+  <div id=PPTC48 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Redirect output to a log file via log[tu]= option</li>
+   <ul>
+    <li>t=truncate, u=unique (w/pid)</li>
+    <li>logs dt’s command line at top of log</li>
+   </ul>
+   <li>Log files are opened in append mode (historic)</li>
+   <li>Beware: No mounted file system checks!</li>
+   <li>Tru64 Unix &amp; Solaris, skip first 8K to avoid overwriting the disk
+       label (e.g. position=8k)</li>
+   <li>Success exit status is zero (0)</li>
+   <li>General failure exit status is 255</li>
+   <li>End of file/media exit status is 254</li>
+   <li>Signals cause non-zero exit status too</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>46</font></div>
+  </td>
+  <td>
+  <div id=PPTP49 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0019.htm');" id=PPTL49>DT Examples</a></font></div>
+  <div id=PPTC49 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>For file system I/O tests:</li>
+   <ul>
+    <li># dt of=/var/tmp/dt.data min=b max=256k incr=var oflags=trunc limit=1g
+        \</li>
+    <li>	<span style='mso-spacerun:yes'>  </span>pattern=iot iotype=random
+        procs=10</li>
+    <li>		OR</li>
+    <li># dt of=/var/tmp/dt.data min=1 max=256k incr=var oflags=trunc limit=1g
+        \</li>
+    <li>	<span style='mso-spacerun:yes'>  </span>enable=lbdata files=10 sdirs=3
+        depth=10 procs=2</li>
+    <li>Alternate between buffered I/O and direct I/O via flags=direct</li>
+   </ul>
+   <li>For raw I/O disk tests:</li>
+   <ul>
+    <li># dt of=/dev/rhdisk7 min=b max=256k incr=var pattern=iot slices=10
+        aios=4</li>
+   </ul>
+   <li>For performance disk tests:</li>
+   <ul>
+    <li># dt of=/var/tmp/dt.data bs=64k limit=1g disable=compare,fsync</li>
+    <li>		OR</li>
+    <li># dt of=/dev/rhdisk7 bs=64k aios=32 disable=compare</li>
+   </ul>
+   <li>It’s advisable to alternate between sequential and random I/O, and when
+       doing sequential, alternate between forward and reverse directions.</li>
+   <li>See Test Recommendations and Use Cases for more details.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>47</font></div>
+  </td>
+  <td>
+  <div id=PPTP50 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0029.htm');" id=PPTL50>Large Capacity Disk
+  Testing</a></font></div>
+  <div id=PPTC50 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>TEST DESCRIPTION:<span style='mso-spacerun:yes'>  </span>This test shows
+       a method to verify large TB sized disks without doing I/O to the full
+       capacity.<span style='mso-spacerun:yes'>  </span>A number of options are
+       used, here are the key ones:</li>
+   <ul>
+    <li>slices=16 to divide the capacity into 16 sections, each with their own
+        process</li>
+    <li>aios=4 to queue multiple requests per process for improved performance.</li>
+    <li>step=4g to seek after every record, thereby avoid writing every block.</li>
+    <li>iodir=reverse to start at the end of sections then work forward.</li>
+    <li>other options are left as an exercise to the reader! <font
+        face=Wingdings>J</font></li>
+   </ul>
+   <br>
+   <ul>
+    <li><font face="Courier New">shaix11# dt<span
+        style='mso-spacerun:yes'>                              </span>\</font></li>
+    <li><span style='mso-spacerun:yes'>         </span>of=/dev/rhdisk10<span
+        style='mso-spacerun:yes'>                </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>slices=16<span
+        style='mso-spacerun:yes'>                       </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>step=4g<span
+        style='mso-spacerun:yes'>                         </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>disable=pstats<span
+        style='mso-spacerun:yes'>                  </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>aios=4<span
+        style='mso-spacerun:yes'>                          </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>oncerr=abort<span
+        style='mso-spacerun:yes'>                    </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>min=b<span
+        style='mso-spacerun:yes'>                           </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>max=256k<span
+        style='mso-spacerun:yes'>                        </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>incr=var<span
+        style='mso-spacerun:yes'>                        </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>align=rotate<span
+        style='mso-spacerun:yes'>                    </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>pattern=iot<span
+        style='mso-spacerun:yes'>                     </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>iodir=reverse<span
+        style='mso-spacerun:yes'>                   </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>prefix='%d@%h'<span
+        style='mso-spacerun:yes'>                  </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>alarm=5s<span
+        style='mso-spacerun:yes'>                        </span>\</li>
+    <li><span style='mso-spacerun:yes'>         </span>noprogt=10s</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>48</font></div>
+  </td>
+  <td>
+  <div id=PPTP51 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0060.htm');" id=PPTL51>Large File Testing</a></font></div>
+  <div id=PPTC51 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>TEST DESCRIPTION: Creates a single large file of 15TB, then starts 15
+       processes each doing I/O to their own slice.<span
+       style='mso-spacerun:yes'>  </span>The step option is used to skip 25MB
+       between records, writing approximately 153GB’s of data.</li>
+   <br>
+   <br>
+   <ul>
+    <li># dt<span style='mso-spacerun:yes'>                                    
+        </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>of=${OutputFile}<span
+        style='mso-spacerun:yes'>                </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>aios=8<span
+        style='mso-spacerun:yes'>                          </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>flags=direct<span
+        style='mso-spacerun:yes'>                    </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>limit=15t<span
+        style='mso-spacerun:yes'>                       </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>step=25m<span
+        style='mso-spacerun:yes'>                        </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>slices=15<span
+        style='mso-spacerun:yes'>                       </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>oncerr=abort<span
+        style='mso-spacerun:yes'>                    </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>bs=256k<span
+        style='mso-spacerun:yes'>                         </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>dispose=keep<span
+        style='mso-spacerun:yes'>                    </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>enable=debug<span
+        style='mso-spacerun:yes'>                    </span>\</li>
+    <li><span style='mso-spacerun:yes'>        </span>logu=logs/dt.log</li>
+    <br>
+    <br>
+    <li>Note: The example requires dt version 16.14, otherwise add
+        iodir=reverse</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>49</font></div>
+  </td>
+  <td>
+  <div id=PPTP52 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0050.htm');" id=PPTL52>No Progress I/O Timing</a></font></div>
+  <div id=PPTC52 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>alarm=value and noprogt=value options useful to detect slow or no I/O
+       times, esp. during failovers.</li>
+   <li>alarm() API previously used, now replaced with monitoring thread to
+       avoid issues with I/O blocking signal delivery.</li>
+   <li>Example no-progress trigger script.</li>
+   <li>Also see I/O Monitoring Tool (iomon) Wiki.</li>
+   <br>
+   <br>
+   <li>Example:</li>
+   <ul>
+    <li>shaix11# ./dt of=/dev/rhdisk7 bs=64k aios=16 pattern=iot \</li>
+    <li>		<span style='mso-spacerun:yes'>     </span>alarm=3s noprogt=15s
+        runtime=5m stats=brief</li>
+    <li>[ Initiate controller takeover to force path failover. ]</li>
+    <li>dt: No progress made during write on /dev/rhdisk7 for 18 seconds!</li>
+    <li>dt: No progress made during write on /dev/rhdisk7 for 21 seconds!</li>
+    <li>				...</li>
+    <li>dt: No progress made during write on /dev/rhdisk7 for 39 seconds!</li>
+    <br>
+    <br>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>50</font></div>
+  </td>
+  <td>
+  <div id=PPTP53 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0055.htm');" id=PPTL53>Copy and Verify I/O
+  Mode</a></font></div>
+  <div id=PPTC53 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>dt’s iomode= option controls {copy, test, or verify} modes.</li>
+   <li>The copy is an image mode copy, automatically verified.</li>
+   <li>Useful for copying CD/DVD ISO’s to disk (preferred over dd).</li>
+   <br>
+   <br>
+   <li>Example:</li>
+   <ul>
+    <li>shaix11# dt of=/dev/rhdisk0 bs=64k pattern=iot aios=16 stats=none (prime
+        hdisk0 data)</li>
+    <li>shaix11# dt if=/dev/rhdisk0 of=/dev/rhdisk1 bs=64k aios=16 iomode=copy</li>
+    <br>
+    <br>
+    <li>Copy Statistics:</li>
+    <li><span style='mso-spacerun:yes'>    </span>Data operation performed:
+        Copied '/dev/rhdisk0' to '/dev/rhdisk1'.</li>
+    <li><span style='mso-spacerun:yes'>     </span>Total records processed:
+        16384 @ 65536 bytes/record (64.000 Kbytes)</li>
+    <li><span style='mso-spacerun:yes'>     </span>Total bytes transferred:
+        1073741824 (1048576.000 Kbytes, 1024.000 Mbytes)</li>
+    <li><span style='mso-spacerun:yes'>      </span>Average transfer rates:
+        35078139 bytes/sec, 34255.995 Kbytes/sec</li>
+    <li><span style='mso-spacerun:yes'>     </span>Number I/O's per second:
+        535.250</li>
+    <li><span style='mso-spacerun:yes'>      </span>Total passes completed: 0/1</li>
+    <li><span style='mso-spacerun:yes'>       </span>Total errors detected: 0/1</li>
+    <li><span style='mso-spacerun:yes'>          </span>Total elapsed time:
+        00m30.61s</li>
+    <li><span style='mso-spacerun:yes'>           </span>Total system time:
+        00m00.79s</li>
+    <li><span style='mso-spacerun:yes'>             </span>Total user time:
+        00m00.06s</li>
+    <li><span style='mso-spacerun:yes'>               </span>Starting time: Wed
+        May 16 09:53:02 2007</li>
+    <li><span style='mso-spacerun:yes'>                 </span>Ending time: Wed
+        May 16 09:53:33 2007</li>
+    <li>			...</li>
+    <li>shaix11# dt if=/dev/rhdisk1 bs=64k aios=16 pattern=iot stats=brief (verify
+        hdisk1 data)</li>
+    <li>/dev/rhdisk1 Totals: 2097152 blocks, 1024.000 Mbytes, errors 0/1,
+        passes 1/1, elapsed 01m13.10s</li>
+    <li>shaix11#</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>51</font></div>
+  </td>
+  <td>
+  <div id=PPTP54 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0030.htm');" id=PPTL54>Data Corruptions</a></font></div>
+  <div id=PPTC54 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Data Corruption Example (forced):</li>
+   <br>
+   <br>
+   <ul>
+    <li># dt of=dt.data count=3 dispose=keep disable=stats bs=64k pattern=iot</li>
+    <li># dt if=dt.data count=3 disable=stats bs=64k enable=lbdata</li>
+    <li>dt: Error number 1 occurred on Wed Jul 29 11:41:03 2009</li>
+    <li>dt: Elapsed time since beginning of pass: 00m00.00s</li>
+    <li>dt: Elapsed time since beginning of test: 00m00.00s</li>
+    <li>dt: Data compare error at byte 4 in record number 1</li>
+    <li>dt: Relative block number where the error occurred is 0, position 4
+        (offset 4)</li>
+    <li>dt: Data expected = 0x39, data found = 0x1, byte count = 65536</li>
+    <li>dt: The correct data starts at address 0x529030 (marked by asterisk
+        '*')</li>
+    <li>dt: Dumping Pattern Buffer (base = 0x529030, offset = 0, limit = 4
+        bytes):</li>
+    <li>Offset</li>
+    <li>000000 *39 9c c3 39</li>
+    <br>
+    <br>
+    <li>dt: The incorrect data starts at address 0x52e004 (marked by asterisk
+        '*')</li>
+    <li>dt: Dumping Data Buffer (base = 0x52e000, offset = 4, limit = 512
+        bytes):</li>
+    <li>Offset</li>
+    <li>000000<span style='mso-spacerun:yes'>  </span>00 00 00 00*01 01 01 01
+        02 02 02 02 03 03 03 03</li>
+    <li>000016<span style='mso-spacerun:yes'>  </span>04 04 04 04 05 05 05 05
+        06 06 06 06 07 07 07 07</li>
+    <li>				...</li>
+    <li>000480<span style='mso-spacerun:yes'>  </span>78 78 78 78 79 79 79 79
+        7a 7a 7a 7a 7b 7b 7b 7b</li>
+    <li>000496<span style='mso-spacerun:yes'>  </span>7c 7c 7c 7c 7d 7d 7d 7d
+        7e 7e 7e 7e 7f 7f 7f 7f</li>
+    <br>
+    <br>
+    <li>dt: Rereading and verifying record data using Direct I/O...</li>
+    <li>dt: Seeked to block 0 (0) at byte position 0</li>
+    <li>dt: Record #1 - Reading 65536 bytes (128 blocks) into buffer 0x53f000,
+        lba's 0 - 127 (pos 0)</li>
+    <li>dt: Reread data matches previous data read, possible write failure!</li>
+    <li>#</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>52</font></div>
+  </td>
+  <td>
+  <div id=PPTP55 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0057.htm');" id=PPTL55>False Data Corruptions?</a></font></div>
+  <div id=PPTC55 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Beware:<span style='mso-spacerun:yes'>  </span>False data corruptions will
+       occur doing random I/O with unique data.</li>
+   <ul>
+    <li>Unique data means different pattern data in each block.</li>
+   </ul>
+   <li>Why?<span style='mso-spacerun:yes'>  </span>Random I/O oftentimes
+       overwrites previously written data block(s).</li>
+   <ul>
+    <li>Resolving this requires maintaining a bitmap of blocks written to
+        prevent overwrites.</li>
+   </ul>
+   <li>Workaround: Don’t use pattern files larger than the device block size
+       (512, 1K, etc).</li>
+   <br>
+   <br>
+   <li>Example:</li>
+   <li>shaix11# dt of=/var/tmp/dt.data min=b max=256k pf=pattern_all limit=100m
+       iotype=random dlimit=32 stats=brief</li>
+   <li>End of Write pass 0/1, 204800 blocks, 100.000 Mbytes, 895 records,
+       errors 0/1, elapsed 00m04.05s</li>
+   <br>
+   <br>
+   <li>dt: Error number 1 occurred on Thu May 17 10:10:03 2007</li>
+   <li>dt: Elapsed time since beginning of pass: 00m00.00s</li>
+   <li>dt: Elapsed time since beginning of test: 00m04.05s</li>
+   <li>dt: Data compare error at byte 0 in record number 4</li>
+   <li>dt: Relative block number where the error occurred is 142297, position
+       72856064</li>
+   <li>dt: Data expected = 0xa1, data found = 0x9d, byte count = 2048</li>
+   <li>dt: The correct data starts at address 0x20006c00 (marked by asterisk
+       '*')</li>
+   <li>dt: Dumping Pattern Buffer (base = 0x20006000, offset = 3072, limit = 32
+       bytes):</li>
+   <br>
+   <br>
+   <li>0x20006bf0<span style='mso-spacerun:yes'>  </span>f0 f1 f2 f3 f4 f5 f6
+       f7 f8 f9 fa fb fc fd fe ff</li>
+   <li>0x20006c00 *a1 38 61 a2 1e 0f a4 bd 0a 3d 6d f0 ac c3 ac b4</li>
+   <br>
+   <br>
+   <li>dt: The incorrect data starts at address 0x2000c000 (marked by asterisk
+       '*')</li>
+   <li>dt: Dumping Data Buffer (base = 0x2000c000, offset = 0, limit = 32
+       bytes):</li>
+   <br>
+   <br>
+   <li>0x2000c000 *9d 9d 86 d2 aa 82 67 b7 d3 a6 13 cd 41 6c 7d f4</li>
+   <li>0x2000c010<span style='mso-spacerun:yes'>  </span>36 c7 ba 04 73 9d 86
+       16 a5 e4 57 a6 02 ed da 71</li>
+   <li>End of Read pass 1/1, 10 blocks, 0.005 Mbytes, 4 records, errors 1/1,
+       elapsed 00m00.00s</li>
+   <li>/var/tmp/dt.data Totals: 204810 blocks, 100.005 Mbytes, errors 1/1,
+       passes 1/1, elapsed 00m04.05s</li>
+   <li>shaix11#</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>53</font></div>
+  </td>
+  <td>
+  <div id=PPTP56 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0031.htm');" id=PPTL56>Limitations/Notes</a></font></div>
+  <div id=PPTC56 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>One device per process in test mode.</li>
+   <li>AIO used in lieu of threads to increase I/O’s.</li>
+   <li>AIO read-after-write (enable=raw) option does synchronous read(), thus
+       slowing down AIO’s.</li>
+   <li>Encoded LBA’s wrap at 2TB with 512 byte block size.</li>
+   <li>Missing file system tests:</li>
+   <ul>
+    <li>file locking</li>
+    <li>append/truncate (enabled via oflags=)</li>
+    <li>holes (read back as zeros, step= creates)</li>
+    <li>automatic open() file flags (randomly select)</li>
+    <li>more directory operations (rename, etc)</li>
+    <li>etc.</li>
+    <li>Remember: dt wasn’t designed for file systems!</li>
+   </ul>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>54</font></div>
+  </td>
+  <td>
+  <div id=PPTP64 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0033.htm');" id=PPTL64>Documentation?</a></font></div>
+  <div id=PPTC64 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>“dt help” gives option summary.</li>
+   <li>DT Overview (dt-Overview.ppt)</li>
+   <li>DT User’s Guide (dt-UsersGuide.doc)</li>
+   <li>DT Source Overview (DtSourceOverview.doc)</li>
+   <li>Above docs contained in DT source kit.</li>
+   <li>Also available off my DT web page.</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+ <tr onmouseover="Over(this)" onmouseout="Out(this)" onclick="Follow(this)"
+  style='cursor:hand'>
+  <td align=right valign=top>
+  <div class=sldNum><font size=2>55</font></div>
+  </td>
+  <td>
+  <div id=PPTP65 class=PTxt><font size=2><a
+  href="javascript:GoToSld('slide0016.htm');" id=PPTL65>Where is DT Located?</a></font></div>
+  <div id=PPTC65 class=CTxt style='display:none'><font size=2>
+  <ul>
+   <li>Within NetApp:</li>
+   <ul>
+    <li>http://web.rtp.netapp.com/~rtmiller/dt.html</li>
+   </ul>
+   <li>Latest Executables:</li>
+   <ul>
+    <li>/u/rtmiller/Tools/dt.d-WIP/{OSdir}</li>
+   </ul>
+   <li>Perforce Source:</li>
+   <ul>
+    <li>//depot/tools/main/performance/</li>
+    <li>subdirectory dt.d-v15.27/ (and later)</li>
+   </ul>
+   <li>Contact author via e-mail to:</li>
+   <ul>
+    <li>Robin.Miller@NetApp.com</li>
+   </ul>
+   <li>Questions and comments welcome!</li>
+  </ul>
+  </font></div>
+  </td>
+ </tr>
+</table>
+
+
+
+</div>
+
+<div style='display:none'><a href=master03.htm></a><a href=master03.xml></a><a
+href=preview.wmf></a><a href=master120.htm></a><a href=master120.xml></a><a
+href=master02.htm></a><a href=pres.xml></a><a href=slide0001.htm></a><a
+href="master120_image001.gif"></a><a href="master120_image002.gif"></a><a
+href=slide0002.htm></a><a href="master03_image003.gif"></a><a
+href=slide0039.htm></a><a href=slide0045.htm></a><a href=slide0046.htm></a><a
+href=slide0003.htm></a><a href=slide0062.htm></a><a
+href="slide0062_image004.png"></a><a href="slide0062_image005.gif"></a><a
+href=slide0064.htm></a><a href="slide0064_image006.png"></a><a
+href="slide0064_image007.gif"></a><a href=slide0040.htm></a><a
+href=slide0041.htm></a><a href=slide0042.htm></a><a href=slide0043.htm></a><a
+href=slide0061.htm></a><a href=slide0063.htm></a><a
+href="slide0063_image008.png"></a><a href="slide0063_image009.gif"></a><a
+href=slide0068.htm></a><a href="slide0068_image010.png"></a><a
+href="slide0068_image011.gif"></a><a href=slide0017.htm></a><a
+href=slide0035.htm></a><a href=slide0025.htm></a><a href=slide0005.htm></a><a
+href=slide0012.htm></a><a href=slide0026.htm></a><a href=slide0065.htm></a><a
+href="slide0065_image012.png"></a><a href="slide0065_image013.gif"></a><a
+href=slide0027.htm></a><a href=slide0056.htm></a><a href=slide0028.htm></a><a
+href=slide0038.htm></a><a href=slide0006.htm></a><a href=slide0048.htm></a><a
+href="slide0048_image014.png"></a><a href="slide0048_image015.gif"></a><a
+href=slide0069.htm></a><a href="slide0069_image016.png"></a><a
+href="slide0069_image017.gif"></a><a href=slide0072.htm></a><a
+href=slide0073.htm></a><a href=slide0074.htm></a><a href=slide0010.htm></a><a
+href=slide0011.htm></a><a href=slide0007.htm></a><a href=slide0044.htm></a><a
+href=slide0058.htm></a><a href=slide0059.htm></a><a href=slide0020.htm></a><a
+href=slide0036.htm></a><a href=slide0037.htm></a><a href=slide0024.htm></a><a
+href=slide0066.htm></a><a href=slide0023.htm></a><a href=slide0022.htm></a><a
+href=slide0021.htm></a><a href=slide0067.htm></a><a href=slide0008.htm></a><a
+href=slide0019.htm></a><a href=slide0029.htm></a><a href=slide0060.htm></a><a
+href=slide0050.htm></a><a href=slide0055.htm></a><a href=slide0030.htm></a><a
+href=slide0057.htm></a><a href=slide0031.htm></a><a href=slide0051.htm></a><a
+href=slide0047.htm></a><a href=slide0052.htm></a><a href=slide0054.htm></a><a
+href=slide0053.htm></a><a href=slide0014.htm></a><a href=slide0032.htm></a><a
+href=slide0033.htm></a><a href=slide0016.htm></a><a href=master01.htm></a><a
+href="master03_stylesheet.css"></a><a href="master120_stylesheet.css"></a><a
+href=script.js></a><a href="../dt-Overview.htm"></a><a href=fullscreen.htm></a><a
+href=buttons.gif></a><a href=frame.htm></a><a href=outline.htm></a></div>
+
+</body>
+
+</html>

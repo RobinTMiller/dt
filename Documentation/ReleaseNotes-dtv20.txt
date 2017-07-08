@@ -1,0 +1,837 @@
+ Hi All,						Last Update: August 15th, 2015
+	This is the updated dt v20 release notes.
+	This file resides in the Documentation directory as "ReleaseNotes-dtv20.txt".
+ 
+	Note: This release includes prebuilt binaries for most OS's! (even Mac OSX!)
+
+	Beta testing has been active ~2 weeks, I plan to release to all my month end.
+
+	Until I prepare more formal release notes, please see the highlighted help text
+below for new features/options. Also, please see TOI's in the Documentation directory.
+
+	I've tried to keep options backwards compatible, but any scripts "screen scraping"
+will break, since the output format has changed, esp. the log prefix.
+
+	The major new features include:
+
+	o jobs with multiple threads
+	  - allows better scale out and control
+	  - Note: procs= is automatically turned into threads!
+	  - Multiple procs may return, by request, if highly desirable.
+	o dynamic job control
+	  - pause, resume, modify, query, stop, etc
+	o extended error reporting (easier triage, see example below)
+	o file locking (to exercise the API and modes)
+	  - Note: Does not support concurrent shared locks!
+	o interactive and pipe modes
+	  - see "dt.ksh" script for a simple example
+	  - Note: Server/client support is forthcoming!
+	o script files (see Scripts directory for examples)
+	  - script=FILE.dt to execute
+	  - a start script is also supported (~/.datatestrc)
+	o predefined workloads
+	  - Note: Only a few exist after removing NetApp workloads.
+	  - Please send me your favorite workloads, I can add them! ;)
+	o ability to define custom workloads (see "define" option)
+	  - Note: WOrkloads can be define in the dt startup script.
+	o control of I/O's per second (iops=float_value)
+	o multiple file and multiple directory copy/verify
+	o for direct disks, a mirror mode is supported
+	  - Note: This is useful for testing synchronous mirrors
+	o a unique identifier (UUID) is permitted in paths and prefix
+	  - this makes it easier to create unique directories or files
+	  - Note: On Linux, an option UUID package is required!
+	o additional options for controlling history data
+	  - control how many bytes per block in each record is saved
+	  - Note: Previously, data was only saved from start of record.
+	o and a number of other minor enhancements
+
+	Please Note: The SCSI unmap and LBA status require the spt tool, which
+I have not released publicly yet. I plan to work on this next, although I may
+implement these directly in dt (the SCSI library is already integrated). :)
+
+	Also, please know I am switching to my external e-mail account:
+
+	    Robin.T.Miller@gmail.com
+
+	Please let me know of any questions or issues you may encounter.
+
+Cheers,
+Robin
+==============================================================================
+Please Note: The Makefile's expect building from a subdirectory for each OS!
+------------------------------------------------------------------------------
+cycrh6rtp13% pwd
+/u/rtmiller/Tools/dt.v20.30
+cycrh6rtp13% cd linux-rhel6x64
+cycrh6rtp13% make -f ../Makefile.linux VPATH=.. OS=linux
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dt.o ../dt.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtaio.o ../dtaio.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtfs.o ../dtfs.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtfmt.o ../dtfmt.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtgen.o ../dtgen.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dthist.o ../dthist.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtiot.o ../dtiot.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtinfo.o ../dtinfo.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtjobs.o ../dtjobs.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtmem.o ../dtmem.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtmmap.o ../dtmmap.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtmtrand64.o ../dtmtrand64.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtprint.o ../dtprint.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtprocs.o ../dtprocs.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtread.o ../dtread.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtwrite.o ../dtwrite.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtscsi.o ../dtscsi.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtstats.o ../dtstats.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dttape.o ../dttape.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtunix.o ../dtunix.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtutil.o ../dtutil.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtusage.o ../dtusage.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtverify.o ../dtverify.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtworkloads.o ../dtworkloads.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o libscsi.o ../libscsi.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o scsidata.o ../scsidata.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o scsilib.o scsilib.c
+loading dt ...done
+cycrh6rtp13% 
+
+dt Help:
+========
+Robin@rtm-asus-pc ~
+$ ./dt help
+Usage: dt.exe options...
+
+    Where options are:
+        if=filename           The input file to read.
+        of=filename           The output file to write.
+        sdsf=filename         The SCSI device special file.
+        pf=filename           The data pattern file to use.
+        dir=dirpath           The directory path for files.
+        dirp=string           The directory prefix for subdirs.
+        filepostfix=str       The file postfix. (D: j%jobt%thread)
+        sdirs=value           The number of subdirectories.
+        depth=value           The subdirectory depth.
+        bs=value              The block size to read/write.
+    or  bs=random             Random size between 512 and 256k.
+        job_log=filename      The job log file name.
+        log[tu]=filename      The log file name to write.
+                              t=truncate, u=unique (w/tid)
+        logprefix=string      The per line logging prefix.
+        error_log=filename    The error log file name.
+        master_log=filename   The master log file name.
+        aios=value            Set number of AIO's to queue.
+        alarm=time            The keepalive alarm time.
+        keepalive=string      The keepalive message string.
+        keepalivet=time       The keepalive message frequency.
+        pkeepalive=str        The pass keepalive message string.
+        tkeepalive=str        The totals keepalive message string.
+        align=offset          Set offset within page aligned buffer.
+    or  align=rotate          Rotate data address through sizeof(ptr).
+        capacity=value        Set the device capacity in bytes.
+    or  capacity=max          Set maximum capacity from disk driver.
+        bufmodes={buffered,unbuffered,cachereads,cachewrites}
+                              Set one or more buffering modes (Default: none)
+        boff=string           Set the buffer offsets to: dec or hex (Default: hex)
+        dfmt=string           Set the data format to: byte or word (Default: word)
+        dispose=mode          Set file dispose to: {delete, keep, or keeponerror}.
+        dlimit=value          Set the dump data buffer limit.
+        dtype=string          Set the device type being tested.
+        idtype=string         Set input device type being tested.
+        odtype=string         Set output device type being tested.
+        dsize=value           Set the device block (sector) size.
+        errors=value          The number of errors to tolerate.
+        files=value           Set number of disk/tape files to process.
+        ffreq=value           The frequency (in records) to flush buffers.
+        fstrim_freq=value     The file system trim frequency (in files).
+        maxfiles=value        The maximum files for all directories.
+        flow=type             Set flow to: none, cts_rts, or xon_xoff.
+        incr=value            Set number of record bytes to increment.
+    or  incr=variable         Enables variable I/O request sizes.
+        iops=value            Set I/O per second (this is per thread).
+        iodir=direction       Set I/O direction to: {forward, reverse, or vary}.
+        iomode=mode           Set I/O mode to: {copy, mirror, test, or verify}.
+        iotype=type           Set I/O type to: {random, sequential, or vary}.
+        iotpass=value         Set the IOT pattern for specified pass.
+        iotseed=value         Set the IOT pattern block seed value.
+        iotune=filename       Set I/O tune delay parameters via file.
+        history=value         Set the number of history request entries.
+        history_bufs=value    Set the history data buffers (per request).(or hbufs)
+        history_bsize=value   Set the history block data size increment. (or hbsize)
+        history_data=value    Set the history data size (bytes to save). (or hdsize)
+        min=value             Set the minumum record size to transfer.
+        max=value             Set the maximum record size to transfer.
+        lba=value             Set starting block used w/lbdata option.
+        lbs=value             Set logical block size for lbdata option.
+        limit=value           The number of bytes to transfer.
+        maxdata=value         The maximum data limit (all files).
+        maxdatap=value        The maximum data percentage (range: 0-100).
+        flags=flags           Set open flags:   {excl,sync,...}
+        oflags=flags          Set output flags: {append,trunc,...}
+        maxbad=value          Set maximum bad blocks to display. (Default: 10)
+        onerr=action          Set error action: {abort, continue, or pause}.
+        noprogt=value         Set the no progress time (in seconds).
+        noprogtt=value        Set the no progress trigger time (secs).
+        notime=optype         Disable timing of specified operation type.
+        parity=string         Set parity to: {even, odd, or none}.
+        pass_cmd=string       The per pass command to execute.
+        passes=value          The number of passes to perform.
+        pattern=value         The 32 bit hex data pattern to use.
+    or  pattern=iot           Use DJ's IOT test pattern.
+    or  pattern=incr          Use an incrementing data pattern.
+    or  pattern=string        The string to use for the data pattern.
+        position=offset       Position to offset before testing.
+        oposition=offset      The output file position (copy/verify).
+        prefix=string         The data pattern prefix string.
+        procs=value           The number of processes to create.
+        ralign=value          The random I/O offset alignment.
+        rlimit=value          The random I/O data byte limit.
+        rseed=value           The random number generator seed.
+        records=value         The number of records to process.
+        runtime=time          The number of seconds to execute.
+        script=filename       The script file name to execute.
+        slice=value           The specific disk slice to test.
+        slices=value          The number of disk slices to test.
+        skip=value            The number of records to skip past.
+        seek=value            The number of records to seek past.
+        step=value            The number of bytes seeked after I/O.
+        stats=level           The stats level: {brief, full, or none}
+        stopon=filename       Watch for file existance, then stop.
+        sleep=time            The sleep time (in seconds).
+        msleep=value          The msleep time (in milliseconds).
+        usleep=value          The usleep time (in microseconds).
+        showtime=value        Show time value in ctime() format.
+        threads=value         The number of threads to execute.
+        trigger={br, bdr, lr, seek, cmd:str, or triage}
+                              The triggers to execute on errors.
+        trigger_action=value  The trigger action (for noprogs).
+        trigger_on={all, errors, miscompare, or noprogs} (Default: all)
+                              The trigger control (when to execute).
+        volumes=value         The number of volumes to process.
+        vrecords=value        The record limit for the last volume.
+        enable=flag           Enable one or more of the flags below.
+        disable=flag          Disable one or more of the flags below.
+        help                  Display this help text.
+        eval EXPR             Evaluate expression, show values.
+        system CMD            Execute a system command.
+        !CMD                  Same as above, short hand.
+        shell                 Startup a system shell.
+        usage                 Display the program usage.
+        version               Display the version information.
+
+    I/O Behaviors:
+        iobehavior=type       Specify the I/O behavior to use.
+          Where type is:
+            dt                The dt I/O behavior (default).
+
+    For help on each I/O behavior use: "iobehavior=type help"
+
+    Job Start Options:
+        istate={paused,running} (Default: running)
+                              Initial state after thread created.
+        tag=string            Specify job tag when starting tests.
+
+    Job Control Options:
+        jobs[:full][={jid|tag}] | [job=value] | [tag=string]
+                              Show all jobs or specified job.
+        cancelall             Cancel all jobs.
+        cancel={jid|tag} | [job=value] | [tag=string]
+                              Cancel the specified job ID.
+        modify[={jid|tag}] | [job=value] | [tag=string] [modify_options]
+                              Modify all jobs or specified job.
+        pause[={jid|tag}] | [job=value] | [tag=string]
+                              Pause all jobs or specified job.
+        query[={jid|tag}] | [job=value] | [tag=string] [query_string]
+                              Query all jobs or specified job.
+        resume[={jid|tag}] | [job=value] | [tag=string]
+                              Resume all jobs or specified job.
+        stopall               Stop all jobs.
+        stop={jid|tag} | [job=value] | [tag=string]
+                              Stop the specified job.
+        wait[={jid|tag}] | [job=value] | [tag=string]
+                              Wait for all jobs or specified job.
+
+    File Locking Options:
+        enable=lockfiles      Enables file locks (locks & unlocks)
+        lockmode={mixed | full | partial}
+                              Chance of full or partial file locks (default: mixed).
+        unlockchance=[0-100]  Probability of keeping locks and skipping unlocking.
+        Examples:
+            unlockchance=100  100% chance of unlocking, ALL files unlocked. [default]
+            unlockchance=50    50% chance of unlocking each file.
+            unlockchance=0      0% chance of unlocking, NO files are unlocked.
+
+    Workload Options:
+        define workloadName options...
+                              Define a workload with options.
+        workloads [substr]
+                              Display the valid workloads.
+        workload=name         Select the specified workload.
+
+    File System Full Options:
+        fsfree_delay=value    FS free space sleep delay.    (Def: 3 secs)
+        fsfree_retries=value  FS free space wait retries.   (Def: 10)
+
+        Please consider adding the truncate flag or enable=deleteperpass,
+        to free space between passes or with multiple threads to same FS.
+
+    Retry Related Options:
+        retry_error=value     The error code to retry.
+        retry_delay=value     The retry delay.              (Def: 5 secs)
+        retry_limit=value     The retry limit.              (Def: 60)
+
+    Error Strings Accepted:
+        ERROR_BUSY (170), ERROR_DISK_FULL (112)
+        ERROR_IO_DEVICE (1117), ERROR_VC_DISCONNECTED (240)
+        ERROR_UNEXP_NET_ERR (59), ERROR_SEM_TIMEOUT (121)
+        ERROR_BAD_NETPATH (53), ERROR_NETNAME_DELETED (64)
+        ERROR_DEVICE_NOT_CONNECTED (1167), ERROR_NO_SYSTEM_RESOURCES (1450)
+            OR
+        retry_error='*' or -1 to retry all errors.
+
+    SCSI Specific Options:
+        idt=string            The Inquiry device type. (both, device, or serial)
+        spt_path=string       Path to SCSI (spt) tool.
+        spt_options=string    Additional spt options.
+        readtype=string       The SCSI read type (read8, read10, read16).
+        writetype=string      The SCSI write type (write8, write10, write16, writev16).
+        scsi_recovery_delay=value The SCSI recovery delay.  (Def: 2 secs)
+        scsi_recovery_retries=value The SCSI recovery retries.(Def: 60)
+        scsi_timeout=value    The SCSI timeout (in ms).     (Def: 0ms)
+        unmap_freq=value      The SCSI unmap frequency.     (Def: 0)
+        unmap=type            The SCSI unmap type.
+         Valid types are: random, unmap, and write_same.
+
+    Flags to enable/disable:
+        aio              POSIX Asynchronous I/O.    (Default: disabled)
+        compare          Data comparison.           (Default: enabled)
+        coredump         Core dump on errors.       (Default: disabled)
+        deleteerrorlog   Delete error log file.     (Default: disabled)
+        deleteperpass    Delete files per pass.     (Default: disabled)
+        debug            Debug output.              (Default: disabled)
+        Debug            Verbose debug output.      (Default: disabled)
+        edebug           End of file debug.         (Default: disabled)
+        fdebug           File operations debug.     (Default: disabled)
+        jdebug           Job control debug.         (Default: disabled)
+        ldebug           File locking debug.        (Default: disabled)
+        mdebug           Memory related debug.      (Default: disabled)
+        mntdebug         Mount device lookup debug. (Default: disabled)
+        pdebug           Process related debug.     (Default: disabled)
+        rdebug           Random debug output.       (Default: disabled)
+        tdebug           Thread debug output.       (Default: disabled)
+        timerdebug       Timer debug output.        (Default: disabled)
+        dump             Dump data buffer.          (Default: enabled)
+        dumpall          Dump all blocks.           (Default: disabled)
+        dump_context     Dump good context block.   (Default: enabled)
+        errors           Report errors flag.        (Default: disabled)
+        xerrors          Report extended errors.    (Default: enabled)
+        eof              EOF/EOM exit status.       (Default: disabled)
+        fsalign          File system align.         (Default: disabled)
+        fstrim           File system trim.          (Default: disabled)
+        funique          Unique output file.        (Default: disabled)
+        fsincr           File size incrementing.    (Default: disabled)
+        fsync            Controls file sync'ing.    (Default: runtime)
+        header           Log file header.           (Default: disabled)
+        trailer          Log file trailer.          (Default: disabled)
+        hdump            History dump.              (Default: disabled)
+        htiming          History timing.            (Default: disabled)
+        image            Image mode copy (disks).   (Default: disabled)
+        lbdata           Logical block data.        (Default: disabled)
+        logpid           Log process ID.            (Default: disabled)
+        lockfiles        Lock files.                (Default: disabled)
+        looponerror      Loop on error.             (Default: disabled)
+        microdelay       Microsecond delays.        (Default: disabled)
+        msecsdelay       Millisecond delays.        (Default: disabled)
+        secsdelay        Second delays.             (Default: disabled)
+        mount_lookup     Mount device lookup.       (Default: enabled)
+        multi            Multiple volumes.          (Default: disabled)
+        noprog           No progress check.         (Default: disabled)
+        pipes            Pipe mode control flag.    (Default: disabled)
+        prefill          Prefill read buffer.       (Default: enabled)
+        pstats           Per pass statistics.       (Default: enabled)
+        raw              Read after write.          (Default: disabled)
+        reread           Re-read after raw.         (Default: disabled)
+        resfsfull        Restart file system full.  (Default: enabled)
+        readcache        Read cache control.        (Default: enabled)
+        writecache       Write cache control.       (Default: enabled)
+        retryDC          Retry data corruptions.    (Default: enabled)
+        retrydisc        Retry session disconnects. (Default: disabled)
+        scriptverify     Script verify display.     (Default: disabled)
+        sighup           Hangup signal control.     (Default: enabled)
+        sparse           Sparse file attribute.     (Default: enabled)
+        prealloc         Preallocate w/o sparse.    (Default: enabled)
+        scsi             SCSI operations.           (Default: enabled)
+        scsi_info        SCSI Information.          (Default: enabled)
+        scsi_io          SCSI I/O operations.       (Default: disabled)
+        sdebug           SCSI debug output.         (Default: disabled)
+        scsi_errors      SCSI error logging.        (Default: disabled)
+        scsi_recovery    SCSI recovery control.     (Default: enabled)
+        unmap            SCSI unmap per pass.       (Default: disabled)
+        get_lba_status   SCSI Get LBA Status.       (Default: disabled)
+        stats            Display statistics.        (Default: enabled)
+        stopimmed        Stop immediate w/stop file.(Default: disabled)
+        syslog           Log errors to syslog.      (Default: disabled)
+        timestamp        Timestamp each block.      (Default: disabled)
+        trigargs         Trigger cmd arguments.     (Default: enabled)
+        unique           Unique pattern.            (Default: enabled)
+        uuid_dashes      Dashes in UUID strings.    (Default: enabled)
+        verbose          Verbose output.            (Default: enabled)
+        verify           Verify data written.       (Default: enabled)
+
+        Example: enable=debug disable=compare,pstats
+
+    Common Open Flags:
+        none                  Clear all user set flags.
+        excl (O_EXCL)         Exclusive open. (don't share)
+        direct (O_DIRECT)     Direct disk access. (don't cache data).
+        direct (NO_BUFFERING) Direct disk access. (don't cache data).
+        nodirect              Cache data (disables Direct I/O).
+        sync (O_SYNC)         Sync updates for data/file attributes.
+
+    Output Open Flags:
+        none                  Clear all user set flags.
+        append (O_APPEND)     Append data to end of existing file.
+        dsync (O_DSYNC)       Sync data to disk during write operations.
+        trunc (O_TRUNC)       Truncate an existing file before writing.
+
+    Delays (Values are seconds, unless micro/msecs delay is enabled):
+        open_delay=value      Delay before opening the file.    (Default: 0)
+        close_delay=value     Delay before closing the file.    (Default: 0)
+        delete_delay=value    Delay after deleting files.       (Default: 0 secs)
+        end_delay=value       Delay between multiple passes.    (Default: 0 secs)
+        forced_delay=value    Force random I/O delay (noprog).  (Default: 0 secs)
+        start_delay=value     Delay before starting the test.   (Default: 0 secs)
+        read_delay=value      Delay before reading each record. (Default: 0)
+        write_delay=value     Delay before writing each record. (Default: 0)
+        term_delay=value      Delay before terminating.         (Default: 0 secs)
+        term_wait=time        Thread termination wait time.     (Default: 180 secs)
+
+        The delay options accept 'random' for random delays.
+        Please Note: For disk devices, microseconds is the default!:
+
+    Numeric Input:
+        For options accepting numeric input, the string may contain any
+        combination of the following characters:
+
+        Special Characters:
+            w = words (4 bytes)            q = quadwords (8 bytes)
+            b = blocks (512 bytes)         k = kilobytes (1024 bytes)
+            m = megabytes (1048576 bytes)  p = page size (4096 bytes)
+            g = gigabytes (1073741824 bytes)
+            t = terabytes (1099511627776 bytes)
+            d = device size (set via dsize=value option)
+            inf or INF = infinity (18446744073709551615 bytes)
+
+        Arithmetic Characters:
+            + = addition                   - = subtraction
+            * or x = multiplcation         / = division
+            % = remainder
+
+        Bitwise Characters:
+            ~ = complement of value       >> = shift bits right
+           << = shift bits left            & = bitwise 'and' operation
+            | = bitwise 'or' operation     ^ = bitwise exclusive 'or'
+
+        The default base for numeric input is decimal, but you can override
+        this default by specifying 0x or 0X for hexadecimal conversions, or
+        a leading zero '0' for octal conversions.  NOTE: Evaluation is from
+        right to left without precedence, and parenthesis are not permitted.
+
+    Keepalive Format Control:
+            %b = The bytes read or written.   %B = Total bytes read and written.
+            %c = Record count for this pass.  %C = Total records for this test.
+            %d = The device name.             %D = The real device name.
+            %e = The number of errors.        %E = The error limit.
+            %f = The files read or written.   %F = Total files read and written.
+            %h = The host name.               %H = The full host name.
+            %k = The kilobytes this pass.     %K = Total kilobytes for this test.
+            %l = Blocks read or written.      %L = Total blocks read and written.
+            %m = The megabytes this pass.     %M = Total megabytes for this test.
+            %p = The pass count.              %P = The pass limit.
+            %r = Records read this pass.      %R = Total records read this test.
+            %s = The seconds this pass.       %S = The total seconds this test.
+            %t = The pass elapsed time.       %T = The total elapsed time.
+            %i = The I/O mode (read/write)    %u = The user (login) name.
+            %w = Records written this pass.   %W = Total records written this test.
+
+    Performance Keywords:
+            %bps  = The bytes per second.     %lbps = Logical blocks per second.
+            %kbps = Kilobytes per second.     %mbps = The megabytes per second.
+            %iops = The I/O's per second.     %spio = The seconds per I/O.
+
+            Lowercase means per pass stats, while uppercase means total stats.
+
+    I/O Keywords:
+            %iodir = The I/O direction.       %iotype = The I/O type.
+            %lba = The current logical block. %offset = The current file offset.
+            %bufmode = The file buffer mode.  %status = The thread exit status.
+
+    Job Control Keywords:
+            %job  = The job ID.               %tag    = The job tag.
+            %tid  = The thread ID.            %thread = The thread number.
+
+    Misc Keywords:
+            %keepalivet = The keepalive time.
+
+    Default Keepalive:
+            keepalive="%d Stats: mode %i, blocks %l, %m Mbytes, pass %p/%P, elapsed %t"
+
+    Default Pass Keepalive: (when full pass stats are disabled via disable=pstats)
+            pkeepalive="%d Stats: mode %i, blocks %L, %M Mbytes, pass %p/%P, elapsed %T"
+
+    Log File/Log Prefix Format Keywords:
+            %bufmode = The file buffer mode.  %dfs    = The directory separator ('\')
+            %dsf     = The device name.       %device = The device path.
+            %iodir   = The I/O direction.     %iotype = The I/O type.
+            %host    = The host name.         %user   = The user name.
+            %job     = The job ID.            %tag    = The job tag.
+            %tid     = The thread ID.         %thread = The thread number.
+            %pid     = The process ID.        %prog   = The program name.
+            %ymd     = The year,month,day.    %hms    = The hour,day,seconds.
+            %date    = The date string.       %et     = The elapsed time.
+            %tod     = The time of day.       %etod   = Elapsed time of day.
+            %secs    = Seconds since start.   %seq    = The sequence number.
+            %tmpdir  = Temporary directory.   %uuid    = The UUID string.
+
+            String 'gtod' = "%tod (%etod) %prog (j:%job t:%thread): "
+
+        Example: log=dt_%host_%user_%iodir_%iotype-%uuid.log
+                 logprefix="%seq %ymd %hms %et %prog (j:%job t:%thread): "
+
+    I/O Tune File Format Keywords:
+            %iotune = The I/O tune path.      %tmpdir = The temporary directory.
+            %host   = The host name.          %user   = The user (login) name.
+
+        Example: iotune=%iotune OR %tmpdir%host_MyIOtune_file
+
+    Pattern String Input:
+            \\ = Backslash   \a = Alert (bell)   \b = Backspace
+            \f = Formfeed    \n = Newline        \r = Carriage Return
+            \t = Tab         \v = Vertical Tab   \e or \E = Escape
+            \ddd = Octal Value    \xdd or \Xdd = Hexadecimal Value
+
+    Prefix Format Control:
+            %d = The device name.           %D = The real device name.
+            %h = The host name.             %H = The full host name.
+            %p = The process ID.            %P = The parent PID.
+            %s = The device serial number.
+            %u = The user name.             %U = A unique UUID.
+            %j = The job ID.                %J = The job tag.
+            %t = The thread number.         %T = The thread ID.
+
+        Example: prefix="%U %d@%h" OR prefix="%d(%s)@%h"
+
+    Time Input:
+            d = days (86400 seconds),      h = hours (3600 seconds)
+            m = minutes (60 seconds),      s = seconds (the default)
+
+        Arithmetic characters are permitted, and implicit addition is
+        performed on strings of the form '1d5h10m30s'.
+
+    Trigger Types:
+            br = Execute a bus reset.
+            bdr = Execute a bus device reset.
+            lr = Execute a device lun reset.
+            seek = Issue a seek to the failing lba.
+            triage = Issue SCSI triage commands.
+            cmd:string = Execute command with these args:
+              string dname op dsize offset position lba errno noprogt
+              args following cmd:string get appended to above args.
+
+    Defaults:
+        errors=1, files=0, passes=1, records=0, bs=512, log=stderr
+        pattern=0x39c39c39, dispose=delete, align=0 (page aligned)
+        aios=8, dlimit=512, onerr=continue, volumes=0, vrecords=1
+        iodir=forward, iomode=test, iotype=sequential, stats=full
+        iotseed=0x01010101, hdsize=32, maxbad=10
+
+    --> Date: August 13th, 2015, Version: 20.31, Author: Robin T. Miller <--
+
+Robin@rtm-asus-pc ~
+$
+==================================================================================
+Note: dt output redirected to a thread log. Notice the command line is displayed
+at the top of the log, as well as the end of the log when errors occur.
+This is a forced error, of course, but shows dt's new extended error reporting!
+----------------------------------------------------------------------------------
+dt (j:1 t:1): Command Line:
+dt (j:1 t:1): 
+dt (j:1 t:1):     # ./dt if=/dev/mapper/3600a098042425457422b43696a737435 bs=random pattern=iot limit=100m maxbad=1 log=/var/tmp/thread.log
+dt (j:1 t:1): 
+dt (j:1 t:1):         --> Date: August 13th, 2015, Version: 20.31, Author: Robin T. Miller <--
+dt (j:1 t:1): 
+dt (j:1 t:1): 
+dt (j:1 t:1): Operating System Information:
+dt (j:1 t:1):                      Host name: ssan-rhel5u4-21 (10.229.136.235)
+dt (j:1 t:1):                      User name: root
+dt (j:1 t:1):                     Process ID: 3228
+dt (j:1 t:1):                 OS information: Linux 2.6.18-164.el5 #1 SMP Tue Aug 18 15:51:48 EDT 2009 x86_64
+dt (j:1 t:1): 
+dt (j:1 t:1): SCSI Information:
+dt (j:1 t:1):               SCSI Device Name: /dev/mapper/3600a098042425457422b43696a737435
+dt (j:1 t:1):          Vendor Identification: NETAPP
+dt (j:1 t:1):         Product Identification: LUN C-Mode
+dt (j:1 t:1):        Firmware Revision Level: 8200
+dt (j:1 t:1):      Target Port Group Support: 1 (implicit ALUA)
+dt (j:1 t:1):                   Block Length: 512
+dt (j:1 t:1):               Maximum Capacity: 2097152 (1024.000 Mbytes)
+dt (j:1 t:1):        Provisioning Management: Full Provisioned
+dt (j:1 t:1):              Device Identifier: 600a-0980-4242-5457-422b-4369-6a73-7435
+dt (j:1 t:1):           Device Serial Number: BBTWB+Cijst5
+dt (j:1 t:1):     Management Network Address: http://10.63.7.221/
+dt (j:1 t:1): 
+dt (j:1 t:1): ERROR: Error number 1 occurred on Sat Aug 15 08:10:42 2015
+dt (j:1 t:1): 
+dt (j:1 t:1):                   Error Number: 1
+dt (j:1 t:1):                  Time of Error: Sat Aug 15 08:10:42 2015
+dt (j:1 t:1):                Read Start Time: Sat Aug 15 08:10:41 2015
+dt (j:1 t:1):                    Pass Number: 1
+dt (j:1 t:1):              Pass Elapsed Time: 00m00.68s
+dt (j:1 t:1):              Test Elapsed Time: 00m00.68s
+dt (j:1 t:1):                      File Name: /dev/mapper/3600a098042425457422b43696a737435
+dt (j:1 t:1):                      Operation: miscompare
+dt (j:1 t:1):                  Record Number: 213
+dt (j:1 t:1):                   Request Size: 166912 (0x28c00)
+dt (j:1 t:1):                   Block Length: 326 (0x146)
+dt (j:1 t:1):                       I/O Mode: read
+dt (j:1 t:1):                       I/O Type: sequential
+dt (j:1 t:1):                      File Type: input
+dt (j:1 t:1):           Device Serial Number: BBTWB+Cijst5
+dt (j:1 t:1):              Device Identifier: 600a-0980-4242-5457-422b-4369-6a73-7435
+dt (j:1 t:1):                    Device Size: 512 (0x200)
+dt (j:1 t:1):                    File Offset: 27702272 (0x1a6b400)
+dt (j:1 t:1):                   Starting LBA: 54106 (0xd35a)
+dt (j:1 t:1):                     Ending LBA: 54431 (0xd49f)
+dt (j:1 t:1):              Error File Offset: 27787264 (0x1a80000)
+dt (j:1 t:1):             Starting Error LBA: 54272 (0xd400)
+dt (j:1 t:1):        Corruption Buffer Index: 84992 (byte index into read buffer)
+dt (j:1 t:1):         Corruption Block Index: 0 (byte index in miscompare block)
+dt (j:1 t:1): 
+dt (j:1 t:1): Data compare error at byte 84992 in record number 213
+dt (j:1 t:1): Relative block number where the error occurred is 54272, offset 27787264
+dt (j:1 t:1): Block expected = 54272 (0x0000d400), block found = 1465139778 (0x57544242), count = 166912
+dt (j:1 t:1): The correct data starts at address 0x2aaaaaac0c00 (marked by asterisk '*')
+dt (j:1 t:1): Dumping Pattern Buffer (base = 0x2aaaaaaac000, offset = 84992, limit = 512 bytes):
+dt (j:1 t:1):           Address / Offset
+dt (j:1 t:1): 0x00002aaaaaac0b00/ 84736 | 3f 14 41 40 40 15 42 41 41 16 43 42 42 17 44 43 "? A@@ BAA CBB DC"
+dt (j:1 t:1): 0x00002aaaaaac0b10/ 84752 | 43 18 45 44 44 19 46 45 45 1a 47 46 46 1b 48 47 "C EDD FEE GFF HG"
+dt (j:1 t:1): 0x00002aaaaaac0b20/ 84768 | 47 1c 49 48 48 1d 4a 49 49 1e 4b 4a 4a 1f 4c 4b "G IHH JII KJJ LK"
+dt (j:1 t:1): 0x00002aaaaaac0b30/ 84784 | 4b 20 4d 4c 4c 21 4e 4d 4d 22 4f 4e 4e 23 50 4f "K MLL!NMM"ONN#PO"
+dt (j:1 t:1): 0x00002aaaaaac0b40/ 84800 | 4f 24 51 50 50 25 52 51 51 26 53 52 52 27 54 53 "O$QPP%RQQ&SRR'TS"
+dt (j:1 t:1): 0x00002aaaaaac0b50/ 84816 | 53 28 55 54 54 29 56 55 55 2a 57 56 56 2b 58 57 "S(UTT)VUU*WVV+XW"
+dt (j:1 t:1): 0x00002aaaaaac0b60/ 84832 | 57 2c 59 58 58 2d 5a 59 59 2e 5b 5a 5a 2f 5c 5b "W,YXX-ZYY.[ZZ/\["
+dt (j:1 t:1): 0x00002aaaaaac0b70/ 84848 | 5b 30 5d 5c 5c 31 5e 5d 5d 32 5f 5e 5e 33 60 5f "[0]\\1^]]2_^^3`_"
+dt (j:1 t:1): 0x00002aaaaaac0b80/ 84864 | 5f 34 61 60 60 35 62 61 61 36 63 62 62 37 64 63 "_4a``5baa6cbb7dc"
+dt (j:1 t:1): 0x00002aaaaaac0b90/ 84880 | 63 38 65 64 64 39 66 65 65 3a 67 66 66 3b 68 67 "c8edd9fee:gff;hg"
+dt (j:1 t:1): 0x00002aaaaaac0ba0/ 84896 | 67 3c 69 68 68 3d 6a 69 69 3e 6b 6a 6a 3f 6c 6b "g<ihh=jii>kjj?lk"
+dt (j:1 t:1): 0x00002aaaaaac0bb0/ 84912 | 6b 40 6d 6c 6c 41 6e 6d 6d 42 6f 6e 6e 43 70 6f "k@mllAnmmBonnCpo"
+dt (j:1 t:1): 0x00002aaaaaac0bc0/ 84928 | 6f 44 71 70 70 45 72 71 71 46 73 72 72 47 74 73 "oDqppErqqFsrrGts"
+dt (j:1 t:1): 0x00002aaaaaac0bd0/ 84944 | 73 48 75 74 74 49 76 75 75 4a 77 76 76 4b 78 77 "sHuttIvuuJwvvKxw"
+dt (j:1 t:1): 0x00002aaaaaac0be0/ 84960 | 77 4c 79 78 78 4d 7a 79 79 4e 7b 7a 7a 4f 7c 7b "wLyxxMzyyN{zzO|{"
+dt (j:1 t:1): 0x00002aaaaaac0bf0/ 84976 | 7b 50 7d 7c 7c 51 7e 7d 7d 52 7f 7e 7e 53 80 7f "{P}||Q~}}R ~~S  "
+dt (j:1 t:1): 0x00002aaaaaac0c00/ 84992 |*00 d4 00 00 01 d5 01 01 02 d6 02 02 03 d7 03 03 "                "
+dt (j:1 t:1): 0x00002aaaaaac0c10/ 85008 | 04 d8 04 04 05 d9 05 05 06 da 06 06 07 db 07 07 "                "
+dt (j:1 t:1): 0x00002aaaaaac0c20/ 85024 | 08 dc 08 08 09 dd 09 09 0a de 0a 0a 0b df 0b 0b "                "
+dt (j:1 t:1): 0x00002aaaaaac0c30/ 85040 | 0c e0 0c 0c 0d e1 0d 0d 0e e2 0e 0e 0f e3 0f 0f "                "
+dt (j:1 t:1): 0x00002aaaaaac0c40/ 85056 | 10 e4 10 10 11 e5 11 11 12 e6 12 12 13 e7 13 13 "                "
+dt (j:1 t:1): 0x00002aaaaaac0c50/ 85072 | 14 e8 14 14 15 e9 15 15 16 ea 16 16 17 eb 17 17 "                "
+dt (j:1 t:1): 0x00002aaaaaac0c60/ 85088 | 18 ec 18 18 19 ed 19 19 1a ee 1a 1a 1b ef 1b 1b "                "
+dt (j:1 t:1): 0x00002aaaaaac0c70/ 85104 | 1c f0 1c 1c 1d f1 1d 1d 1e f2 1e 1e 1f f3 1f 1f "                "
+dt (j:1 t:1): 0x00002aaaaaac0c80/ 85120 | 20 f4 20 20 21 f5 21 21 22 f6 22 22 23 f7 23 23 "    ! !!" ""# ##"
+dt (j:1 t:1): 0x00002aaaaaac0c90/ 85136 | 24 f8 24 24 25 f9 25 25 26 fa 26 26 27 fb 27 27 "$ $$% %%& &&' ''"
+dt (j:1 t:1): 0x00002aaaaaac0ca0/ 85152 | 28 fc 28 28 29 fd 29 29 2a fe 2a 2a 2b ff 2b 2b "( (() ))* **+ ++"
+dt (j:1 t:1): 0x00002aaaaaac0cb0/ 85168 | 2c 00 2d 2c 2d 01 2e 2d 2e 02 2f 2e 2f 03 30 2f ", -,- .-. /./ 0/"
+dt (j:1 t:1): 0x00002aaaaaac0cc0/ 85184 | 30 04 31 30 31 05 32 31 32 06 33 32 33 07 34 33 "0 101 212 323 43"
+dt (j:1 t:1): 0x00002aaaaaac0cd0/ 85200 | 34 08 35 34 35 09 36 35 36 0a 37 36 37 0b 38 37 "4 545 656 767 87"
+dt (j:1 t:1): 0x00002aaaaaac0ce0/ 85216 | 38 0c 39 38 39 0d 3a 39 3a 0e 3b 3a 3b 0f 3c 3b "8 989 :9: ;:; <;"
+dt (j:1 t:1): 0x00002aaaaaac0cf0/ 85232 | 3c 10 3d 3c 3d 11 3e 3d 3e 12 3f 3e 3f 13 40 3f "< =<= >=> ?>? @?"
+dt (j:1 t:1): 
+dt (j:1 t:1): The incorrect data starts at address 0x2aaaaab02c00 (marked by asterisk '*')
+dt (j:1 t:1): Dumping Data Buffer (base = 0x2aaaaaaee000, offset = 84992, limit = 512 bytes):
+dt (j:1 t:1):           Address / Offset
+dt (j:1 t:1): 0x00002aaaaab02b00/ 84736 | 3f 14 41 40 40 15 42 41 41 16 43 42 42 17 44 43 "? A@@ BAA CBB DC"
+dt (j:1 t:1): 0x00002aaaaab02b10/ 84752 | 43 18 45 44 44 19 46 45 45 1a 47 46 46 1b 48 47 "C EDD FEE GFF HG"
+dt (j:1 t:1): 0x00002aaaaab02b20/ 84768 | 47 1c 49 48 48 1d 4a 49 49 1e 4b 4a 4a 1f 4c 4b "G IHH JII KJJ LK"
+dt (j:1 t:1): 0x00002aaaaab02b30/ 84784 | 4b 20 4d 4c 4c 21 4e 4d 4d 22 4f 4e 4e 23 50 4f "K MLL!NMM"ONN#PO"
+dt (j:1 t:1): 0x00002aaaaab02b40/ 84800 | 4f 24 51 50 50 25 52 51 51 26 53 52 52 27 54 53 "O$QPP%RQQ&SRR'TS"
+dt (j:1 t:1): 0x00002aaaaab02b50/ 84816 | 53 28 55 54 54 29 56 55 55 2a 57 56 56 2b 58 57 "S(UTT)VUU*WVV+XW"
+dt (j:1 t:1): 0x00002aaaaab02b60/ 84832 | 57 2c 59 58 58 2d 5a 59 59 2e 5b 5a 5a 2f 5c 5b "W,YXX-ZYY.[ZZ/\["
+dt (j:1 t:1): 0x00002aaaaab02b70/ 84848 | 5b 30 5d 5c 5c 31 5e 5d 5d 32 5f 5e 5e 33 60 5f "[0]\\1^]]2_^^3`_"
+dt (j:1 t:1): 0x00002aaaaab02b80/ 84864 | 5f 34 61 60 60 35 62 61 61 36 63 62 62 37 64 63 "_4a``5baa6cbb7dc"
+dt (j:1 t:1): 0x00002aaaaab02b90/ 84880 | 63 38 65 64 64 39 66 65 65 3a 67 66 66 3b 68 67 "c8edd9fee:gff;hg"
+dt (j:1 t:1): 0x00002aaaaab02ba0/ 84896 | 67 3c 69 68 68 3d 6a 69 69 3e 6b 6a 6a 3f 6c 6b "g<ihh=jii>kjj?lk"
+dt (j:1 t:1): 0x00002aaaaab02bb0/ 84912 | 6b 40 6d 6c 6c 41 6e 6d 6d 42 6f 6e 6e 43 70 6f "k@mllAnmmBonnCpo"
+dt (j:1 t:1): 0x00002aaaaab02bc0/ 84928 | 6f 44 71 70 70 45 72 71 71 46 73 72 72 47 74 73 "oDqppErqqFsrrGts"
+dt (j:1 t:1): 0x00002aaaaab02bd0/ 84944 | 73 48 75 74 74 49 76 75 75 4a 77 76 76 4b 78 77 "sHuttIvuuJwvvKxw"
+dt (j:1 t:1): 0x00002aaaaab02be0/ 84960 | 77 4c 79 78 78 4d 7a 79 79 4e 7b 7a 7a 4f 7c 7b "wLyxxMzyyN{zzO|{"
+dt (j:1 t:1): 0x00002aaaaab02bf0/ 84976 | 7b 50 7d 7c 7c 51 7e 7d 7d 52 7f 7e 7e 53 80 7f "{P}||Q~}}R ~~S  "
+dt (j:1 t:1): 0x00002aaaaab02c00/ 84992 |*42 42 54 57 42 2b 43 69 6a 73 74 35 40 2f 64 65 "BBTWB+Cijst5@/de"
+dt (j:1 t:1): 0x00002aaaaab02c10/ 85008 | 76 2f 6d 61 70 70 65 72 2f 33 36 30 30 61 30 39 "v/mapper/3600a09"
+dt (j:1 t:1): 0x00002aaaaab02c20/ 85024 | 38 30 34 32 34 32 35 34 35 37 34 32 32 62 34 33 "8042425457422b43"
+dt (j:1 t:1): 0x00002aaaaab02c30/ 85040 | 36 39 36 61 37 33 37 34 33 35 40 73 73 61 6e 2d "696a737435@ssan-"
+dt (j:1 t:1): 0x00002aaaaab02c40/ 85056 | 72 68 65 6c 35 75 34 2d 32 31 00 00 00 d4 00 00 "rhel5u4-21      "
+dt (j:1 t:1): 0x00002aaaaab02c50/ 85072 | 01 d5 01 01 02 d6 02 02 03 d7 03 03 04 d8 04 04 "                "
+dt (j:1 t:1): 0x00002aaaaab02c60/ 85088 | 05 d9 05 05 06 da 06 06 07 db 07 07 08 dc 08 08 "                "
+dt (j:1 t:1): 0x00002aaaaab02c70/ 85104 | 09 dd 09 09 0a de 0a 0a 0b df 0b 0b 0c e0 0c 0c "                "
+dt (j:1 t:1): 0x00002aaaaab02c80/ 85120 | 0d e1 0d 0d 0e e2 0e 0e 0f e3 0f 0f 10 e4 10 10 "                "
+dt (j:1 t:1): 0x00002aaaaab02c90/ 85136 | 11 e5 11 11 12 e6 12 12 13 e7 13 13 14 e8 14 14 "                "
+dt (j:1 t:1): 0x00002aaaaab02ca0/ 85152 | 15 e9 15 15 16 ea 16 16 17 eb 17 17 18 ec 18 18 "                "
+dt (j:1 t:1): 0x00002aaaaab02cb0/ 85168 | 19 ed 19 19 1a ee 1a 1a 1b ef 1b 1b 1c f0 1c 1c "                "
+dt (j:1 t:1): 0x00002aaaaab02cc0/ 85184 | 1d f1 1d 1d 1e f2 1e 1e 1f f3 1f 1f 20 f4 20 20 "                "
+dt (j:1 t:1): 0x00002aaaaab02cd0/ 85200 | 21 f5 21 21 22 f6 22 22 23 f7 23 23 24 f8 24 24 "! !!" ""# ##$ $$"
+dt (j:1 t:1): 0x00002aaaaab02ce0/ 85216 | 25 f9 25 25 26 fa 26 26 27 fb 27 27 28 fc 28 28 "% %%& &&' ''( (("
+dt (j:1 t:1): 0x00002aaaaab02cf0/ 85232 | 29 fd 29 29 2a fe 2a 2a 2b ff 2b 2b 2c 00 2d 2c ") ))* **+ ++, -,"
+dt (j:1 t:1): 
+dt (j:1 t:1): Analyzing IOT Record Data: (Note: Block #'s are relative to start of record!)
+dt (j:1 t:1): 
+dt (j:1 t:1):                 IOT block size: 512
+dt (j:1 t:1):         Total number of blocks: 326 (166912 bytes)
+dt (j:1 t:1):         Current IOT seed value: 0x01010101 (pass 1)
+dt (j:1 t:1):           Start of good blocks: 1
+dt (j:1 t:1):          Length of good blocks: 166 (84992 bytes)
+dt (j:1 t:1):        Good blocks file offset: 27702272 (lba 54106)
+dt (j:1 t:1):      Start of corrupted blocks: 167
+dt (j:1 t:1):     Length of corrupted blocks: 160 (81920 bytes)
+dt (j:1 t:1):   Corrupted blocks file offset: 27787264 (lba 54272)
+dt (j:1 t:1):     Number of corrupted blocks: 160
+dt (j:1 t:1):    Number of good blocks found: 166
+dt (j:1 t:1):    Number of zero blocks found: 0
+dt (j:1 t:1): 
+dt (j:1 t:1):                       Record #: 213
+dt (j:1 t:1):                    File offset: 27702272
+dt (j:1 t:1):                 Transfer count: 166912 (0x28c00)
+dt (j:1 t:1):             Record block range: 54106 - 54431
+dt (j:1 t:1):            Read buffer address: 0x2aaaaaaee000
+dt (j:1 t:1):           Pattern base address: 0x2aaaaaaac000
+dt (j:1 t:1):                           Note: Incorrect data is marked with asterisk '*'
+dt (j:1 t:1): 
+dt (j:1 t:1):                   Record block: 165 (good data)
+dt (j:1 t:1):            Record block offset: 27786752 (lba 54271)
+dt (j:1 t:1):          Expected block number: 54271 (0x0000d3ff)
+dt (j:1 t:1):          Received block number: 54271 (0x0000d3ff)
+dt (j:1 t:1): 
+dt (j:1 t:1): Byte Expected: address 0x2aaaaaac0a00      Received: address 0x2aaaaab02a00
+dt (j:1 t:1): 0000 0000d3ff 0101d500 0202d601 0303d702   0000d3ff 0101d500 0202d601 0303d702 
+dt (j:1 t:1): 0010 0404d803 0505d904 0606da05 0707db06   0404d803 0505d904 0606da05 0707db06 
+dt (j:1 t:1): 0020 0808dc07 0909dd08 0a0ade09 0b0bdf0a   0808dc07 0909dd08 0a0ade09 0b0bdf0a 
+dt (j:1 t:1): 0030 0c0ce00b 0d0de10c 0e0ee20d 0f0fe30e   0c0ce00b 0d0de10c 0e0ee20d 0f0fe30e 
+dt (j:1 t:1): 0040 1010e40f 1111e510 1212e611 1313e712   1010e40f 1111e510 1212e611 1313e712 
+dt (j:1 t:1): 0050 1414e813 1515e914 1616ea15 1717eb16   1414e813 1515e914 1616ea15 1717eb16 
+dt (j:1 t:1): 0060 1818ec17 1919ed18 1a1aee19 1b1bef1a   1818ec17 1919ed18 1a1aee19 1b1bef1a 
+dt (j:1 t:1): 0070 1c1cf01b 1d1df11c 1e1ef21d 1f1ff31e   1c1cf01b 1d1df11c 1e1ef21d 1f1ff31e 
+dt (j:1 t:1): 0080 2020f41f 2121f520 2222f621 2323f722   2020f41f 2121f520 2222f621 2323f722 
+dt (j:1 t:1): 0090 2424f823 2525f924 2626fa25 2727fb26   2424f823 2525f924 2626fa25 2727fb26 
+dt (j:1 t:1): 00a0 2828fc27 2929fd28 2a2afe29 2b2bff2a   2828fc27 2929fd28 2a2afe29 2b2bff2a 
+dt (j:1 t:1): 00b0 2c2d002b 2d2e012c 2e2f022d 2f30032e   2c2d002b 2d2e012c 2e2f022d 2f30032e 
+dt (j:1 t:1): 00c0 3031042f 31320530 32330631 33340732   3031042f 31320530 32330631 33340732 
+dt (j:1 t:1): 00d0 34350833 35360934 36370a35 37380b36   34350833 35360934 36370a35 37380b36 
+dt (j:1 t:1): 00e0 38390c37 393a0d38 3a3b0e39 3b3c0f3a   38390c37 393a0d38 3a3b0e39 3b3c0f3a 
+dt (j:1 t:1): 00f0 3c3d103b 3d3e113c 3e3f123d 3f40133e   3c3d103b 3d3e113c 3e3f123d 3f40133e 
+dt (j:1 t:1): 0100 4041143f 41421540 42431641 43441742   4041143f 41421540 42431641 43441742 
+dt (j:1 t:1): 0110 44451843 45461944 46471a45 47481b46   44451843 45461944 46471a45 47481b46 
+dt (j:1 t:1): 0120 48491c47 494a1d48 4a4b1e49 4b4c1f4a   48491c47 494a1d48 4a4b1e49 4b4c1f4a 
+dt (j:1 t:1): 0130 4c4d204b 4d4e214c 4e4f224d 4f50234e   4c4d204b 4d4e214c 4e4f224d 4f50234e 
+dt (j:1 t:1): 0140 5051244f 51522550 52532651 53542752   5051244f 51522550 52532651 53542752 
+dt (j:1 t:1): 0150 54552853 55562954 56572a55 57582b56   54552853 55562954 56572a55 57582b56 
+dt (j:1 t:1): 0160 58592c57 595a2d58 5a5b2e59 5b5c2f5a   58592c57 595a2d58 5a5b2e59 5b5c2f5a 
+dt (j:1 t:1): 0170 5c5d305b 5d5e315c 5e5f325d 5f60335e   5c5d305b 5d5e315c 5e5f325d 5f60335e 
+dt (j:1 t:1): 0180 6061345f 61623560 62633661 63643762   6061345f 61623560 62633661 63643762 
+dt (j:1 t:1): 0190 64653863 65663964 66673a65 67683b66   64653863 65663964 66673a65 67683b66 
+dt (j:1 t:1): 01a0 68693c67 696a3d68 6a6b3e69 6b6c3f6a   68693c67 696a3d68 6a6b3e69 6b6c3f6a 
+dt (j:1 t:1): 01b0 6c6d406b 6d6e416c 6e6f426d 6f70436e   6c6d406b 6d6e416c 6e6f426d 6f70436e 
+dt (j:1 t:1): 01c0 7071446f 71724570 72734671 73744772   7071446f 71724570 72734671 73744772 
+dt (j:1 t:1): 01d0 74754873 75764974 76774a75 77784b76   74754873 75764974 76774a75 77784b76 
+dt (j:1 t:1): 01e0 78794c77 797a4d78 7a7b4e79 7b7c4f7a   78794c77 797a4d78 7a7b4e79 7b7c4f7a 
+dt (j:1 t:1): 01f0 7c7d507b 7d7e517c 7e7f527d 7f80537e   7c7d507b 7d7e517c 7e7f527d 7f80537e 
+dt (j:1 t:1): 
+dt (j:1 t:1):                   Record block: 166 (bad data)
+dt (j:1 t:1):            Record block offset: 27787264 (lba 54272)
+dt (j:1 t:1):          Expected block number: 54272 (0x0000d400)
+dt (j:1 t:1):          Received block number: 1465139778 (0x57544242)
+dt (j:1 t:1):          Received block offset: 750151566336 (Data Range: 0 - 104857600)
+dt (j:1 t:1):        Seed detected at offset: 76 (0x4c) (word 19, zero based)
+dt (j:1 t:1):       Data written during pass: 1
+dt (j:1 t:1):        Calculated block number: 3975004397 (0xecedc0ed)
+dt (j:1 t:1):      Expected data is for seed: 0x01010101 (pass 1)
+dt (j:1 t:1):     Received data is from seed: 0x01010101 (wrong data)
+dt (j:1 t:1): 
+dt (j:1 t:1): Byte Expected: address 0x2aaaaaac0c00      Received: address 0x2aaaaab02c00
+dt (j:1 t:1): 0000 0000d400 0101d501 0202d602 0303d703 * 57544242 69432b42 3574736a 65642f40 
+dt (j:1 t:1): 0010 0404d804 0505d905 0606da06 0707db07 * 616d2f76 72657070 3036332f 39306130 
+dt (j:1 t:1): 0020 0808dc08 0909dd09 0a0ade0a 0b0bdf0b * 32343038 34353234 32343735 33346232 
+dt (j:1 t:1): 0030 0c0ce00c 0d0de10d 0e0ee20e 0f0fe30f * 61363936 34373337 73403533 2d6e6173 
+dt (j:1 t:1): 0040 1010e410 1111e511 1212e612 1313e713 * 6c656872 2d347535 00003132 0000d400 
+dt (j:1 t:1): 0050 1414e814 1515e915 1616ea16 1717eb17 * 0101d501 0202d602 0303d703 0404d804 
+dt (j:1 t:1): 0060 1818ec18 1919ed19 1a1aee1a 1b1bef1b * 0505d905 0606da06 0707db07 0808dc08 
+dt (j:1 t:1): 0070 1c1cf01c 1d1df11d 1e1ef21e 1f1ff31f * 0909dd09 0a0ade0a 0b0bdf0b 0c0ce00c 
+dt (j:1 t:1): 0080 2020f420 2121f521 2222f622 2323f723 * 0d0de10d 0e0ee20e 0f0fe30f 1010e410 
+dt (j:1 t:1): 0090 2424f824 2525f925 2626fa26 2727fb27 * 1111e511 1212e612 1313e713 1414e814 
+dt (j:1 t:1): 00a0 2828fc28 2929fd29 2a2afe2a 2b2bff2b * 1515e915 1616ea16 1717eb17 1818ec18 
+dt (j:1 t:1): 00b0 2c2d002c 2d2e012d 2e2f022e 2f30032f * 1919ed19 1a1aee1a 1b1bef1b 1c1cf01c 
+dt (j:1 t:1): 00c0 30310430 31320531 32330632 33340733 * 1d1df11d 1e1ef21e 1f1ff31f 2020f420 
+dt (j:1 t:1): 00d0 34350834 35360935 36370a36 37380b37 * 2121f521 2222f622 2323f723 2424f824 
+dt (j:1 t:1): 00e0 38390c38 393a0d39 3a3b0e3a 3b3c0f3b * 2525f925 2626fa26 2727fb27 2828fc28 
+dt (j:1 t:1): 00f0 3c3d103c 3d3e113d 3e3f123e 3f40133f * 2929fd29 2a2afe2a 2b2bff2b 2c2d002c 
+dt (j:1 t:1): 0100 40411440 41421541 42431642 43441743 * 2d2e012d 2e2f022e 2f30032f 30310430 
+dt (j:1 t:1): 0110 44451844 45461945 46471a46 47481b47 * 31320531 32330632 33340733 34350834 
+dt (j:1 t:1): 0120 48491c48 494a1d49 4a4b1e4a 4b4c1f4b * 35360935 36370a36 37380b37 38390c38 
+dt (j:1 t:1): 0130 4c4d204c 4d4e214d 4e4f224e 4f50234f * 393a0d39 3a3b0e3a 3b3c0f3b 3c3d103c 
+dt (j:1 t:1): 0140 50512450 51522551 52532652 53542753 * 3d3e113d 3e3f123e 3f40133f 40411440 
+dt (j:1 t:1): 0150 54552854 55562955 56572a56 57582b57 * 41421541 42431642 43441743 44451844 
+dt (j:1 t:1): 0160 58592c58 595a2d59 5a5b2e5a 5b5c2f5b * 45461945 46471a46 47481b47 48491c48 
+dt (j:1 t:1): 0170 5c5d305c 5d5e315d 5e5f325e 5f60335f * 494a1d49 4a4b1e4a 4b4c1f4b 4c4d204c 
+dt (j:1 t:1): 0180 60613460 61623561 62633662 63643763 * 4d4e214d 4e4f224e 4f50234f 50512450 
+dt (j:1 t:1): 0190 64653864 65663965 66673a66 67683b67 * 51522551 52532652 53542753 54552854 
+dt (j:1 t:1): 01a0 68693c68 696a3d69 6a6b3e6a 6b6c3f6b * 55562955 56572a56 57582b57 58592c58 
+dt (j:1 t:1): 01b0 6c6d406c 6d6e416d 6e6f426e 6f70436f * 595a2d59 5a5b2e5a 5b5c2f5b 5c5d305c 
+dt (j:1 t:1): 01c0 70714470 71724571 72734672 73744773 * 5d5e315d 5e5f325e 5f60335f 60613460 
+dt (j:1 t:1): 01d0 74754874 75764975 76774a76 77784b77 * 61623561 62633662 63643763 64653864 
+dt (j:1 t:1): 01e0 78794c78 797a4d79 7a7b4e7a 7b7c4f7b * 65663965 66673a66 67683b67 68693c68 
+dt (j:1 t:1): 01f0 7c7d507c 7d7e517d 7e7f527e 7f80537f * 696a3d69 6a6b3e6a 6b6c3f6b 6c6d406c 
+dt (j:1 t:1): 
+dt (j:1 t:1): Rereading and verifying record data...
+dt (j:1 t:1): Seeked to block 54106 (0xd35a) at offset 27702272
+dt (j:1 t:1): Record #1 - Reading 166912 bytes (326 blocks) into buffer 0x2aaaaab31000, lba's 54106 - 54431 (pos 27702272)
+dt (j:1 t:1): Reread data matches previous data read, possible write failure!
+dt (j:1 t:1): Command line to re-read the corrupted data:
+dt (j:1 t:1): -> ./dt if=/dev/mapper/3600a098042425457422b43696a737435 bs=166912 count=1 position=27702272 pattern=iot
+dt (j:1 t:1): 
+dt (j:1 t:1): Operating System Information:
+dt (j:1 t:1):                      Host name: ssan-rhel5u4-21 (10.229.136.235)
+dt (j:1 t:1):                      User name: root
+dt (j:1 t:1):                     Process ID: 3228
+dt (j:1 t:1):                 OS information: Linux 2.6.18-164.el5 #1 SMP Tue Aug 18 15:51:48 EDT 2009 x86_64
+dt (j:1 t:1): 
+dt (j:1 t:1): SCSI Information:
+dt (j:1 t:1):            Inquiry information: Vid=NETAPP, Pid=LUN C-Mode, Rev=8200
+dt (j:1 t:1):           Capacity information: Block Length=512, Capacity=2097152 (1024.000 Mbytes)
+dt (j:1 t:1):        Provisioning management: Full Provisioned
+dt (j:1 t:1):              Device identifier: 600a-0980-4242-5457-422b-4369-6a73-7435
+dt (j:1 t:1):           Device serial number: BBTWB+Cijst5
+dt (j:1 t:1):     Management Network Address: http://10.63.7.221/
+dt (j:1 t:1): 
+dt (j:1 t:1): Total Statistics:
+dt (j:1 t:1):         Input device/file name: /dev/mapper/3600a098042425457422b43696a737435 (device type=disk)
+dt (j:1 t:1):        Type of I/O's performed: sequential (forward, rseed=0x55d6703c)
+dt (j:1 t:1):       Job Information Reported: Job 1, Thread 1
+dt (j:1 t:1):       Data pattern string used: 'IOT Pattern' (blocking is 512 bytes)
+dt (j:1 t:1):       Last IOT seed value used: 0x01010101
+dt (j:1 t:1):        Total records processed: 213 with min=512, max=262144, incr=variable
+dt (j:1 t:1):        Total bytes transferred: 27869184 (27216.000 Kbytes, 26.578 Mbytes)
+dt (j:1 t:1):         Average transfer rates: 40390122 bytes/sec, 39443.478 Kbytes/sec
+dt (j:1 t:1):        Number I/O's per second: 308.696
+dt (j:1 t:1):         Number seconds per I/O: 0.0032 (3.24ms)
+dt (j:1 t:1):         Total passes completed: 1/1
+dt (j:1 t:1):          Total errors detected: 1/1
+dt (j:1 t:1):             Total elapsed time: 00m00.69s
+dt (j:1 t:1):              Total system time: 00m00.00s
+dt (j:1 t:1):                Total user time: 00m00.03s
+dt (j:1 t:1):                  Starting time: Sat Aug 15 08:10:41 2015
+dt (j:1 t:1):                    Ending time: Sat Aug 15 08:10:42 2015
+dt (j:1 t:1): 
+dt (j:1 t:1): Command Line:
+dt (j:1 t:1): 
+dt (j:1 t:1):     # ./dt if=/dev/mapper/3600a098042425457422b43696a737435 bs=random pattern=iot limit=100m maxbad=1 log=/var/tmp/thread.log
+dt (j:1 t:1): 
+dt (j:1 t:1):         --> Date: August 13th, 2015, Version: 20.31, Author: Robin T. Miller <--
+dt (j:1 t:1): 
+

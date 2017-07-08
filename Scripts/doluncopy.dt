@@ -1,0 +1,45 @@
+enable=scriptverify
+version
+
+# A simple script to demonstrate multiple copy operations.
+
+# The slices option creates multiple threads to the same device/file.
+
+$COPY_OPTIONS="bs=32k slices=3 keepalivet=15"
+#$COPY_OPTIONS="bs=32k slices=10 enable=scsi_io keepalivet=15"
+$DATA_LIMIT="limit=1g"
+
+# First cluster source/destination devices.
+$CLUS1_SRC=${CLUS1_SRC:/dev/dm-0}
+$CLUS1_DST=${CLUS1_DST:/dev/dm-1}
+
+# Second cluster source/destination devices.
+$CLUS2_SRC=${CLUS2_SRC:/dev/dm-2}
+$CLUS2_DST=${CLUS2_DST:/dev/dm-3}
+
+# Populate the source disks to be copied, with a known patttern.
+
+of=${CLUS1_SRC} bs=32k pattern=iot disable=pstats ${COPY_OPTIONS} ${DATA_LIMIT} tag=clus1_init &
+of=${CLUS1_DST} bs=32k pattern=0 disable=pstats ${COPY_OPTIONS} ${DATA_LIMIT} tag=clus1_init &
+wait tag=clus1_init
+
+# Background jobs via &, bg, or enable=async
+# Each job has an ID, but a tag can be specified.
+# Note: When both src/dst are specified, iomode=copy is implied!
+
+src=${CLUS1_SRC} dst=${CLUS1_DST} ${COPY_OPTIONS} ${DATA_LIMIT} tag=clus1_copy &
+src=${CLUS2_SRC} dst=${CLUS2_DST} ${COPY_OPTIONS} ${DATA_LIMIT} tag=clus2_copy &
+
+# Give threads a short time to get started.
+msleep=50
+
+# Show active jobs:
+jobs
+
+# Query thread status:
+query
+
+# Wait for both disk copies to complete.
+
+wait tag=clus1_copy
+wait tag=clus2_copy

@@ -1,0 +1,30 @@
+enable=scriptverify
+version
+
+# A script to regression test various workloads.
+
+$DT_DIR=${DT_DIR:/var/tmp/workloads}
+$DT_FILE=${DT_FILE:%workload.data}
+$DT_DEBUG=${DT_DEBUG_OPTS:"enable=btags,header,trailer disable=pstats keepalivet=15"}
+$DT_LIMIT=${DT_LIMIT:1g}
+$DT_LOGDIR=${DT_LOGDIR:/var/tmp/logs}
+$DT_RUNTIME=${DT_RUNTIME:5m}
+$DT_THREADS=${DT_THREADS:1}
+
+system rm -rf ${DT_LOGDIR}
+system mkdir ${DT_LOGDIR}
+
+define myopts of=${DT_DIR}/${DT_FILE} limit=${DT_LIMIT} runtime=${DT_RUNTIME} threads=${DT_THREADS} ${DT_DEBUG} log=${DT_LOGDIR}/%workload.log
+
+# Note: By default, data validation is disabled so we can achieve desired percentages.
+
+workload=web_file_server workload=myopts
+workload=dss_db workload=myopts
+workload=media_streaming workload=myopts
+workload=sql_Server_log workload=myopts
+workload=os_paging workload=myopts
+workload=web_server_log workload=myopts
+workload=oltp_db workload=myopts
+workload=exchange_server workload=myopts
+workload=workstation workload=myopts
+workload=video_on_demand workload=myopts

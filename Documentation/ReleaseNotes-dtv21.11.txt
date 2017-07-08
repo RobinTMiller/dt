@@ -1,0 +1,511 @@
+ Hi All,						Last Update: December 30th, 2015
+	This is the updated dt v21.11 release notes.
+	This file resides in the Documentation directory as "ReleaseNotes-dtv21.11.txt".
+ 
+	Note: This release includes prebuilt binaries for most OS's, including Mac OSX!
+
+	The major new features include:
+
+	o Added a block tag option, to generate self describing data blocks!
+	  - this is enabled via enable=btags
+	  - vflags=flags      Set/clear btag verify flags. {lba,offset,...}
+            Example: verifyFlags= or vflags=~all,lba,crc32
+	  - please see examples below for more information
+	o Three options were added to support variable file sizes:
+	  - incr_limit=value  Set the data limit increment.
+	  - min_limit=value   Set the minumum data limit.
+	  - max_limit=value   Set the maximum data limit.
+	o dt's now supports read/write and/or sequential/random percentages.
+	  - readp=value    Percentage of accesses that are reads. Range [0,100].
+			   'random' keyword makes the read/write percentage random.
+	  - randp=value    Percentage of accesses that are random. Range [0,100].
+			   Sequential accesses = 0%, else random percentage
+	  - Please Note: dt has data validation enabled by default.
+	    Add disable=verify to disable, required for accurate percentages.
+	  - Please add flags=direct or bufmodes=unbuffered with file systems.
+	o A higher resolution timer is used for start/stop timing,
+	  required for short runs with flash storage or FS buffer caches.
+	  - Previously clock cycles was used, now the resolution is 10x more accurate!
+	o With the addition of read/write and sequential/random percentages,
+          10 new workloads have been added. Please see the attach example.
+	 - Note: Data verification is disabled so percentages are achieved.
+           Otherwise the read after write skews the read/write percentages.
+           Please add enable=verify to re-enable data validation.
+	o Several new options were added:
+	  - enable=fill_always always prefills files prior to writing.
+	  - enable=fill_once fill once (first pass).
+	    this is enabled automatically for percentages when the
+            file does not exist or is smaller than the limit requested.
+	  - fill_pattern=value specifies the 32-bit hex pattern to fill with.
+	    When not specified, the inverted data pattern is used.
+	o Several existing workloads have been updated with block tags for
+          improved data validation (self-describing data).
+	o Several other workloads were updated with variable data limits.
+	o When using workloads, "%workload" can be used in file and log names.
+	o Fixed a bug with releasing completed async jobs, which lost prior jobs.
+
+	Please let me know of any questions or issues you may encounter.
+
+Cheers,
+Robin
+======================================================================================
+
+Predefined Workloads:
+=====================
+robin-mac:mac_darwin roblemo$ ./dt workloads
+Valid Workloads:
+
+    dt_acid: File System Acid Workload (requires ~2.37g space)
+        limit=25m maxdatap=75 onerr=abort disable=pstats oflags=trunc incr=var min=1k max=256k dispose=keep pattern=iot prefix='%d@%h' noprogt=15s noprogtt=130s alarm=6 notime=fsync,close enable=syslog history=5 hdsize=128 enable=htiming iodir=vary iotype=vary enable=deleteperpass,fsincr,timestamp,aio dirp=DT_ sdirs=8 files=6 depth=4 bufmodes=cachereads,buffered,unbuffered,cachewrites runtime=24h stopon=/var/tmp/stopit.dt trigger=cmd:/x/eng/localtest/noarch/bin/dt_noprog_script.ksh keepalivet=300 workload=san_keepalive
+
+    dt_dedup: Deduplication Pattern
+        min=8k max=256k incr=4k limit=250m maxdatap=75 pf=/usr/software/test/noarch/dtdata/pattern_dedup enable=syslog history=5 enable=htiming bufmodes=cachereads,buffered,unbuffered,cachewrites logprefix="%et %prog (j:%job t:%thread): " disable=pstats keepalivet=5m threads=4
+
+    dt_hammer: dt Hammer File System Workload (requires ~6.20g space)
+        bs=random min_limit=b max_limit=5m incr_limit=vary files=250 maxdatap=75 iodir=vary iotype=vary onerr=abort enable=btags,deleteperpass prefix='%d@%h' pattern=iot bufmodes=buffered,cachereads,cachewrites,unbuffered history=5 hdsize=128 enable=htiming alarm=3 noprogt=15 noprogtt=3m enable=nate disable=pstats keepalivet=5m threads=10
+
+    many_files: Populate directory with many files (requires ~1g space)
+        min=b max=1m incr=4k limit=1m files=100 sdirs=3 depth=3 dispose=keep prefix='%d@%h' enable=lbdata disable=pstats
+
+    incr_files: Create incrementing file sizes (requires ~1.36g space)
+        files=256 min=b max=1m limit=64m prefix=%d@%h pattern=iot enable=fsincr dispose=keep
+
+    file_percentages: Single file with read/write and random/sequential percentages
+        bs=random limit=1g enable=btags flags=direct onerr=abort slices=10 readp=-1 randp=50 dispose=keep
+
+    file_performance: Single file performance
+        bs=32k limit=1g flags=direct slices=10 disable=pstats disable=compare dispose=keep
+
+    fill_once: Fill a file or disk once (write only)
+        bs=64k slices=25 disable=compare,pstat,verify dispose=keep
+
+    vary_file_sizes: Create files with varying sizes (requires ~2.41g space)
+        bs=random min_limit=b max_limit=5m incr_limit=vary files=100 sdirs=3 depth=3 maxdatap=75 dispose=keeponerror prefix='%d@%h' enable=lbdata,deleteperpass disable=pstats
+
+    terabyte_lun: Terabyte LUN
+        slices=16 step=4g aios=4 bs=random align=rotate pattern=iot prefix='%d@%h' iodir=reverse enable=pstats
+
+    terabyte_file: Single terabyte file
+        limit=15t slices=15 step=1g aios=4 bs=random align=rotate iodir=reverse pattern=iot prefix='%d@%h' enable=pstats dispose=keep
+
+    sparse_files: Sparse files test
+        bs=16k step=32k disable=pstats enable=lbdata dispose=keep
+
+    web_file_server: Web File Server Workload
+        bs=64k readp=95 randp=5 disable=verify flags=direct
+
+    dss_db: Decision Support System Database Workload
+        bs=1m readp=100 randp=100 disable=compare,verify flags=direct
+
+    media_streaming: Media Streaming Workload
+        bs=64k readp=98 randp=0 disable=verify flags=direct
+
+    sql_Server_log: SQL Server Log Workload
+        bs=64k readp=0 randp=0 disable=verify flags=direct
+
+    os_paging: OS Paging Workload
+        bs=64k readp=90 randp=0 disable=verify flags=direct
+
+    web_server_log: Web Server Log
+        bs=8k readp=0 randp=0 disable=verify flags=direct
+
+    oltp_db: Online Transaction Processing (OLTP) Workload
+        bs=8k readp=70 randp=100 disable=verify flags=direct
+
+    exchange_server: Exchange Server Workload
+        bs=4k readp=67 randp=100 disable=verify flags=direct
+
+    workstation: Workstation Workload
+        bs=8k readp=80 randp=80 disable=verify flags=direct
+
+    video_on_demand: Video on Demand (VOD) Workload
+        bs=512k readp=0 randp=100 disable=verify flags=direct
+
+    san_file_system: SAN File System Workload
+        bs=random limit=2g dispose=keeponerror iodir=vary iotype=vary keepalivet=5m pattern=iot prefix='%d@%h' enable=btags onerr=abort disable=pstats notime=close,fsync oflags=trunc threads=4 enable=noprog noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=syslog runtime=12h stopon=/var/tmp/stopit.dt bufmodes=buffered,cachereads,cachewrites,unbuffered
+
+    san_disk: SAN Direct Disk Workload
+        bs=random slices=4 pattern=iot prefix='%d@%h' enable=btags iodir=vary iotype=vary keepalivet=5m onerr=abort disable=pstats noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=syslog runtime=12h stopon=/var/tmp/stopit.dt
+
+    high_validation: Define Highest Data Validation Options (not a workload)
+        enable=btags pattern=iot prefix='%d@%h'
+
+robin-mac:mac_darwin roblemo$ 
+
+===========================================================================================
+
+Variable File Sizes Example:
+============================
+ssan-rhel5u4-21% ./dt of=/var/tmp/dtdir/dt.data min_limit=1 max_limit=1m files=10 dispose=keep disable=stats
+ssan-rhel5u4-21% ls -ls /var/tmp/dtdir/dt.data*
+  944 -rw-r--r-- 1 rtmiller gopher   960664 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000001
+  888 -rw-r--r-- 1 rtmiller gopher   904943 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000002
+  748 -rw-r--r-- 1 rtmiller gopher   759136 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000003
+  312 -rw-r--r-- 1 rtmiller gopher   312953 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000004
+  240 -rw-r--r-- 1 rtmiller gopher   239839 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000005
+  120 -rw-r--r-- 1 rtmiller gopher   116389 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000006
+  720 -rw-r--r-- 1 rtmiller gopher   731039 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000007
+  684 -rw-r--r-- 1 rtmiller gopher   692278 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000008
+  344 -rw-r--r-- 1 rtmiller gopher   346659 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000009
+  464 -rw-r--r-- 1 rtmiller gopher   467246 Oct 17 06:19 /var/tmp/dtdir/dt.data-00000010
+ssan-rhel5u4-21%                               
+ssan-rhel5u4-21% rm -rf /var/tmp/dtdir    
+ssan-rhel5u4-21% ./dt of=/var/tmp/dtdir/dt.data min_limit=b max_limit=1m incr_limit=100k files=10 dispose=keep disable=stats
+ssan-rhel5u4-21% ls -ls /var/tmp/dtdir/dt.data*                                                                             
+  4 -rw-r--r-- 1 rtmiller gopher    512 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000001
+108 -rw-r--r-- 1 rtmiller gopher 102912 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000002
+208 -rw-r--r-- 1 rtmiller gopher 205312 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000003
+308 -rw-r--r-- 1 rtmiller gopher 307712 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000004
+408 -rw-r--r-- 1 rtmiller gopher 410112 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000005
+508 -rw-r--r-- 1 rtmiller gopher 512512 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000006
+608 -rw-r--r-- 1 rtmiller gopher 614912 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000007
+708 -rw-r--r-- 1 rtmiller gopher 717312 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000008
+808 -rw-r--r-- 1 rtmiller gopher 819712 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000009
+908 -rw-r--r-- 1 rtmiller gopher 922112 Oct 17 06:20 /var/tmp/dtdir/dt.data-00000010
+ssan-rhel5u4-21% 
+
+===========================================================================================
+
+Block Tags (btags) Example:
+===========================
+ssan-rhel5u4-21% dt of=dt.data bs=random limit=25m disable=pstats enable=btags dispose=keep
+dt (j:1 t:1): End of Write pass 0/1, 51200 blocks, 25.000 Mbytes, 190 records, errors 0/1, elapsed 00m02.55s
+dt (j:1 t:1): End of Read pass 1/1, 51200 blocks, 25.000 Mbytes, 190 records, errors 0/1, elapsed 00m00.68s
+dt (j:1 t:1): 
+dt (j:1 t:1): Operating System Information:
+dt (j:1 t:1):                      Host name: ssan-rhel5u4-21 (10.229.136.235)
+dt (j:1 t:1):                      User name: rtmiller
+dt (j:1 t:1):                     Process ID: 18041
+dt (j:1 t:1):                 OS information: Linux 2.6.18-164.el5 #1 SMP Tue Aug 18 15:51:48 EDT 2009 x86_64
+dt (j:1 t:1): 
+dt (j:1 t:1): File System Information:
+dt (j:1 t:1):            Mounted from device: 10.63.8.66:/datatest
+dt (j:1 t:1):           Mounted on directory: /mnt
+dt (j:1 t:1):                Filesystem type: nfs
+dt (j:1 t:1):             Filesystem options: rw,addr=10.63.8.66
+dt (j:1 t:1):          Filesystem block size: 65536
+dt (j:1 t:1): 
+dt (j:1 t:1): Total Statistics:
+dt (j:1 t:1):        Output device/file name: dt.data (device type=regular)
+dt (j:1 t:1):        Type of I/O's performed: sequential (forward, rseed=0x5582c2cf)
+dt (j:1 t:1):       Job Information Reported: Job 1, Thread 1
+dt (j:1 t:1):      Data pattern read/written: 0x39c39c39
+dt (j:1 t:1):        Total records processed: 380 with min=512, max=262144, incr=variable
+dt (j:1 t:1):        Total bytes transferred: 52428800 (51200.000 Kbytes, 50.000 Mbytes)
+dt (j:1 t:1):         Average transfer rates: 16181728 bytes/sec, 15802.469 Kbytes/sec
+dt (j:1 t:1):        Number I/O's per second: 117.284
+dt (j:1 t:1):         Number seconds per I/O: 0.0085 (8.53ms)
+dt (j:1 t:1):         Total passes completed: 1/1
+dt (j:1 t:1):          Total errors detected: 0/1
+dt (j:1 t:1):             Total elapsed time: 00m03.24s
+dt (j:1 t:1):              Total system time: 00m00.06s
+dt (j:1 t:1):                Total user time: 00m00.47s
+dt (j:1 t:1):                  Starting time: Wed Jun 17 12:13:03 2015
+dt (j:1 t:1):                    Ending time: Wed Jun 17 12:13:06 2015
+dt (j:1 t:1): 
+ssan-rhel5u4-21% dt if=dt.data bs=random limit=25m disable=pstats enable=btags
+dt (j:1 t:1): 
+dt (j:1 t:1): Operating System Information:
+dt (j:1 t:1):                      Host name: ssan-rhel5u4-21 (10.229.136.235)
+dt (j:1 t:1):                      User name: rtmiller
+dt (j:1 t:1):                     Process ID: 18584
+dt (j:1 t:1):                 OS information: Linux 2.6.18-164.el5 #1 SMP Tue Aug 18 15:51:48 EDT 2009 x86_64
+dt (j:1 t:1): 
+dt (j:1 t:1): File System Information:
+dt (j:1 t:1):            Mounted from device: 10.63.8.66:/datatest
+dt (j:1 t:1):           Mounted on directory: /mnt
+dt (j:1 t:1):                Filesystem type: nfs
+dt (j:1 t:1):             Filesystem options: rw,addr=10.63.8.66
+dt (j:1 t:1):          Filesystem block size: 65536
+dt (j:1 t:1): 
+dt (j:1 t:1): Total Statistics:
+dt (j:1 t:1):         Input device/file name: dt.data (device type=regular)
+dt (j:1 t:1):        Type of I/O's performed: sequential (forward, rseed=0x55823bd5)
+dt (j:1 t:1):       Job Information Reported: Job 1, Thread 1
+dt (j:1 t:1):              Data pattern read: 0x39c39c39
+dt (j:1 t:1):        Total records processed: 208 with min=512, max=262144, incr=variable
+dt (j:1 t:1):        Total bytes transferred: 26214400 (25600.000 Kbytes, 25.000 Mbytes)
+dt (j:1 t:1):         Average transfer rates: 163840000 bytes/sec, 160000.000 Kbytes/sec
+dt (j:1 t:1):        Number I/O's per second: 1300.000
+dt (j:1 t:1):         Number seconds per I/O: 0.0008 (0.77ms)
+dt (j:1 t:1):         Total passes completed: 1/1
+dt (j:1 t:1):          Total errors detected: 0/1
+dt (j:1 t:1):             Total elapsed time: 00m00.16s
+dt (j:1 t:1):              Total system time: 00m00.01s
+dt (j:1 t:1):                Total user time: 00m00.13s
+dt (j:1 t:1):                  Starting time: Wed Jun 17 12:22:21 2015
+dt (j:1 t:1):                    Ending time: Wed Jun 17 12:22:21 2015
+dt (j:1 t:1): 
+ssan-rhel5u4-21% 
+ssan-rhel5u4-21% dt if=dt.data bs=1k count=1 disable=stats enable=btags,dump_btags
+dt (j:1 t:1): 
+dt (j:1 t:1): Block Tag (btag) @ 0x000000001323c000 (128 bytes):
+dt (j:1 t:1): 
+dt (j:1 t:1):              File Offset (  0): 0 (0)
+dt (j:1 t:1):               File Inode (  8): 67376510 (0x404157e)
+dt (j:1 t:1):                Host Name ( 32): ssan-rhel5u4-21
+dt (j:1 t:1):                Signature ( 56): 0xbadcafee
+dt (j:1 t:1):                  Version ( 60): 1
+dt (j:1 t:1):             Pattern Type ( 61): 3 (32-bit pattern)
+dt (j:1 t:1):                    Flags ( 62): 0x1 (file,sequential,forward)
+dt (j:1 t:1):       Write Start (secs) ( 64): 0x55819c8f => Wed Jun 17 12:13:03 2015
+dt (j:1 t:1):        Write Time (secs) ( 68): 0x55819c8f => Wed Jun 17 12:13:03 2015
+dt (j:1 t:1):       Write Time (usecs) ( 72): 0x00012f9f
+dt (j:1 t:1):                  Pattern ( 76): 0x39c39c39
+dt (j:1 t:1):               Generation ( 80): 1 (0x00000001)
+dt (j:1 t:1):               Process ID ( 84): 18041 (0x00004679)
+dt (j:1 t:1):                   Job ID ( 88): 1 (0x00000001)
+dt (j:1 t:1):            Thread Number ( 92): 1 (0x00000001)
+dt (j:1 t:1):              Device Size ( 96): 512 (0x00000200)
+dt (j:1 t:1):             Record Index (100): 0 (0x00000000)
+dt (j:1 t:1):              Record Size (104): 240128 (0x0003aa00)
+dt (j:1 t:1):            Record Number (108): 1 (0x00000001)
+dt (j:1 t:1):              Step Offset (112): 0 (0)
+dt (j:1 t:1):         Opaque Data Type (120): 0
+dt (j:1 t:1):         Opaque Data Size (122): 0 (0x0000)
+dt (j:1 t:1):                   CRC-32 (124): 0x1edcefed
+dt (j:1 t:1): 
+dt (j:1 t:1): 
+dt (j:1 t:1): Block Tag (btag) @ 0x000000001323c200 (128 bytes):
+dt (j:1 t:1): 
+dt (j:1 t:1):              File Offset (  0): 512 (0x200)
+dt (j:1 t:1):               File Inode (  8): 67376510 (0x404157e)
+dt (j:1 t:1):                Host Name ( 32): ssan-rhel5u4-21
+dt (j:1 t:1):                Signature ( 56): 0xbadcafee
+dt (j:1 t:1):                  Version ( 60): 1
+dt (j:1 t:1):             Pattern Type ( 61): 3 (32-bit pattern)
+dt (j:1 t:1):                    Flags ( 62): 0x1 (file,sequential,forward)
+dt (j:1 t:1):       Write Start (secs) ( 64): 0x55819c8f => Wed Jun 17 12:13:03 2015
+dt (j:1 t:1):        Write Time (secs) ( 68): 0x55819c8f => Wed Jun 17 12:13:03 2015
+dt (j:1 t:1):       Write Time (usecs) ( 72): 0x00012fa5
+dt (j:1 t:1):                  Pattern ( 76): 0x39c39c39
+dt (j:1 t:1):               Generation ( 80): 1 (0x00000001)
+dt (j:1 t:1):               Process ID ( 84): 18041 (0x00004679)
+dt (j:1 t:1):                   Job ID ( 88): 1 (0x00000001)
+dt (j:1 t:1):            Thread Number ( 92): 1 (0x00000001)
+dt (j:1 t:1):              Device Size ( 96): 512 (0x00000200)
+dt (j:1 t:1):             Record Index (100): 512 (0x00000200)
+dt (j:1 t:1):              Record Size (104): 239616 (0x0003a800)
+dt (j:1 t:1):            Record Number (108): 1 (0x00000001)
+dt (j:1 t:1):              Step Offset (112): 0 (0)
+dt (j:1 t:1):         Opaque Data Type (120): 0
+dt (j:1 t:1):         Opaque Data Size (122): 0 (0x0000)
+dt (j:1 t:1):                   CRC-32 (124): 0x5933e2bb
+dt (j:1 t:1): 
+ssan-rhel5u4-21%
+ssan-rhel5u4-21% ls -lsi dt.data
+67376510 25708 -rw-r--r-- 1 rtmiller gopher 26214400 Jun 17 12:13 dt.data
+ssan-rhel5u4-21% 
+
+Example of btags AFTER copying a file:
+======================================
+
+ssan-rhel5u4-21% cd /var/tmp
+ssan-rhel5u4-21% dt of=dt.data bs=2k count=1 enable=btags dispose=keep disable=stats
+ssan-rhel5u4-21% cp dt.data dtcopy.data
+ssan-rhel5u4-21% ls -lsi dt.data dtcopy.data 
+491523 4 -rw-r--r-- 1 rtmiller gopher 2048 Jun 18 11:42 dt.data
+491760 4 -rw-r--r-- 1 rtmiller gopher 2048 Jun 18 11:42 dtcopy.data
+ssan-rhel5u4-21% dt if=dtcopy.data bs=2k count=1 enable=btags dispose=keep
+dt (j:1 t:1): 
+dt (j:1 t:1): Block Tag (btag) @ 0x0000000005b5d000 (128 bytes):
+dt (j:1 t:1): 
+dt (j:1 t:1):              File Offset (  0): 0 (0)
+dt (j:1 t:1):               File Inode (  8): incorrect
+dt (j:1 t:1):                       Expected: 491760 (0x780f0)
+dt (j:1 t:1):                       Received: 491523 (0x78003)
+dt (j:1 t:1):                Host Name ( 32): ssan-rhel5u4-21
+dt (j:1 t:1):                Signature ( 56): 0xbadcafee
+dt (j:1 t:1):                  Version ( 60): 1
+dt (j:1 t:1):             Pattern Type ( 61): 3 (32-bit pattern)
+dt (j:1 t:1):                    Flags ( 62): 0x1 (file,sequential,forward)
+dt (j:1 t:1):       Write Start (secs) ( 64): 0x5582e6e8 => Thu Jun 18 11:42:32 2015
+dt (j:1 t:1):        Write Time (secs) ( 68): 0x5582e6e8 => Thu Jun 18 11:42:32 2015
+dt (j:1 t:1):       Write Time (usecs) ( 72): 0x000e6546
+dt (j:1 t:1):                  Pattern ( 76): 0x39c39c39
+dt (j:1 t:1):               Generation ( 80): 1 (0x00000001)
+dt (j:1 t:1):               Process ID ( 84): 10227 (0x000027f3)
+dt (j:1 t:1):                   Job ID ( 88): 1 (0x00000001)
+dt (j:1 t:1):            Thread Number ( 92): 1 (0x00000001)
+dt (j:1 t:1):              Device Size ( 96): 512 (0x00000200)
+dt (j:1 t:1):             Record Index (100): 0 (0x00000000)
+dt (j:1 t:1):              Record Size (104): 2048 (0x00000800)
+dt (j:1 t:1):            Record Number (108): 1 (0x00000001)
+dt (j:1 t:1):              Step Offset (112): 0 (0)
+dt (j:1 t:1):         Opaque Data Type (120): 0
+dt (j:1 t:1):         Opaque Data Size (122): 0 (0x0000)
+dt (j:1 t:1):                   CRC-32 (124): 0xff4b1aa8
+dt (j:1 t:1): 
+dt (j:1 t:1): ERROR: Error number 1 occurred on Thu Jun 18 11:42:41 2015
+dt (j:1 t:1): 
+dt (j:1 t:1):                   Error Number: 1
+dt (j:1 t:1):                  Time of Error: Thu Jun 18 11:42:41 2015
+dt (j:1 t:1):                Read Start Time: Thu Jun 18 11:42:41 2015
+dt (j:1 t:1):                    Pass Number: 1
+dt (j:1 t:1):              Pass Elapsed Time: 00m00.00s
+dt (j:1 t:1):              Test Elapsed Time: 00m00.00s
+dt (j:1 t:1):                      File Name: dtcopy.data
+dt (j:1 t:1):                     File Inode: 491760 (0x780f0)
+dt (j:1 t:1):                      File Size: 2048 (0x800)
+dt (j:1 t:1):                      Operation: miscompare
+dt (j:1 t:1):                  Record Number: 1
+dt (j:1 t:1):                   Request Size: 2048 (0x800)
+dt (j:1 t:1):                   Block Length: 4 (0x4)
+dt (j:1 t:1):                       I/O Mode: read
+dt (j:1 t:1):                       I/O Type: sequential
+dt (j:1 t:1):                      File Type: input
+dt (j:1 t:1):                     Direct I/O: disabled (caching data)
+dt (j:1 t:1):                    Device Size: 512 (0x200)
+dt (j:1 t:1):                    File Offset: 0 (0)
+dt (j:1 t:1):                   Starting LBA: 0 (0)
+dt (j:1 t:1):                     Ending LBA: 3 (0x3)
+dt (j:1 t:1):              Error File Offset: 8 (0x8)
+dt (j:1 t:1):             Starting Error LBA: 0 (0)
+dt (j:1 t:1):        Corruption Buffer Index: 8 (byte index into read buffer)
+dt (j:1 t:1):         Corruption Block Index: 8 (byte index in miscompare block)
+dt (j:1 t:1): 
+dt (j:1 t:1): Data compare error at byte 8 in record number 1
+dt (j:1 t:1): Relative block number where the error occurred is 0, offset 8 (index 8)
+dt (j:1 t:1): Data expected = 0xf0, data found = 0x3, byte count = 2048
+dt (j:1 t:1): The correct data starts at address 0x5b5e008 (marked by asterisk '*')
+dt (j:1 t:1): Dumping Block Tag Buffer (base = 0x5b5e000, buffer offset = 8, limit = 128 bytes):
+dt (j:1 t:1):           Address / Offset
+dt (j:1 t:1): 0x0000000005b5e000/     0 | 00 00 00 00 00 00 00 00*f0 80 07 00 00 00 00 00 "                "
+dt (j:1 t:1): 0x0000000005b5e010/    16 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "                "
+dt (j:1 t:1): 0x0000000005b5e020/    32 | 73 73 61 6e 2d 72 68 65 6c 35 75 34 2d 32 31 00 "ssan-rhel5u4-21 "
+dt (j:1 t:1): 0x0000000005b5e030/    48 | 00 00 00 00 00 00 00 00 ee af dc ba 01 03 01 00 "                "
+dt (j:1 t:1): 0x0000000005b5e040/    64 | 00 00 00 00 f1 e6 82 55 cf c0 08 00 39 9c c3 39 "       U    9  9"
+dt (j:1 t:1): 0x0000000005b5e050/    80 | 01 00 00 00 03 28 00 00 01 00 00 00 01 00 00 00 "     (          "
+dt (j:1 t:1): 0x0000000005b5e060/    96 | 00 02 00 00 00 00 00 00 00 08 00 00 01 00 00 00 "                "
+dt (j:1 t:1): 0x0000000005b5e070/   112 | 00 00 00 00 00 00 00 00 00 00 00 00 a8 1a 4b ff "              K "
+dt (j:1 t:1): 
+dt (j:1 t:1): The correct data starts at address 0x5b5b000 (marked by asterisk '*')
+dt (j:1 t:1): Dumping Pattern Buffer (base = 0x5b5b000, buffer offset = 0, limit = 4 bytes):
+dt (j:1 t:1):           Address / Offset
+dt (j:1 t:1): 0x0000000005b5b000/     0 |*39 9c c3 39                                     "9  9"
+dt (j:1 t:1): 
+dt (j:1 t:1): The incorrect data starts at address 0x5b5d008 (marked by asterisk '*')
+dt (j:1 t:1): Dumping Data Buffer (base = 0x5b5d000, buffer offset = 8, limit = 512 bytes):
+dt (j:1 t:1):           Address / Offset
+dt (j:1 t:1): 0x0000000005b5d000/     0 | 00 00 00 00 00 00 00 00*03 80 07 00 00 00 00 00 "                "
+dt (j:1 t:1): 0x0000000005b5d010/    16 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "                "
+dt (j:1 t:1): 0x0000000005b5d020/    32 | 73 73 61 6e 2d 72 68 65 6c 35 75 34 2d 32 31 00 "ssan-rhel5u4-21 "
+dt (j:1 t:1): 0x0000000005b5d030/    48 | 00 00 00 00 00 00 00 00 ee af dc ba 01 03 01 00 "                "
+dt (j:1 t:1): 0x0000000005b5d040/    64 | e8 e6 82 55 e8 e6 82 55 46 65 0e 00 39 9c c3 39 "   U   UFe  9  9"
+dt (j:1 t:1): 0x0000000005b5d050/    80 | 01 00 00 00 f3 27 00 00 01 00 00 00 01 00 00 00 "     '          "
+dt (j:1 t:1): 0x0000000005b5d060/    96 | 00 02 00 00 00 00 00 00 00 08 00 00 01 00 00 00 "                "
+dt (j:1 t:1): 0x0000000005b5d070/   112 | 00 00 00 00 00 00 00 00 00 00 00 00 a8 1a 4b ff "              K "
+dt (j:1 t:1): 0x0000000005b5d080/   128 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d090/   144 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d0a0/   160 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d0b0/   176 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d0c0/   192 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d0d0/   208 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d0e0/   224 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d0f0/   240 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d100/   256 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d110/   272 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d120/   288 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d130/   304 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d140/   320 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d150/   336 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d160/   352 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d170/   368 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d180/   384 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d190/   400 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d1a0/   416 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d1b0/   432 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d1c0/   448 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d1d0/   464 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d1e0/   480 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 0x0000000005b5d1f0/   496 | 39 9c c3 39 39 9c c3 39 39 9c c3 39 39 9c c3 39 "9  99  99  99  9"
+dt (j:1 t:1): 
+dt (j:1 t:1): Rereading and verifying record data using Direct I/O...
+dt (j:1 t:1): Seeked to block 0 (0) at offset 0
+dt (j:1 t:1): Record #1 - Reading 2048 bytes (4 blocks) into buffer 0x5b60000, lba's 0 - 3 (offset 0)
+dt (j:1 t:1): Reread data matches previous data read, possible write failure!
+dt (j:1 t:1): Command line to re-read the corrupted data:
+dt (j:1 t:1): -> /u/rtmiller/Tools/tdt.d-WIP/linux-rhel5x64/dt if=dtcopy.data bs=2048 count=1 position=0 pattern=0x39c39c39 flags=direct enable=btag
+dt (j:1 t:1): Note: For more information regarding data corruptions, please visit this link:
+dt (j:1 t:1):     https://wikid.netapp.com/w/User:Rtmiller/datatest_(dt)_Corruption_BURTs
+dt (j:1 t:1): 
+dt (j:1 t:1): Operating System Information:
+dt (j:1 t:1):                      Host name: ssan-rhel5u4-21 (10.229.136.235)
+dt (j:1 t:1):                      User name: rtmiller
+dt (j:1 t:1):                     Process ID: 10243
+dt (j:1 t:1):                 OS information: Linux 2.6.18-164.el5 #1 SMP Tue Aug 18 15:51:48 EDT 2009 x86_64
+dt (j:1 t:1): 
+dt (j:1 t:1): File System Information:
+dt (j:1 t:1):            Mounted from device: /dev/sda3
+dt (j:1 t:1):           Mounted on directory: /var
+dt (j:1 t:1):                Filesystem type: ext3
+dt (j:1 t:1):             Filesystem options: rw
+dt (j:1 t:1):          Filesystem block size: 4096
+dt (j:1 t:1): 
+dt (j:1 t:1): Total Statistics:
+dt (j:1 t:1):         Input device/file name: dtcopy.data (device type=regular)
+dt (j:1 t:1):        Type of I/O's performed: sequential (forward)
+dt (j:1 t:1):       Job Information Reported: Job 1, Thread 1
+dt (j:1 t:1):              Data pattern read: 0x39c39c39
+dt (j:1 t:1):         Block tag verify flags: 0x0400006b
+dt (j:1 t:1):        Total records processed: 1 @ 2048 bytes/record (2.000 Kbytes)
+dt (j:1 t:1):        Total bytes transferred: 2048 (2.000 Kbytes, 0.002 Mbytes)
+dt (j:1 t:1):         Average transfer rates: 0 bytes/sec, 0.000 Kbytes/sec
+dt (j:1 t:1):        Number I/O's per second: 0.000
+dt (j:1 t:1):         Number seconds per I/O: 0.0000 (0.00ms)
+dt (j:1 t:1):         Total passes completed: 1/1
+dt (j:1 t:1):          Total errors detected: 1/1
+dt (j:1 t:1):             Total elapsed time: 00m00.00s
+dt (j:1 t:1):              Total system time: 00m00.00s
+dt (j:1 t:1):                Total user time: 00m00.00s
+dt (j:1 t:1):                  Starting time: Thu Jun 18 11:42:41 2015
+dt (j:1 t:1):                    Ending time: Thu Jun 18 11:42:41 2015
+dt (j:1 t:1): 
+dt (j:1 t:1): Command Line:
+dt (j:1 t:1): 
+dt (j:1 t:1):     % /u/rtmiller/Tools/tdt.d-WIP/linux-rhel5x64/dt if=dtcopy.data bs=2k count=1 enable=btags dispose=keep
+dt (j:1 t:1): 
+dt (j:1 t:1):         --> Date: June 18th, 2015, Version: 21.00, Author: Robin T. Miller <--
+dt (j:1 t:1): 
+dt (j:0 t:0): Program is exiting with status -1...
+ssan-rhel5u4-21%
+
+Verify File w/btags, disabling inode verification:
+==================================================
+
+ssan-rhel5u4-21% dt if=dtcopy.data bs=2k count=1 enable=btags dispose=keep vflags=~inode 
+dt (j:1 t:1): 
+dt (j:1 t:1): Operating System Information:
+dt (j:1 t:1):                      Host name: ssan-rhel5u4-21 (10.229.136.235)
+dt (j:1 t:1):                      User name: rtmiller
+dt (j:1 t:1):                     Process ID: 10573
+dt (j:1 t:1):                 OS information: Linux 2.6.18-164.el5 #1 SMP Tue Aug 18 15:51:48 EDT 2009 x86_64
+dt (j:1 t:1): 
+dt (j:1 t:1): File System Information:
+dt (j:1 t:1):            Mounted from device: /dev/sda3
+dt (j:1 t:1):           Mounted on directory: /var
+dt (j:1 t:1):                Filesystem type: ext3
+dt (j:1 t:1):             Filesystem options: rw
+dt (j:1 t:1):          Filesystem block size: 4096
+dt (j:1 t:1): 
+dt (j:1 t:1): Total Statistics:
+dt (j:1 t:1):         Input device/file name: dtcopy.data (device type=regular)
+dt (j:1 t:1):        Type of I/O's performed: sequential (forward)
+dt (j:1 t:1):       Job Information Reported: Job 1, Thread 1
+dt (j:1 t:1):              Data pattern read: 0x39c39c39
+dt (j:1 t:1):         Block tag verify flags: 0x04000063
+dt (j:1 t:1):        Total records processed: 1 @ 2048 bytes/record (2.000 Kbytes)
+dt (j:1 t:1):        Total bytes transferred: 2048 (2.000 Kbytes, 0.002 Mbytes)
+dt (j:1 t:1):         Average transfer rates: 0 bytes/sec, 0.000 Kbytes/sec
+dt (j:1 t:1):        Number I/O's per second: 0.000
+dt (j:1 t:1):         Number seconds per I/O: 0.0000 (0.00ms)
+dt (j:1 t:1):         Total passes completed: 1/1
+dt (j:1 t:1):          Total errors detected: 0/1
+dt (j:1 t:1):             Total elapsed time: 00m00.00s
+dt (j:1 t:1):              Total system time: 00m00.00s
+dt (j:1 t:1):                Total user time: 00m00.00s
+dt (j:1 t:1):                  Starting time: Thu Jun 18 11:51:05 2015
+dt (j:1 t:1):                    Ending time: Thu Jun 18 11:51:05 2015
+dt (j:1 t:1): 
+ssan-rhel5u4-21%
+

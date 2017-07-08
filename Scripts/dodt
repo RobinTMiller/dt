@@ -1,0 +1,10 @@
+#!/bin/ksh -p
+# Simple script to test noprog.
+typeset DT_DEVICE=${DT_DEVICE:-$1}
+if [[ -z "$DT_DEVICE" ]]; then
+    print -u2 "Please define DT_DEVICE to top of the directory tree to use!"
+    print -u2 "Example: export DT_DEVICE=/dev/sdg or /dev/mapper/3600a098042425456782b425131713363"
+    exit 1
+fi
+./dt if=${DT_DEVICE} bs=random disable=compare,pstats,verbose runtime=10m noprogt=1 flags=direct
+exit $?

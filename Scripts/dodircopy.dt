@@ -1,0 +1,74 @@
+enable=scriptverify
+version
+
+# A simple script to demonstrate multiple copy directory operations.
+# Note: Multiple threads each create their own directory tree! ;)
+
+# Note: These options require ~1GB per directory (1010 files)!
+#$COPY_OPTIONS="bs=32k files=10 sdirs=10 depth=10"
+# These options requires ~162MB per directory (160 files)!
+# My VSIM storage is very small! ~250MB for this NFS volume.
+$COPY_OPTIONS="bs=32k files=10 sdirs=3 depth=5"
+$DATA_LIMIT="limit=1m"
+$DEBUG_OPTIONS=enable=fdebug
+$PATTERN_OPTIONS="prefix=%d@%h pattern=iot"
+
+# Note: These can be predefined to override our defaults!
+
+$DST_DIR=${DST_DIR:/mnt}
+$SRC_DIR=${SRC_DIR:/var/tmp}
+
+$DST_SDIR=${DST_DIR}/dst
+$SRC_SDIR=${SRC_DIR}/src
+
+# Note: These are templates, file number is appended.
+
+$DST_FILES=${DST_SDIR}/file.data
+$SRC_FILES=${SRC_SDIR}/file.data
+
+# Remove old files (if any), first!
+
+system rm -rf ${DST_SDIR} ${SRC_SDIR}
+
+# See how much free space we have.
+
+system df -kP ${SRC_DIR} ${DST_DIR}
+
+sleep=10
+
+# Populate the source directiory files to be copied.
+
+of=${SRC_FILES} bs=32k dispose=keep ${COPY_OPTIONS} ${DATA_LIMIT} ${DEBUG_OPTIONS} ${PATTERN_OPTIONS}
+
+# Verify the files written match what dt wrote.
+system find ${SRC_SDIR} -type f | wc -l
+
+# Copy and verify the source and destination directory files.
+# Note: Without a data limit, the size of the first file is used.
+
+src=${SRC_FILES} dst=${DST_FILES} ${COPY_OPTIONS} ${DEBUG_OPTIONS} tag=dir_copy &
+
+# Show the active jobs.
+jobs:full
+
+# Query the threads running:
+query
+
+# Wait for this file copy to complete.
+wait tag=dir_copy
+
+# Lastly, how many files did we create?
+system find ${SRC_SDIR} -type f | wc -l
+system find ${DST_SDIR} -type f | wc -l
+
+# See how much space each directory consumes.
+
+system du -sk ${SRC_SDIR} ${DST_SDIR}
+
+# See how much free space we have left.
+
+system df -kP ${SRC_DIR} ${DST_DIR}
+
+# Ok, now make sure we cleanup for next script (if any).
+system rm -rf ${DST_SDIR} ${SRC_SDIR}
+

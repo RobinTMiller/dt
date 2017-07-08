@@ -1,0 +1,39 @@
+enable=scriptverify
+version
+
+# A simple script to demonstrate multiple copy operations.
+
+# The slices option creates multiple threads to the same file.
+
+$COPY_OPTIONS="bs=32k slices=10 onerr=abort"
+$DATA_LIMIT=${DATA_LIMIT:1g}
+$DEBUG_OPTIONS=""
+
+$DIRECTORY=${DIRECTORY:/var/tmp}
+$FILE_SRC=${DIRECTORY}/src_test_file.data
+$FILE_DST=${DIRECTORY}/dst_test_file.data
+
+system df -kP ${DIRECTORY}
+system rm -f ${FILE_SRC} ${FILE_DST}
+
+# Populate the source file to be copied.
+
+of=${FILE_SRC} bs=32k dispose=keep ${COPY_OPTIONS} ${DEBUG_OPTIONS} limit=${DATA_LIMIT}
+
+# Copy and verify the source file to the destination file.
+# Note: Without a data limit, the entire file is copied.
+
+src=${FILE_SRC} dst=${FILE_DST} ${COPY_OPTIONS} bufmodes=unbuffered,buffered passes=2 ${DEBUG_OPTIONS} tag=file_copy &
+
+# Show the active jobs.
+jobs:full
+
+# Query the threads running:
+query
+
+# Wait for this file copy to complete.
+wait tag=file_copy
+
+# Now, see how much space we used!
+system df -kP ${DIRECTORY}
+system ls -ls ${FILE_SRC} ${FILE_DST}

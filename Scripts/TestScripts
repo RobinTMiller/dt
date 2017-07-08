@@ -1,0 +1,10 @@
+A few test scripts included in the source kit include: (dated, not used or maintained)
+
+dta  tests async serial lines.
+dtc  tests CD-ROM w/RRD test disc.
+dtciot  tests IOT CD-ROM test disc. (TCL)
+dtf  tests floppy diskettes.
+dtr  reads RRD test disc patterns.
+dts  gathers disk performance data.
+dtt  gathers tape performance data.
+dtw  writes RRD test disc patterns. 

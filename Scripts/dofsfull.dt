@@ -1,0 +1,81 @@
+enable=scriptverify
+version
+
+# Define the output path file system:
+
+$MNT=${MNT:/mnt}
+$DIR=${DIR:${MNT}/dtdir}
+$FILE=${DIR}/dt.data
+$OPTS="pattern=iot history=3 enable=debug,edebug,fdebug,tdebug dispose=keeponerror onerr=abort log=/var/tmp/thread-j%jobt%thread.log"
+$REPORT_FREE_SPACE="system df -kP ${MNT} ; sleep 10 ; df -kP ${MNT}"
+
+system df -kP ${MNT}
+system time rm -rf ${DIR}
+system df -kP ${MNT} ; sleep 10 ; df -kP ${MNT}
+system rm -f /var/tmp/thread*.log*
+
+logprefix="%et (%prog j:%job t:%thread): "
+
+# Execute a series of tests to ensure file system full is properly handled.
+
+# First, create a master log for ALL output.
+mlog=/var/tmp/master.log
+
+# Start with a single file, more than the volume space.
+of=${FILE} ${OPTS} bs=random limit=1g
+${REPORT_FREE_SPACE}
+
+# Same test, ensuring buffer modes get modified accordingly.
+of=${FILE} ${OPTS} bs=random limit=1g bufmodes=buffered,unbuffered
+${REPORT_FREE_SPACE}
+
+# Now, let's ensure async I/O file system full is handled properly.
+of=${FILE} ${OPTS} bs=random limit=1g aios=8
+${REPORT_FREE_SPACE}
+
+# Now verify multple passes with varying direction and type work.
+of=${FILE} ${OPTS} bs=random limit=1g passes=3 iodir=vary iotype=vary
+${REPORT_FREE_SPACE}
+
+# Same as the above, except now we're kicking off 10 threads.
+of=${FILE} ${OPTS} bs=random limit=1g passes=3 threads=10 iodir=vary iotype=vary
+${REPORT_FREE_SPACE}
+
+# Let's verify direct I/O work properly.
+of=${FILE} ${OPTS} bs=random limit=1g passes=3 threads=10 flags=direct
+${REPORT_FREE_SPACE}
+
+# Same test with file truncation and multiple passes.
+of=${FILE} ${OPTS} bs=random limit=1g passes=3 threads=10 oflags=trunc
+${REPORT_FREE_SPACE}
+
+# Same test with deleting all files between passes.
+of=${FILE} ${OPTS} bs=random limit=1g passes=3 threads=10 enable=deleteperpass
+${REPORT_FREE_SPACE}
+
+# Now create sufficient files to overfill the volume.
+of=${FILE} ${OPTS} bs=random limit=1m count=1 files=inf
+${REPORT_FREE_SPACE}
+
+# Verify our directory full and multiple files work properly.
+of=${FILE} ${OPTS} bs=random limit=10m files=10 sdirs=10 depth=10
+${REPORT_FREE_SPACE}
+
+# Same as above except with truncate and deleting enabled.
+of=${FILE} ${OPTS} bs=random limit=10m files=10 sdirs=10 threads=10 oflags=trunc enable=deleteperpass
+${REPORT_FREE_SPACE}
+
+# Same as above except more small files so we create more subdirectories.
+of=${FILE} ${OPTS} bs=random limit=1m files=10 sdirs=10 depth=10 oflags=trunc enable=deleteperpass
+${REPORT_FREE_SPACE}
+
+# Create lots of files and lots of subdirectories (up to 100 per top level directory).
+of=${FILE} ${OPTS} bs=random limit=1m count=1 files=10 sdirs=10 depth=100 oflags=trunc enable=deleteperpass
+${REPORT_FREE_SPACE}
+
+# This test is expected to fail, since we cannot free space.
+# Multiple slices (threads) to the same file, we cannot delete or truncate!
+#of=${FILE} ${OPTS} bs=random limit=1g slices=10
+
+system df -kP ${DIR}
+system rm -rf ${DIR}

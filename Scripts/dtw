@@ -1,0 +1,113 @@
+#!/bin/csh
+#	%Z%%M% %I% %E%
+#
+#	Date:	August 21, 1990
+#	Author:	Robin Miller
+#
+#	Description:
+#
+#	This script is used to write test patterns to the specified
+#	device.  The format after this writing is:
+#
+#	Each pattern is 300 blocks in length and the same pattern is
+#	repeated in each block.  This is true of the first 6 patterns,
+#	but the last 4 patterns repeat every 4 or 8 blocks.
+#
+#	There is a total of 10 data patterns.
+#
+# Arguments:
+#	$1	The device name.
+#	$2	The log file name.
+#	$3	The block limit.
+#	$4	The block size(s).
+#	$5	The pass count.
+#	$6	Enable debug flag.
+#
+set DEVICE=$1
+set LOG_FILE=$2
+set DATA_LIMIT=$3
+set BLOCK_SIZES=$4
+set PASS_COUNT=$5
+set DEBUG_FLAG=$6
+#
+set BLOCK_SIZE=512
+set END_OF_FILE="-2"
+set PAT_PREFIX="pattern_"
+set PAT_BLOCKS=300
+set PAT_LENGTH=`expr $PAT_BLOCKS \* $BLOCK_SIZE`
+set NUM_PATTERNS=10
+set CAPACITY=1170568
+if ($DEVICE == '') then
+    echo "Usage: dtw device [ log_file block_limit block_sizes pass_count debug ]";
+    exit 1
+endif
+if ($DEVICE != '') then
+    if (`dirname $DEVICE` != '/dev') then
+	set DEVICE=/dev/$DEVICE
+    endif
+endif
+if ($LOG_FILE == '') then
+	set LOG_FILE=dtw.log
+endif
+if ($DATA_LIMIT == '') then
+	set DATA_LIMIT=$CAPACITY
+endif
+#
+# Please Note:  The block sizes used must divide evenly into the
+#		pattern length to properly calculate the seek count.
+#
+if ($BLOCK_SIZES == '') then
+#	set BLOCK_SIZES="512 1024 2048 5120 10240"
+	set BLOCK_SIZES="10240 5120 2048 1024 512"
+endif
+if ($PASS_COUNT == '') then
+	set PASS_COUNT=1
+endif
+if ($DEBUG_FLAG == 'none') then
+	set DEBUG_OPTS=""
+else if ($DEBUG_FLAG == 'debug') then
+	set DEBUG_OPTS="enable=coredump,debug,dump"
+else
+	set DEBUG_OPTS="enable=dump,aio"
+endif
+if (-f $LOG_FILE) then
+	rm -f $LOG_FILE
+endif
+#
+# Main Test Loop
+#
+foreach bs ($BLOCK_SIZES)
+  set RECORD_COUNT=`expr \( $PAT_LENGTH / $bs \)`
+  set data_limit=0
+  set pattern_count=0
+  while ($data_limit < $DATA_LIMIT)  
+    set pattern_num=0
+    while ($pattern_num != $NUM_PATTERNS)
+	set PATTERN_NAME="$PAT_PREFIX$pattern_num"
+	set SEEK_COUNT=`expr \( $pattern_count + $pattern_num \) \* \( $PAT_LENGTH / $bs \)`
+	set record_count=$RECORD_COUNT
+echo	dt of=$DEVICE records=$record_count bs=$bs log=$LOG_FILE pf=$PATTERN_NAME seek=$SEEK_COUNT disable=stats,verify passes=$PASS_COUNT $DEBUG_OPTS >> $LOG_FILE
+#	echo "" >> $LOG_FILE
+	dt of=$DEVICE records=$record_count bs=$bs log=$LOG_FILE pf=$PATTERN_NAME seek=$SEEK_COUNT disable=stats,verify passes=$PASS_COUNT $DEBUG_OPTS
+	set exit_status=$status
+	if ($exit_status) then
+	    if ($exit_status == $END_OF_FILE) then
+		break ; break
+	    else
+		file $DEVICE
+		exit ($exit_status)
+	    endif
+	endif
+	set pattern_num=`expr $pattern_num + 1`
+	set block_count=`expr \( $record_count \* $bs \) / $BLOCK_SIZE`
+	set data_limit=`expr $data_limit + $block_count`
+	if ($data_limit >= $DATA_LIMIT) then
+	    break
+	endif
+    end
+    set pattern_count=`expr $pattern_count + $NUM_PATTERNS`
+  end
+  echo "" >> $LOG_FILE
+  echo "*** End of Test ***" >> $LOG_FILE
+  echo "" >> $LOG_FILE
+end

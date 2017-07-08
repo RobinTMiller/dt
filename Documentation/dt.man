@@ -1,0 +1,2423 @@
+.TH "dt" "1" "27 Jul 2009" "dt version 16.20"
+.de bu
+.IP \(bu
+..
+.SH NAME
+dt \- Data Test Program
+.SH SYNOPSIS
+.B dt
+.RB [ options ]
+
+.SH EXTREME WARNING!!!
+Use of this program is \fIalmost\fR guaranteed
+to find problems and cause your schedules to slip. If you
+are afraid to find bugs or otherwise break your system,
+then \fIplease\fR do \fBnot\fR use this program for testing.
+You can pay now or pay later, but you've been warned!
+
+.SH DESCRIPTION
+.PP
+\fIdt\fR is a generic data test program used to verify the proper
+operation of peripherals and I/O sub-systems, and for obtaining
+performance information. Since verification of data is performed,
+\fIdt\fR can be thought of as a generic diagnostic tool.
+.PP
+Although the original design goals of being a generic test tool were
+accomplished, it quickly become evident that device specific tests,
+such as terminals, and different programming interfaces such as memory
+mapped files and POSIX asynchronous I/O API's were necessary.
+Therefore, special options were added to enable these test modes and
+to specify necessary test parameters.
+.PP
+\fIdt\fR command lines are similar to the \fIdd\fR program, which
+is popular on most UNIX systems. \fIdt\fR contains numerous
+options to provide user control of most test parameters so customized
+tests can be written easily and quickly by specifying simple command
+line options. Since the exit status of the program always reflects
+the completion status of a test, scripts can easily detect failures to
+perform automatic regression tests. 
+.PP
+\fIdt\fR has been used to successfully test disks, tapes, serial
+lines, parallel lines, pipes & FIFO's, memory mapped files, and POSIX
+Asynchronous I/O. In fact, \fIdt\fR can be used with any device
+that supports the standard open, read, write, and close system
+calls. Special support is necessary for some devices, such as
+serial lines, for setting up the speed, parity, data bits, etc, but
+\fIdt\fR's design provides easy addition of this setup.
+.PP
+Most tests can be initiated by a simple \fIdt\fR command line, and
+lots of I/O can be initiated quickly using multiple processes and/or
+POSIX AIO, for those operating systems supporing AIO. More complex
+tests are normally initiated by writing shell scripts and using
+\fIdt\fR in conjunction with other tools, such as \fIscu\fR (SCSI
+Command Utility). Several shell scripts for testing disks, tapes,
+and serial lines are also supplied with this kit which can used as
+templates for developing other specialized test scripts. 
+.PP
+Specific system features are now being added to \fIdt\fR so more
+extensive testing can be accomplished. The program has been
+restructured to allow easy inclusion of new device specific tests by
+dispatching to test functions through a function lookup table.
+This table gets setup automatically, based on options enabled, or via
+the device type "\fIdtype=\fR" option. 
+.PP
+\fBWARNING\fR: \fIdt \fRdoes not perform any sanity checking of the
+output device specified. This means if you are running as root on
+Unix and you specify a raw disk device, dt will overwrite existing
+file systems, so please be careful! I HATE TO ADMIT, I'VE DONE
+THIS MYSELF!
+
+.SH Operating Systems Supported
+.PP
+\fIdt\fR is conditionalized to run on AIX, HP-UX, SUN, ULTRIX, OSF,
+QNX, SCO Unixware, Windows, and Linux operating systems. Porting is
+simple for OSes with POSIX APIs.
+
+.SH Test Uses
+.PP
+Those people with an imagination will find many uses for \fIdt\fR, but I'll list a few I've used it for, just to whet your appetite:
+.bu
+Testing of tape devices using different block sizes to determine the
+best blocking factor for optimum performance and capacity. This is
+very important for streaming tapes devices.
+.bu
+Write tapes to end of tape, to determine the total tape capacity. This
+gives the total data capacity of tapes, after inter-record gaps,
+preamble/postambles, or pad blocks are written on the tape.
+.bu
+Read existing tapes with data comparison disabled, to determine the
+amount of data on the tape. This is useful to determine how much
+disk space is required to read in a tape, or to simply verify the tape
+can be read without errors.
+.bu
+Reading/writing an entire tape to ensure device drivers properly sense
+and handle end of tape error conditions.
+.bu
+Write a tape and ensure it can be read on another tape drive to test
+drive compatibility (also referred to as transportability).
+.bu
+Read multiple tape files to ensure file marks and end of tape are
+reported and handled properly by tape drivers.
+.bu
+I/O to disks using the raw device interface, to determine the optimum
+performance of the controller. This usually gives a good
+indication of how well the controller cache or read-ahead improves I/O
+performance for sequential or random file access.
+.bu
+I/O to disk files through the file system, to determine the affect the
+buffer cache has on write and read performance. You must know the
+characteristics of your O/S's buffer cache to select file sizes to
+either get optimum performance from the cache, or to defeat the affect
+of the buffer cache.
+.bu
+Reading/writing of entire disks, to ensure the media capacity and end
+of media error handling is properly reported by device drivers.
+.bu
+Test memory mapped files to compare I/O performance against raw and
+file system I/O. Typically, memory mapped I/O approaches the raw
+device performance.
+.bu
+Testing I/O to files on NFS mounted file systems. This will give
+you a good indication of your ethernet performance to remote files. 
+.bu
+Writing/reading pipes & FIFO's to verify pipe operation and performance.
+.bu
+Initiating multiple processes to test optimizations of buffer cache,
+device drivers, and/or intelligent controllers. This is also
+useful to test multiple device access and for loading the I/O
+sub-system.
+.bu
+Force I/O at different memory boundaries to test low level driver
+handling. Using the align option, you can set memory alignment for
+testing specialized device driver DMA code. This is very useful
+when developing new I/O sub-systems.
+.bu
+Do loopback testing of parallel or serial lines on either the same
+system of different systems. This is a useful compatibility test
+when running different machines running different operating systems.
+.bu
+Enable POSIX Asynchronous I/O to verify proper operation of this API
+and to determine performance gains (over standard synchronous
+I/O). This is also useful for queuing multiple I/O requests to drivers
+and for testing SCSI tag queuing and RAID configurations.
+.bu
+Specify variable record options for testing variable tape devices.
+.bu
+On Tru64 cluster systems, distributed lock manager (DLM) options can
+be used to control access to shared devices or files.
+.bu
+Also available on Tru64 UNIX is the ability to use Extended Error
+Information (EEI) to detect and recover from SCSI bus/device resets
+(tape is repositioned for continuing the test).
+.bu
+Monitor slow or no I/O progress.
+.bu
+Execute a trigger when failures occur.
+
+.SH Program Options
+This section describes program options and and special notes related
+to each. The \fIdt\fR help file provides a summary of the
+options, and the default value of most options. 
+.SS Input File "if=" Option
+This option specifies the input file to open for reads. The device is
+opened read-only so devices which only permit or support read access,
+e.g., parallel input devices, can be opened successfully.
+.PP
+Special Notes:
+.bu
+Data read is automatically verified with the default data pattern,
+unless you disable this action via the "\fIdisable=compare" \fR option.
+.bu
+Extra pad bytes of sizeof(int), are allocated at the end of data
+buffers, initialized with the inverted data pattern, and then verified
+after each read request to ensure the end of data buffers didn't get
+overwritten by file system and/or device drivers. This extra check
+has found problems with flushing DMA FIFO's on several machines.
+.PP
+Syntax:
+.RS
+.TP
+if=filename
+The input file to read.
+.RE
+
+.SS Output File "of=" Option
+This option specifies the output file to open for writes. After
+the write portion of the test, the device is closed (to reposition to
+start of file or to rewind the tape), re-opened, and then a read
+verification pass is performed. If you wish to prevent the read
+verify pass, you must specify the "\fIdisable=verify\fR" option.
+.PP
+Special Notes:
+.bu
+Terminal devices are closed between passes so previously set terminal
+characteristics don't get reset. This also caused a race condition
+when doing loopback testing with two processes.
+.bu
+When testing terminal (serial) devices, modem control is disabled (via
+setting CLOCAL) to prevent tests from hanging. If the
+"\fIenable=modem" \fR option is specified, then CLOCAL is reset,
+hangup on close HUPCL is set, and testing will not preceed until
+carrier or DSR is detected. This code is not fully tested, but this
+description accurately describes the code.
+.bu
+At the present time, tapes are rewound by closing the device, so you
+\fImust \fRspecify the rewind device during testing if the read verify
+pass is being performed. This restriction will probably change in the
+next release since magtape control commands will be supported (tape
+specific tests as well).
+.bu A special check is made for the /dev/ prefix, and if located, the
+O_CREAT open flag is cleared to prevent accidently creating files in
+this directory when not specifying the correct device name (very easy
+to do when running tests as super-user 'root').
+.bu
+When writing to raw disks on Tru64 UNIX, if the disk was previously
+labeled, you must issue the "\fIdisklabel -z\fR" command to destroy
+the label block or else you cannot write to this area of this disk
+(block 0). Failure to do this results in the error "Read-only file
+system" (errno=EROFS) being returned on write requests.
+.PP
+Syntax:
+.RS
+.TP
+of=filename
+The output file to write.
+.RE
+
+.SS Pattern File "pf=" Option
+This option specifies a pattern file to use for the data pattern
+during testing. This option overrides the "\fIpattern=\fR" option and
+allows you to specify specialized patterns. The only restriction to
+this option is that the entire file \fImust\fR fit in memory. A buffer
+is allocated to read the entire pattern file into memory before
+testing starts so performance is not affected by reading the pattern
+file.
+.PP
+Syntax:
+.RS
+.TP
+pf=filename
+The data pattern file to use.
+.RE
+
+.SS Block Size "bs=" Option
+This option specifies the block size, in bytes, to use during
+testing. At the present time, this option sets both the input and
+output block sizes. At the time I originally wrote this program, I
+didn't have the need for seperate block sizes, but this may change in
+a future release where I'll add back the "\fIibs=\fR" and "\fIobs=\fR"
+options available with \fIdd\fR.
+.PP
+Special Notes:
+.bu
+When enabling variable length records via the "\fImin="\fR option,
+this also sets the maximum record size to be written/read.
+.bu
+For memory mapped files, the block size be a multiple of the system
+dependent page size (normally 4k or 8k bytes).
+.PP
+Syntax:
+.RS
+.TP
+bs=value
+The block size to read/write.
+.RE
+
+.SS Log File "log[tu]=" Options
+This option specifies the log file to redirect all program output
+to. This is done by re-opening the standard error stream (stderr) to
+the specifed log file. Since all output from \fIdt\fR is directed
+to stderr, library functions such as perror() also write to this log
+file.
+.PP
+Special Notes
+.bu
+A seperate buffer is allocated for the stderr stream, and this stream
+is set buffered so timing isn't affected by program output.
+.bu
+When starting multiple processes via the "\fIprocs="\fR option, all
+output is directed to the same log file. The output from each process
+is identified by the process ID (PID) as part of the message (errors &
+statistics).
+.bu
+logt=filename will truncate the existing log file.
+.bu
+logu=filename will create unique log files with multiple processes (w/pid).
+.PP
+Syntax:
+.RS
+.TP
+log[tu]=filename
+The log file name to write.
+.RE
+.PP
+Special format keywords are now expanded when part of the log file
+name, so unique names can be created for each test:
+.PP
+Log File Format Keywords:
+.RS
+.TP
+%iodir
+The I/O direction.
+.tP
+%iotype
+The I/O type.
+.TP
+%host
+The host name.
+.TP
+%pid
+The process ID.
+.TP
+%user
+The user name.
+.RE
+.PP
+Example:
+.RS
+.EX
+log=dt_%host_%user_%iodir_%iotype-%pid.log
+.EE
+.RE
+.PP
+Please see the DiskTests.ksh script for examples of using this.
+
+.SS POSIX Asynchronous I/O "aios=" Option
+This option enables and controls the number of POSIX Asychronous I/O
+requests used by the program.
+.PP
+Special Notes
+.bu
+The default is to queue up to 8 requests.
+.bu
+The system limit for AIO on Tru64 UNIX is dynamic, and can be queried
+by using the "\fIsysconfig -q rt\fR" command.
+.bu
+You can use the "\fIenable=aio\fR" option to enable AIO and use the
+default request limit.
+.bu
+AIO is only supported for character devices and is disabled for
+terminals. On Tru64 UNIX, you can alter the Makefile and link against
+libaio.a, which allows AIO with any device/file by mimic'ing AIO using
+POSIX threads.
+.bu
+AIO requests can be cancelled on Tru64 UNIX, so queuing many requests
+to 1/2in tape devices will probably result in running off the end of
+the tape reel. This is not a problem for cartridge tapes.
+.PP
+Syntax:
+.RS
+.TP
+aios=value
+Set number of AIO's to queue.
+.RE
+
+.SS Keepalive Alarm Time "alarm=" Option
+.SS Keepalive Message "*keepalive=" Options
+These options control a user defined message that will be emitted
+during the test. The user defines how often to display the
+keepalive message, via the "\fIalarm=time\fR" option, and the format
+of the message(s), via the "\fI*keepalive=string\fR" options. The
+normal "\fIkeepalive=\fR" option defines the script emitted during the
+test, while "\fIpkeepalive=\fR" is the per pass message string, and
+"\fItkeepalive=\fR" is the totals message string (overriding what
+\fIdt\fR normally displays). For a full description of the message
+control strings see the UserGuide.
+.PP
+Syntax:
+.RS
+.TP
+alarm=time
+The keepalive alarm time.
+.TP
+keepalive=string
+The keepalive message string.
+.TP
+pkeepalive=str
+The pass keepalive msg string.
+.TP
+tkeepalive=str
+The totals keepalive msg string.
+.RE
+.TP
+Keepalive Message Format Control
+The keepalive string is free format like a printf(), with the
+following format control strings:
+.IP
+Keepalive Format Control:
+.RS
+.TP
+%b
+The bytes read or written.
+.TP
+%B
+Total bytes read and written.
+.TP
+%c
+Record count for this pass.
+.TP
+%C
+Total records for this test.
+.TP
+%d
+The device name.
+.TP
+%D
+The real device name.
+.TP
+%e
+The number of errors.
+.TP
+%E
+The error limit.
+.TP
+%f
+The files read or written.
+.TP
+%F
+Total files read and written.
+.TP
+%h
+The host name.
+.TP
+%H
+The full host name.
+.TP
+%k
+The kilobytes this pass.
+.TP
+%K
+Total kilobytes for this test.
+.TP
+%l
+Blocks read or written.
+.TP
+%L
+Total blocks read and written.
+.TP
+%m
+The megabytes this pass.
+.TP
+%M
+Total megabytes for this test.
+.TP
+%p
+The pass count.
+.TP
+%P
+The pass limit.
+.TP
+%r
+Records read this pass.
+.TP
+%R
+Total records read this test.
+.TP
+%s
+The seconds this pass.
+.TP
+%S
+The total seconds this test.
+.TP
+%t
+The pass elapsed time.
+.TP
+%T
+The total elapsed time.
+.TP
+%i
+The I/O mode (read/write)
+.TP
+%u
+The user (login) name.
+.TP
+%w
+Records written this pass.
+.TP
+%W
+Total records written this test.
+.RE
+.IP
+Performance Keywords:
+.RS
+.TP
+%bps
+The bytes per second.
+.TP
+%lbps
+Logical blocks per second.
+.TP
+%kbps
+Kilobytes per second.
+.TP
+%mbps
+The megabytes per second.
+.TP
+%iops
+The I/O's per second.
+.TP
+%spio
+The seconds per I/O.
+.RE
+
+.IP
+Lowercase means per pass stats, while uppercase means total stats.
+
+.PP
+Default:
+.RS
+.EX
+%d Stats: mode %i, blocks %l, %m Mbytes, pass %p/%P, elapsed %t
+.EE
+.RE
+.PP
+or if pass statistics summary is disabled:
+.RS
+.EX
+%d Stats: mode %i, blocks %L, %M Mbytes, pass %p/%P, elapsed %T
+.EE
+.RE
+.PP
+Here's an example used by Hazards' \fIdiskdt \fRprocess:
+.RS
+.EX
+keepalive="count = %C; e = %e; t = %S; IOpS = %IOPS; SpIO = %SPIO"
+tkeepalive="STAT +RawMbytes %MBPS +RawReads %R +RawWrites %W";
+.EE
+.RE
+
+.SS Buffer Alignment "align=" Option
+This option controls the alignment of the normally page aligned data
+buffer allocated. This option is often useful for testing certain
+DMA boundary conditions not easily reproduced otherwise. The
+rotate option automatically adjust the data buffer pointer by (0, 1,
+2, 3, ...) for each I/O request to ensure various boundaries are fully
+tested.
+.PP
+Syntax:
+.RS
+.TP
+align=offset
+Set offset within page aligned buffer.
+.TP
+align=rotate
+Rotate data address through sizeof(ptr).
+.RE
+
+.SS File Disposition "dispose=" Option
+This option controls the disposition of test files created on file
+systems. By default, the test file created is deleted before
+exiting, but sometimes you may wish to keep this file for further
+examination, for use as a pattern file, or simply for the read verify
+pass of another test (e.g., reading the file via memory map API).
+.PP
+Syntax:
+.RS
+.TP
+dispose=mode
+Set file dispose to: {delete, keep, or keeponerror}.
+.RE
+
+.SS Dump Data Limit "dlimit=" Option
+This option allows you to specify the dump data limit used when data
+compare errors occur. The default dump data limit is 64 bytes. 
+.PP
+Syntax:
+.RS
+.TP
+dlimit=value
+Sets the data dump limit to value.
+.RE
+
+.SS Device Size "dsize=" Option
+This option allows you to specify the device block size used. On
+Tru64 Unix, the device block size is obatined automatically by an OS
+specific IOCTL. For all other systems, random access devices
+default to 512 byte blocks. You'll likely use this option with
+C/DVD's, since their default block size to 2048 bytes per block. 
+.PP
+Syntax:
+.RS
+.TP
+dsize=value
+Set the device block (sector) size.
+.RE
+
+.SS Device Type "dtype=" Option
+.SS Input Device Type "idtype=" Option
+.SS Output Device Type "odtype=" Option
+These options provide a method to inform \fIdt\fR of the type of
+device test to be performed. Without this knowledge, only generic
+testing is possible.
+.PP
+Special Notes
+.bu
+On Tru64 UNIX systems, these options are not necessary, since this
+information is obtained via the DECIOCGET or DEVGETINFO IOCTL's.
+.bu
+Although the program accepts a large number of device types, as shown
+below, specific tests only exists for "disk", "tape", "fifo", and
+"terminal" device types. Others may be added in the future.
+.bu
+In the case of "disk" device type, reports the relative block number
+when read, write, or data compare errors occur.
+.bu
+Also for "disk" devices, will automatically determine the disk
+capacity if a data or record limit is not specified. This is done
+via a series of seek/read requests.
+.bu
+On each operating system supported, string compares are done on well
+known device names to automatically select the device type. For
+example on QNX, "/dev/hd" for disk, "/dev/tp" for tapes, and
+"/dev/ser" for serial lines. 
+.bu
+The device type gets displayed in the total statictics.
+.PP
+Syntax:
+.RS
+.TP
+dtype=string
+Sets the device type.
+.TP
+idtype=string
+Sets the input device type.
+.TP
+odtype=string
+Sets the output device type.
+.RE
+.PP
+The Valid Device Types Are:
+.IP
+audio	comm		disk	graphics
+.IP
+memory	mouse	network	fifo
+.IP
+pipe		printer	processor socket
+.IP
+special	streams	tape	terminal
+.IP
+unknown
+.PP
+Note: Although \fIdt\fR does not provide specific test support for
+each of the devices shown above, its' design makes it easy to add new
+device specific tests. Specific support exists for disk, fifo,
+pipe, tape, and terminals. Support for "ptys" may be added in the
+future as well. 
+
+.SS Error Limit "errors=" Option
+This option controls the maximum number of errors tolerated before the
+program exits.
+.PP
+Special Notes
+.bu
+The default error limit is 1.
+.bu
+All errors have a time stamp associated with them, which are useful
+for characterizing intermittent error conditions. 
+.bu
+The error limit is adjusted for read, write, or data compare
+failures. This limit is not enforced when flushing data, or for
+certain AIO wait operations which are considered non-fatal (perhaps
+this will change).
+.bu
+A future release may support an "\fIonerr=\fR" option to control the
+action of errors (e.g., loop, ignore (continue), or exit).
+.PP
+Syntax:
+.RS
+.TP
+errors=value
+The number of errors to tolerate.
+.RE
+
+.SS File Limit "files=" Option
+This option controls the number of tape files to process with tape devices.
+.PP
+Special Notes
+.bu
+During the write pass, a tape file mark is written after each
+file. After all files are written, 1 or 2 file marks will be
+written automatically by the tape driver when the device is closed.
+.bu
+During reads, each file is expected to be terminated by a file mark
+and read() system calls are expected to return a value of  denoting
+the end of file. When reading past all tapes files, an errno of
+ENOSPC is expected to flag the end of media condition. 
+.bu
+Writing tape file marks is currently not supported on the QNX
+Operating System. The release I currently have does not support
+the mtio commands, and unfortunately the POSIX standard does define
+this interface (the mtio interface appears to be a UNIX specific
+standard). Multiple tape files can still be read on QNX systems
+however. 
+.PP
+Syntax:
+.RS
+.TP
+files=value
+Set number of tape files to process.
+.RE
+
+.SS Terminal Flow Control "flow=" Option
+This option specifies the terminal flow control to use during testing.
+.PP
+Special Notes
+.bu
+The default flow control is "xon_xoff".
+.bu
+When using XON/XOFF flow control, you must make sure these byte codes
+(Ctrl/Q = XON = '\021', Ctrl/S = XOFF = '\023), since the program does
+not filter these out automatically. Also be aware of terminal
+servers (e.g., LAT), or modems (e.g., DF296) which may eat these
+characters. 
+.bu
+Some serial lines do support clear-to-send (CTS) or request-to-send
+(RTS) modem signals. For example on Alpha Flamingo machines, only
+one port (/dev/tty00) supports full modem control, while the alternate
+console port (/dev/tty01) does not. Therefore, if running loopback
+between both ports, you can not use flow control, the test will hang
+waiting for these signals to transition (at least, I think this is the
+case).
+.PP
+Syntax:
+.RS
+.TP
+flow=type
+Set flow to: none, cts_rts, or xon_xoff.
+.RE
+
+.SS History "history=" Option
+This option sets the number of I/O history entries to record.
+During failures, the history is dumped, which can be helpful when
+troubleshooting failures. 
+.PP
+Syntax:
+.RS
+.TP
+history=value
+Set the number of history request entries.
+.RE
+
+.SS History Data Size "hdsize=" Option
+When I/O history is enabled, this option controls how many data bytes
+are saved for each I/O.
+.PP
+Syntax:
+.RS
+hdsize=value
+Set the history data size (bytes to save).
+Default hdsize=32 (set to 0 to disable copy)
+.RE
+ 
+.SS Record Increment "incr=" Option
+This option controls the bytes incremented when testing variable
+length records. After each record, this increment value (default 1),
+is added to the last record size (starting at "\fImin=\fR", up to the
+maximum record size "\fImax=\fR").
+.PP
+Special Notes
+.bu
+If variable length record testing is enabled on fixed block disks and
+this option is omitted, then "\fIincr=\fR" defaults to 512 bytes. 
+.PP
+Syntax:
+.RS
+.TP
+incr=value
+Set number of record bytes to increment.
+.TP
+or
+.TP
+incr=variable
+Enables variable I/O request sizes.
+.RE
+
+.SS I/O Direction "iodir=" Option
+This option allows you to control the I/O direction with random access
+devices. The default direction is forward.
+.PP
+Syntax:
+.RS
+.TP
+iodir=direction
+Set I/O direction to: {forward or reverse}.
+.RE
+
+.SS I/O Mode "iomode=" Option
+This option controls the I/O mode used, either copy, test, or verify
+modes. The copy option was added to do a byte for byte copy between
+devices, while skipping bad blocks and keeping file offsets on both
+disks in sync. I've used this option to (mostly) recover my system
+disk which developed bad blocks which could not be re-assigned. A
+verify operation automatically occurs after the copy, which is real
+handy for unreliable diskettes.
+.PP
+Syntax:
+.RS
+.TP
+iomode=mode
+Set I/O mode to: {copy, test, or verify}.
+.RE
+
+.SS IOT Pass "iotpass=" Option
+This option is used to specify the IOT pass number. When multiple
+passes occur, dt factors in the pass count to generate unique data
+during each pass. For example, the IOT seed is normally 0x01010101,
+and will be multiplied by the pass specified, useful for re-reading
+previously written IOT data patterns.
+.PP
+Syntax:
+.RS
+.TP
+iotpass=value
+Set the IOT pattern for specified pass.
+.RE
+
+.SS IOT Seed "iotseed=" Option
+This option is used to specify the last IOT pattern seed dt used. When
+multiple passes occur, dt now factors in the pass count to generate
+unique data during each pass. For example, the IOT seed is normally
+0x01010101, but this is now multiplied by the pass count for
+uniqueness.
+.PP
+Syntax:
+.RS
+.TP
+iotseed=value
+Set the IOT pattern block seed value.
+.RE
+
+.SS I/O Type "iotype=" Option
+This option controls the type of I/O performed, either random or
+sequential. The default is to do sequential I/O.
+.PP
+Special Notes
+.bu
+The random number generator used is chosen by defines: RAND48 to
+select srand48()/lrand48(), RANDOM to select srandom()/random(), and
+if neither are defined, srand()/rand() gets used by default. Refer to
+your system literature or manual pages to determine which functions
+are supported.
+.PP
+Syntax:
+.RS
+.TP
+iotype=type
+Set I/O type to: {random or sequential}.
+.RE
+.PP
+The seeks are limited to the data limited specified or calculated from
+other options on the \fIdt\fR command line. If data limits are not
+specified, seeks are limited to the size of existing files, or to
+the entire media for disk devices (calculated automatically by
+\fIdt\fR). If the data limits exceed the capacity of the
+media/partition/file under test, a premature end-of-file will be
+encountered on reads or writes, but this is treated as a warning
+(expected), and not as an error.
+
+
+.SS Minimum Record Size "min=" Option
+This option controls the minimum record size to start at when testing
+variable length records. 
+.PP
+Special Notes
+.bu
+By default, tests using fixed length records of block size "\fIbs=\fR" bytes.
+.bu
+This option, in conjuntion with the "\fImax=\fR" and "\fIincr=\fR"
+control variable length record sizes.
+.bu
+If variable length record testing is enabled on fixed block disks and this option is omitted, then "\fImin=\fR" defaults to 512 bytes.
+.PP
+Syntax:
+.RS
+.TP
+min=value
+Set the minumum record size to transfer.
+.RE
+
+.SS Maxmimum Record Size "max=" Option
+The option controls the maximum record size during variable length
+record testing.
+.PP
+Special Notes
+.bu
+If the "\fImin=\fR" option is specified, and this option is omitted, then the maximum record size is set to the block size "\fIbs=\fR".
+.bu
+This option, in conjuntion with the "\fImin=\fR" and "\fIincr=\fR"
+control variable length record sizes.
+.PP
+Syntax:
+.RS
+.TP
+max=value
+Set the maximum record size to transfer.
+.RE
+
+.SS Logical Block Address "lba=" Option
+This option sets the starting logical block address used with the
+"\fIlbdata\fR" option. When specified, the logical block data
+"\fIenable=lbdata\fR" option is automatically enabled.
+.PP
+Syntax:
+.RS
+.TP
+lba=value Set starting block used w/lbdata option.
+.RE
+.PP
+Special Notes
+.bu
+Please do not confuse this option with the disks' real logical block
+address. See 's "\fIseek=\fR" or "\fIposition=\fR" options to set the
+starting file position.
+.bu
+Also note that doesn't know about disk partitions, so any position
+specified is relative to the start of the partition used.
+
+.SS Logical Block Size "lbs=" Option
+This option sets the starting logical block size used with the
+\fIlbdata\fR option. When specified, the logical block data
+(\fIenable=lbdata\fR) option is automatically enabled.
+.PP
+Syntax:
+.RS
+.TP
+lbs=value
+Set logical block size for lbdata option.
+.RE
+
+.SS Data Limit "limit=" Option
+This option specifies the number of data bytes to transfer during each
+write and/or read pass for the test.
+.PP
+Special Notes
+.bu
+You must specify either a data limit, record limit, or files limit to
+initiate a test, unless the device type is "\fIdisk\fR", in which case
+\fIdt\fR will automatically determine the disk capacity.  
+.bu
+When specifying a runtime via the "\fIruntime=\fR" option, the data
+limit controls how many bytes to process for each pass (write and/or
+read pass).
+.bu
+If you specify a infinite "\fIlimit=inf\fR" value, each pass will
+continue until the end of media or file is reached.
+.bu
+When the "\fIstep=value\fR" option is used, limit controls the maximum
+offset stepped to.
+.PP
+Syntax:
+.RS
+.TP
+limit=value
+The number of bytes to transfer.
+.RE
+
+.SS Munsa (DLM) "munsa=" Option
+This option is used on Tru64 Cluster systems to specify various
+distributed lock manager (DLM) options with devices or files.
+.PP
+Syntax:
+.RS
+.TP
+munsa=string
+Set munsa to: cr, cw, pr, pw, ex.
+.RE
+.PP
+MUNSA Lock Options:
+.RS
+.TP
+cr
+Concurrent Read (permits read access, cr/pr/cw by others)
+.TP
+pr
+Protected Read (permits cr/pr read access to all, no write)
+.TP
+cw
+Concurrent Write (permits write and cr access to resource by all)
+.TP
+pw
+Protected Write (permits write access, cr by others)
+.TP
+ex
+Exclusive Mode (permits read/write access, no access to others)
+.RE
+.IP
+ For more details, please refer to the dlm(4) reference page.
+.PP
+Special Notes
+.bu
+MUNSA is an obsolete Tru64 Cluster term which meant \fIMUltiple Node
+Simultaneous Access\fR. The new term is DAIO for \fIDirect Access
+I/O\fR. Finally, the last term used is DRD for \fIDistributed Request
+Dispatcher\fR.
+.RE
+
+.SS Common Open Flags "flags=" Option
+.SS Output Open Flags "oflags=" Option
+These options are used to specify various POSIX compliant open flags,
+and system specific flags, to test the affect of these open modes.
+.PP
+Special Notes
+.bu
+Each operating system has different flags, which can be queried by
+reviewing the help text (\fIdt help\fR).
+.PP
+Syntax:
+.RS
+.TP
+flags=flags
+Set open flags: {excl,sync,...}.
+.TP
+oflags=flags
+Set output flags: {append,trunc,...}.
+.RE
+
+.SS On Child Error "oncerr=" Option
+This option allows you to control the action taken by \fIdt\fR when a
+child process exits with an error. By default, the action is
+\fIcontinue\fR, which allows all child processes to run to
+completion. If the child error action is set to \fIabort\fR, then
+\fIdt\fR aborts all child processes if \fIany\fR child process exits
+with an error status.
+.PP
+Syntax:
+.RS
+.TP
+oncerr={abort|continue}
+Set child error action.
+.RE
+
+.SS No Progress Time "noprogt=" Option
+This option allows you to specify a time (in seconds) to report when
+I/O is not making progress. This option is used in conjunction with
+the "\fIalarm=\fR" option to periodically check
+for an report when I/O is taking too long. This is especially useful
+during controller failover type testing. 
+.PP
+Syntax:
+.RS
+.TP
+noprogt=value
+Set the no progress time (in seconds).
+.RE
+
+.SS No Progress Time Trigger "noprogtt=" Option
+This option allows you to specify a time (in seconds) when to initiate
+the no-progress time trigger script. Note: This option has no effect,
+unless the \fInoprogt=\fR option is enabled.
+.PP
+Syntax:
+.RS
+.TP
+noprogtt=value
+Set the no progress time trigger (in seconds).
+.RE
+
+.SS No Time "notime=" Option
+This option allows you to disable timing of certain operations (system
+calls), when the no-progress options is enabled. Valid optype's are: open close read write ioctl fsync msync aiowait
+.PP
+Special Notes
+.bu
+This option has no effect, unless the option is enabled.
+.PP
+Syntax:
+.RS
+.TP
+notime=optype
+Disable timing of specified operation type.
+.RE
+
+.SS Terminal Parity Setting "parity=" Option
+This option specifies the terminal parity setting to use during testing.
+.PP
+Syntax:
+.RS
+.TP
+parity=string
+Set parity to: even, odd, or none.
+.TP
+parity=string
+(QNX) Set parity to: even, odd, mark, space, or none.
+.RE
+
+.SS Pass Limit "passes=" Option
+This option controls the number of passes to perform for each test.
+.PP
+Special Notes
+.bu
+The default is to perform 1 pass.
+.bu
+When using the "\fIof=\fR" option, each write/read combination is
+considered a single pass.
+.bu
+When multiple passes are specified, a different data pattern is used
+for each pass, unless the user specified a data pattern or pattern
+file. [ Please keep this in mind when using the
+"\fIdispose=keep\fR" option, since using this same
+file for a subsequent read verify pass, will report comparison
+errors... I've burnt myself this way. :-( ] 
+.PP
+Syntax:
+.RS
+.TP
+passes=value
+The number of passes to perform.
+.RE
+
+.SS Data Pattern "pattern=" Option
+This option specifies a 32 bit hexadecimal data pattern to be used for
+the data pattern. \fIdt\fR has 12 built-in patterns, which it
+alternates through when running multiple passes. The default data
+patterns are:
+.PP
+0x39c39c39, 0x00ff00ff, 0x0f0f0f0f, 0xc6dec6de, 0x6db6db6d, 0x00000000,
+0xffffffff, 0xaaaaaaaa, 0x33333333, 0x26673333, 0x66673326, 0x71c7c71c
+.PP
+You can also specify the special keyword "\fIincr=\fR" to use an
+incrementing data pattern, or specify a character string (normally
+contained within single or double quotes).
+.PP
+Syntax:
+.RS
+.TP
+pattern=value
+The 32 bit hex data pattern to use.
+.TP
+or
+.TP
+pattern=iot
+Use DJ's IOT test pattern.
+.TP
+or
+.TP
+pattern=incr
+Use an incrementing data pattern.
+.TP
+or
+.TP
+pattern=string
+The string to use for the data pattern.
+.RE
+
+.SS File Position "position=" Option
+This option specifies a byte offset to seek to prior to starting each
+pass of each test.
+.PP
+Syntax:
+.RS
+.TP
+position=offset
+Position to offset before testing.
+.RE
+
+.SS Prefix "prefix=" Option
+This option allows the user to define a free format prefix string
+which is written at the beginning of each block. It is used to
+generate uniqueness useful when data corruption occur. Certain format
+control strings are interpreted as shown below.
+.PP
+Syntax:
+.RS
+.TP
+prefix=string
+The data pattern prefix string.
+.RE
+.PP
+The prefix format controls permitted are:
+.RS
+.TP
+Prefix Format Control:
+.RS
+.TP
+%d
+The device name.
+.TP
+%D
+The real device name.
+.TP
+%h
+The host name.
+.TP
+%H
+The full host name.
+.TP
+%p
+The process ID.
+.TP
+%P
+The parent PID.
+.TP
+ %u = The user name.
+.RE
+
+.PP
+Example:
+.RS
+.EX
+prefix="%u@%h (pid %p)"
+.EE
+.RE
+
+.SS Multiple Processes "procs=" Option
+This option specifies the number of processes to initiate performing
+the same test. This option allows an easy method for initiating
+multiple I/O requests to a single device or file system.
+.PP
+Special Notes
+.bu
+The per process limit on Tru64 UNIX is 64, and can be queried by using
+the "\fIsysconfig -q proc\fR" command.
+.bu
+Spawning many processes can render your system useless, well at least
+very slow, and consumes large amounts of swap space (make sure you
+have plenty!).
+.bu
+The parent process simply monitors (waits for) all child prcoesses.
+.bu
+When writing to a file system, the process ID (PID) is appended to the
+file name specified with the "\fIof=\fR" option to create
+unique file names. If no pattern is specified, each process is started
+with a unique data pattern. Subsequent passes cycle through the 12
+internal data patterns. Use "\fIdisable=unique\fR" to avoid this
+behaviour.
+.bu
+The spawn() facility, used to execute on a different node, is not
+implemented on the QNX Operating System at this time.
+.PP
+Syntax:
+.RS
+.TP
+procs=value
+The number of processes to create.
+.RE
+
+.SS Set Queue Depth "qdepth=" Option
+This option is currently only implemented on HP-UX. It allow you to
+set the queue depth of the device under test, overriding
+its' default. Note: The settings is sticky (retained).
+.PP
+Syntax:
+.RS
+.TP
+qdepth=value
+Set the queue depth to specified value.
+.RE
+
+.SS Random I/O Offset Alignment "wralign=" Option
+This option is used when performing random I/O, to align each random
+block offset to a particular alignment, for example 32K. 
+.PP
+Syntax:
+.RS
+.TP
+ralign=value
+The random I/O offset alignment.
+.RE
+
+.SS Random I/O Data Limit "rlimit=" Option
+This option is used with random I/O to specify the number of bytes to
+limit random I/O between (starting from block  to this range). This
+option is independent of the data limit option.
+.PP
+Syntax:
+.RS
+.TP
+rlimit=value
+The random I/O data byte limit.
+.RE
+
+.SS Random Seed Value "rseed=" Option
+This options sets the seed to initialize the random number generator
+with, when doing random I/O. When selecting random I/O, the total
+statistics displays the random seed used during that test. This option
+can be used to repeat the random I/O sequence of a test.
+.PP
+Syntax:
+.RS
+.TP
+rseed=value
+The random seed to initialize with.
+.RE
+
+.SS Record Limit "records=" Option
+This option controls the number of records to process for each write
+and/or read pass of each test. The "\fIcount=\fR" option is an alias
+for this option (supported for \fIdd\fR compatibility).
+.PP
+Special Notes
+.bu
+You must specify either a data limit, record limit, or files limit to
+initiate a test, unless the device type is "\fIdisk\fR", in which case
+\fIdt\fR will automatically determine the disk capacity. 
+.bu
+When specifying a runtime via the "\fIruntime=\fR" option, the record
+limit controls how many records process for each pass (write and/or
+read pass).
+.bu
+If you specify a infinite "\fIrecords=Inf\fR" value, each pass will
+continue until the end of media or file is reached.
+.PP
+Syntax:
+.RS
+.TP
+records=value
+The number of records to process.
+.RE
+
+.SS Run Time "runtime=" Option
+This option controls how long the total test should run. When used in
+conjunction with a data limit or record limit, multiple passes will be
+performed until the runtime limit expires. A later section entitled
+"\fITime Input Parameters\fR", describes the shorthand notation for
+time values.
+.PP
+Syntax:
+.RS
+.TP
+runtime=time
+The number of seconds to execute.
+.RE
+
+.SS Retry Delay "retry_delay=" Option
+This option controls the number of seconds to delay between reads
+performed \fIafter\fR a data corruption. (see enable=retryDC option)
+.PP
+Syntax:
+.RS
+.TP
+retry_delay=value
+Delay before retrying operation. (Def: 5)
+.RE
+
+.SS Slice "slice=" Option
+This option is used with random access devices. This option is used in
+conjunction with the "\fIslices=\fRvalue" option, which divides the
+media into slices (see below), then "\fIslice=value\fR" defines the
+slice to do testing to. Since \fIdt\fR does the calculations, this
+simplifies simultaneous testing from multiple hosts to shared storage
+(usually a multi-initiator test requrement).
+.PP
+Syntax:
+.RS
+.TP
+slice=value
+The specific disk slice to test.
+.RE
+
+.SS Slices "slices=" Option
+This option is used with random access devices. This option divides
+the media into slices. Each slice contains a different range of blocks
+to operate on in a separate process. If no pattern is specified, then
+each slice is started with a unique data pattern. Subsequent passes
+alternate through \fIdt\fR's 12 internal patterns.
+.PP
+Syntax:
+.RS
+.TP
+slices=value
+The number of disk slices to test.
+.RE
+.PP
+Note: This option can be used in conjuntion with multiple processes
+and/or asynchronous I/O options to generate a heavy I/O load, great
+for stress testing!
+
+.SS Record Skip "skip=" Option
+This option specifies the numer of records to skip prior to starting
+each write and/or read pass of each test. The skips are accomplished
+by reading records.
+.PP
+Syntax:
+.RS
+.TP
+skip=value
+The number of records to skip past.
+.RE
+
+.SS Record Seek "seek=" Option
+This option specifies the number of records to seek past prior to
+starting each write and/or read test. The seeks are accomplished by
+lseek()'ing past records, which is much faster than skipping when
+using random access devices.
+.PP
+Syntax:
+.RS
+.TP
+seek=value
+The number of records to seek past.
+.RE
+
+.SS Data Step "step=" Option
+This option is used to specify non-sequential I/O requests to random
+access devices. Normally, \fIdt\fR does sequential read & writes, but
+this option specifies that step bytes to be seeked past after each
+request.
+.PP
+Special Notes
+.bu
+The "\fIlimit=value\fR" option can be used to set the maximum offset.
+.PP
+Syntax:
+.RS
+.TP
+step=value
+The number of bytes seeked after I/O.
+.RE
+
+.SS Terminal Speed "speed=" Option
+This option specifies the terminal speed (baud rate) to setup prior to
+initiating the test. Although \fIdt\fR supports all valid baud rates,
+some speeds may not be supported by all serial line drivers, and in
+some cases, specifying higher speeds may result in hardware errors
+(e.g., silo overflow, framing error, and/or hardware/software overrun
+errors). The valid speeds accepted by \fIdt\fR are:
+.IP
+ 0 50 75 110 134 150
+.IP
+ 200 300 600 1200 1800 2400
+.IP
+ 4800 9600 19200 38400 57600 115200
+.PP
+Although a baud rate of zero is accepted, this is done mainly for
+testing purposes (some systems use zero to hangup modems). The higher
+baud rates are only valid on systems which define the Bxxxxx speeds in
+termios.h.
+.PP
+Special Notes
+.bu
+The default speed is 9600 baud.
+.PP
+Syntax:
+.RS
+.TP
+speed=value
+The tty speed (baud rate) to use.
+.RE
+
+.SS Terminal Read Timeout "timeout=" Option
+This option specifies the timeout to use, in 10ths of a second, when
+testing terminal line interfaces. This is the timeout used between
+each character after the first character is received, which may
+prevent tests from hanging when a character is garbled and lost.
+.PP
+Special Notes
+.bu
+The default terminal timeout is 3 seconds.
+.bu
+The default timeout is automatically adjusted for slow baud rates.
+.PP
+Syntax:
+.RS
+.TP
+timeout=value
+The tty read timeout in .10 seconds.
+.RE
+
+.SS Terminal Read Minimum "ttymin=" Option
+This option specifies the minmum number of characers to read, sets the
+VMIN tty attribute.
+.PP
+Special Notes
+.bu
+The tty VMIN field normally gets sets to the value of the block size ().
+.bu
+Note that on some systems, the VMIN field is an \fIunsigned char\fR,
+so the maximum value is 255.
+.bu
+On QNX, this field is an \fIunsigned short\fR, so a maximum of 65535
+is valid.
+.PP
+Syntax:
+.RS
+.TP
+ttymin=value
+The tty read minimum count (sets vmin).
+.RE
+
+.SS Trigger Action "trigger=" Option
+This option specifies a trigger action to take whenever an error
+occurs and/or when the no-progress time has been exceeded (see
+"\fIenable=noprog\fR"). It's main purpose is for triggering an anlyzer
+and/or stopping I/O by some means (panic, etc) when trouble-shooting.
+.PP
+Syntax:
+.RS
+.TP
+trigger=type The trigger to execute during errors.
+.RE
+.PP
+Trigger Types:
+.RS
+.TP
+br
+Execute a bus reset.
+.TP
+bdr
+Execute a bus device reset.
+.TP
+seek
+Issue a seek to the failing lba.
+.TP
+cmd:string
+Execute command with these args:
+string dname op dsize offset position lba errno
+.RE
+.PP
+The first three options require Scu in your PATH.
+.PP
+When specifying the "\fIcmd:\fR" type, which invokes a program/script,
+the following arguments are passed on the command line: 
+.RS
+.EX
+Format: \fBcmd dname op dsize offset position lba errno noprogtime\fR
+.EE
+.RE
+.PP
+Where:
+.br
+dname = The device/file name.
+.br
+op = open/close/read/write/miscompare/noprog
+.br
+dsize = The device block size.
+.br
+offset = The current file offset.
+.br
+position = The failing offset within block.
+.br
+lba = The logical block address (relative for FS).
+.br
+errno = The error number on syscall errors.
+.br
+noprogtime = The no-progress time (in seconds).
+
+
+.SS Multiple Volumes "volumes=" Option
+.SS Multi-Volume Records "vrecords=" Option
+These options are used with removal media devices, to define how many
+volumes and records on the last volume to process (i.e., tapes,
+etc). By using these options, you do not have to \fIguess\fR at a data
+limit or record limit, to overflow onto subsequent volumes. These
+options automatically sets the "\fIenable=multi\fR" option.
+.PP
+Syntax:
+.RS
+.TP
+volumes=value
+The number of volumes to process.
+.TP
+vrecords=value
+The record limit for the last volume.
+.RE
+
+.SS Enable "enable=" and Disable "disable=" Options
+These options are used to either enable or disable program flags which
+either alter default test modes, test actions, or provide additional
+debugging information. You can specify a single flag or multiple flags
+each seperated by a comma (e.g., "\fIenable=aio,debug,dump\fR").
+.PP
+Syntax:
+.RS
+.TP
+enable=flag Enable one or more of the flags below.
+.TP
+disable=flag Disable one or more of the flags below.
+.RE
+.PP
+The flags which can be enabled or disabled are described below.
+
+
+.SS POSIX Asynchronous I/O "aio" Flag
+This flag is used to control use of POSIX Asynchronous I/O during
+testing, rather than the synchronous I/O read() and write() system
+calls.
+.PP
+Special Notes
+.bu
+Beware, you may need to rebuild on new versions of Tru64 Unix due to
+POSIX changes and/or AIO library changes between major releases.
+.bu
+Reference the "\fIaios=\fR" option, for more special notes.
+.RE
+.PP
+Flag:
+.RS
+.TP
+aio
+POSIX Asynchronous I/O.(Default: disabled)
+.RE
+
+.SS Reporting Close Errors "cerror" Flag
+This flag controls where close errors are reported as an error or a
+failure. When disabled, close errors are reported as a warning. This
+flag is meant to be used as a workaround for device drivers which
+improperly return failures when closing the device. Many system
+utilities ignore close failures, but when testing terminals and tapes,
+the close status us \fIvery\fR important. For example with tapes, the
+close reflects the status of writing filemarks (which also flush
+buffered data), and the rewind status.
+.PP
+Flag:
+.RS
+.TP
+cerrors
+Report close errors. (Default: enabled)
+.RE
+
+.SS Data Comparison "\fIcompare\fR" Flag
+This flag disables data verification during the read pass of
+tests. This flag should be disabled to read to end of file/media to
+obtain maximum capacity statistics, or to obtain maximum performance
+statistics (less overhead).
+.PP
+Flag:
+.RS
+.TP
+compare
+Data comparison. (Default: enabled)
+.RE
+
+.SS Core Dump on Errors "\fIcoredump\fR" Flag
+This flag controls whether a core file is generated, via abort(), when
+\fIdt\fR is exiting with a failure status code. This is mainly used
+for program debug, and is not of much interest to normal users. When
+testing multiple processes, via fork(), this is useful if your OS
+debugger does not support debugging child processes.
+.PP
+Flag:
+.RS
+.TP
+coredump
+Core dump on errors. (Default: disabled)
+.RE
+
+.SS Diagnostic Logging "\fIdiag\fR" Flag
+This option is only valid on Tru64 Unix. When enabled, error messages
+get logged to the binary error logger. This is useful to correlate
+device error entries with test failures. Please note, the logging only
+occurs when running as superuser (API restriction, not mine!).
+.PP
+Flag:
+.RS
+.TP
+diag
+Log diagnostic msgs. (Default: disabled)
+.RE
+
+.SS Debug Output "\fIdebug\fR" Flag
+.SS Verbose Debug Output "\fIDebug\fR" Flag
+.SS Random I/O Debug Output "\fIrdebug\fR" Flag
+These flags enable two different levels of debug, which are useful
+when trouble-shooting certain problems (i.e., what is \fIdt\fR doing
+to cause this failure?). Both flags can be specified for full debug
+output.
+.PP
+Flag:
+.RS
+.TP
+debug
+Debug output. (Default: disabled)
+.TP
+Debug
+Verbose debug output. (Default: disabled)
+.TP
+edebug
+End of file debug. (Default: disabled)
+.TP
+rdebug
+Random debug output. (Default: disabled)
+.TP
+tdebug
+Timer debug output. (Default: disabled)
+.RE
+
+
+.SS Dump Data Buffer "\fIdump\fR" Flag
+This flag controls dumping of the data buffer during data comparision
+failures. If a pattern file is being used, then the pattern buffer is
+also dumped for easy comparision purposes. To prevent too many bytes
+from being dumped, esp. when using large block sizes, dumping is
+limited to 512 bytes of data (was 64, recently increased).
+.PP
+Special Notes
+.bu
+When the failure occurs within the first 64 bytes of the buffer,
+dumping starts at the beginning of the buffer.
+.bu
+When the failure occurs at some offset within the data buffer, then
+dumping starts at (data limit/2) bytes prior to the failing byte to
+provide context.
+.bu
+The start of the failing data is marked by an asterisk '*'.
+.bu
+You can use the option to override the default dump limit.
+.bu
+Buffer addresses are displayed for detection of memory boundary problems.
+.RE
+.PP
+Flag:
+.RS
+.TP
+dump
+Dump data buffer. (Default: enabled)
+.RE
+
+.SS Tape EEI Reporting "\fIeei\fR" Flag
+This option controls the reporting of Extended Error Information (EEI)
+on Tru64 UNIX systems, for tape devices when errors occur. The
+standard tape information available from \fImt\fR is reported, along
+with the EEI status, CAM status, and SCSI request sense data. This is
+excellent information to help diagnose tape failures. (thank-you John
+Meneghini!)
+.PP
+Flag:
+.RS
+.TP
+eei
+Tape EEI reporting. (Default: enabled)
+.RE
+
+.SS Flush Terminal I/O Queues "\fIflush\fR" Flag
+This flag controls whether the terminal I/O queues get flushed before
+each test begins. This must be done to ensure no residual characters
+are left in the queues from a prior test, or else data verification
+errors will be reported. Residual characters may also be left from a
+previous XOFF'ed terminal state (output was suspended). 
+.PP
+Flag:
+.RS
+.TP
+flush
+Flush tty I/O queues. (Default: enabled)
+.RE
+
+.SS History Dumping "\fIhdump\fR" Flag
+This flag controls dumping the history entries at the end of a
+test. Normally dt only dumps the history during errors, but this
+option when enabled, dumps the history when exiting. This is useful if
+you are timing I/O's, or wish to see the LBA's I/O went to, etc. 
+.PP
+Flag:
+.RS
+.TP
+hdump
+History dump. (Default: disabled)
+.RE
+
+.SS History Timing "\fIhtiming\fR" Flag
+This flag controls the timing of history entries. Please be aware,
+that enabling timing of each I/O will impact your overall test
+performance, as an extra system call is used to obtain system time.
+.PP
+Flag:
+.RS
+.TP
+htiming
+History timing. (Default: disabled)
+.RE
+
+.SS Log File Header "\fIheader\fR" Flag
+When a log file is specified, \fIdt\fR automatically writes the
+command line and \fIdt\fR version information at the beginning of the
+log file. This option allows you to control whether this header should
+be written.
+.PP
+Flag:
+.RS
+.TP
+header
+Log file header. (Default: enabled)
+.RE
+
+.SS Loop On Error "\fIlooponerror\fR" Flag
+This flag controls lopping on data corruption rereads. This can be
+helpful in capturing the failing read request on an analyzer.
+.PP
+Special Notes
+.bu
+Also see "retry_delay=value" and retryDC flag control.
+.RE
+.PP
+Flag:
+.RS
+.TP
+looponerror
+Loop on error. (Default: disabled)
+.RE
+
+.SS Logical Block Data Mode "\fIlbdata\fR" Flag
+This option enables a feature called logical block data mode. This
+feature allows reading/writing of a 4-byte (32-bit) logical block
+address at the beginning of each data block tested. The block number
+is stored using SCSI byte ordering (big-endian), which matches what
+the SCSI Write Same w/lbdata option uses, so \fIdt\fR can verify this
+pattern, generated by \fIscu\fR's "\fIwrite same\fR"
+command. 
+.PP
+Special Notes
+.bu
+The starting logical block address defaults to 0, unless overridden
+with the "\fIlba=\fR" option. 
+.bu
+The logical block size defaults to 512 bytes, unless overridden with
+the "\fIlbs=\fR" option. 
+.bu
+The logical block address is always inserted started at the beginning
+of each data block.
+.bu
+Enabling this feature will degrade performance statistics (slightly).
+.RE
+
+.SS Enable Loopback Mode "\fIloopback\fR" Flag
+This flag specifies that either the input or output file should be
+used in a loopback mode. In loopback mode, \fIdt\fR forks(), and makes
+the child process the reader, while the parent process becomes the
+writer. In previous versions of \fIdt\fR, you had to specify both the
+same input and output file to enable loopback mode. When specifying
+this flag, \fIdt\fR automatically duplicates the input or output
+device, which is a little cleaner than the old method (which still
+works).
+.PP
+Some people may argue that \fIdt\fR should automatically enable
+loopback mode when a single terminal or FIFO device is detected. The
+rationale behind not doing this is described below:
+.bu
+You may wish to have another process as reader and/or writer (which
+also includes another program, not necessarily ).
+.bu
+You may wish to perform device loopback between two systems (e.g., to
+verify the terminal drivers of two operating systems are compatible).
+.bu
+A goal of is to force (hardcode) actions or options to make the
+program more flexible. A minimum of validity checking is done to avoid
+being too restrictive, although hooks exists to do this.
+.PP
+Special Notes
+.bu
+The read verify flag is automatically disabled.
+.bu
+This mode is most useful with terminal devices and/or FIFO's (named pipes).
+
+.SS Microsecond Delays "\fImicrodelay\fR" Flag
+This flag tells \fIdt\fR that delay values, i.e. "\fIsdelay=\fR" and
+others, should be executed using microsecond intervals, rather the
+second intervals. (thank-you George Bittner for implementing this
+support!)
+.PP
+Flag:
+.RS
+.TP
+microdelay
+Microsecond delays. (Default: disabled)
+.RE
+
+.SS Memory Mapped I/O "\fImmap\fR" Flag
+This flag controls whether the memory mapped API is used for
+testing. This test mode is currently supported on SUN/OS, Tru64 UNIX,
+and Linux operating systems.
+.PP
+Special Notes
+.bu
+The block size specified "\fIbs=\fR" be a multiple of the system dependent
+page size (normally 4k or 8k).
+.bu
+An msync() is done after writing and prior to closing to force
+modified pages to permanent storage. It may be useful to add an option
+to inhibit this action at some point, but my testing was specifically
+to time mmap performance. Obviously, invalidating the memory mapped
+pages, kind of defeats the purpose of using memory mapped files in the
+first place.
+.bu
+Specifying multiple passes when doing a read verify test, gives you a
+good indication of the system paging utilization on successive
+passes.
+.bu
+Memory mapping large data files (many megabytes) may exhaust certain
+system resources. On an early version of SUN/OS V4.0?, I could hang my
+system by gobbling up all of physical memory and forcing paging (this
+was certainly a bug which has probably been corrected since then).
+.RE
+.PP
+Flag:
+.RS
+.TP
+mmap
+Memory mapped I/O. (Default: disabled)
+.RE
+
+.SS Test Modem Lines "\fImodem\fR" Flag
+This flag controls the testing of terminal modem lines. Normally,
+\fIdt\fR disables modem control, via setting CLOCAL, to prevent tests
+from hanging. When this flag is enabled, \fIdt\fR enables modem
+control, via clearing CLOCAL, and then monitoring the modem signals
+looking for either carrier detect (CD) or dataset ready (DSR) before
+allowing the test to start.
+.PP
+Special Notes
+.bu
+The program does not contain modem signal monitoring functions for the
+all operating systems. The functions in are specific to Tru64 UNIX and
+ULTRIX systems, but these can be used as templates for other operating
+systems.
+.RE
+.PP
+Flag:
+.RS
+.TP
+modem
+Test modem tty lines. (Default: disabled)
+.RE
+
+.SS Multiple Volumes "\fImulti\fR" Flag
+This flag controls whether multiple volumes are used during
+testing. When this flag is enabled, if the data limit or record count
+specified does not fit on the current loaded media, the user is
+prompted to insert the next media to continue testing. Although this
+is used mostly with tape devices, it can be used with any removeable
+media.
+.PP
+Flag:
+.RS
+.TP
+multi
+Multiple volumes. (Default: disabled)
+.RE
+
+.SS No I/O Progress "\fInoprog\fR" Flag
+This flag controls whether \fIdt\fR will check for slow or no I/O
+progress during testing.
+.PP
+Special Notes
+Enabling this flag will do nothing by itself. The "\fIalarm=\fR"
+option specifies the frequency of how often \fIdt\fR checks for no
+progress.
+.bu
+The "\fInoprogt=secs\fR" option specified the no I/O progress time.
+.bu
+If "\fInoprogt=\fR" is omitted, it defaults to the "\fIalarm\fR" time value.
+.bu
+The \fInoprog\fR flag is implicitly enabled by the
+"\fInoprogt=value\fR" option.
+.RE
+.PP
+Flag:
+.RS
+.TP
+noprog
+No progress check. (Default: disabled)
+.RE
+
+.SS Prefill "\fIprefill\fR" Flag
+This flag controls the buffer prefill normally performed prior to
+reads. Normally, dt prefills the buffer with the inverted data pattern
+(1st four bytes). This, of course, ensures the data is overwritten
+with data read, but also imposes overhead not always desirable.
+.PP
+Special Notes
+.bu
+When IOT pattern is used, this flag is automatically enabled, since
+IOT blocks are unique.
+.RE
+.PP
+Flag:
+.RS
+.TP
+prefill
+Prefill read buffer. (Default: enabled)
+.RE
+
+.SS Control Per Pass Statistics "\fIpstats\fR" Flag
+This flag controls whether the per pass statistics are displayed. If
+this flag is disabled, a single summary line is still displayed per
+pass and the total statistics are still displayed in the full format.
+.PP
+Flag:
+.RS
+.TP
+pstats
+Per pass statistics. (Default: enabled)
+.RE
+
+.SS Read After Write "\fIraw\fR" Flag
+This flag controls whether a read-after-write will be
+performed. Sorry, \fIraw\fR does \fBnot\fR mean character device
+interface. Normally \fIdt\fR performs a write pass, followed by a read
+pass. When this flag is enabled the read/verify is done immediately
+after the write.
+.PP
+Flag:
+.RS
+.TP
+raw
+Read after write. (Default: disabled)
+.RE
+
+.SS Tape Reset Handling "\fIresets\fR" Flag
+This option is used during SCSI bus and device reset testing, to
+reposition the tape position (tapes rewind on resets), and to continue
+testing. This option is only enabled for Tru64 UNIX systems
+(currently), since this option requires reset detection from EEI
+status, and tape position information from the CAM tape driver
+(although \fIdt\fR also maintains the tape position as a sanity check
+against the drivers' data)
+.PP
+Flag:
+.RS
+.TP
+resets
+Tape reset handling. (Default: disabled)
+.RE
+
+.SS Retry Data Corruptions "\fIretryDC"\fR Flag
+This flag controls whether a data corruption retry is performed. A
+second read is done to re-read the data, with direct I/O for file
+systems, and the data is compared against the previous read data, and
+the expected data. If the reread data matches the expected data, then
+dt assumes a "read failure" occurred, otherwise if the reread data
+matches the previous read, dt assumes a "write failure" (the data was
+written incorrectly).
+.PP
+Flag:
+.RS
+.TP
+retryDC
+Retry data corruptions.(Default: enabled)
+.RE
+
+.SS Control Program Statistics "\fIstats\fR" Flag
+This flag controls whether any statistics get displayed (both pass and
+total statistics). Disabling this flag also disabled the pass
+statistics described above.
+.PP
+Flag:
+.RS
+.TP
+stats
+Display statistics. (Default: enabled)
+.RE
+
+.SS Table(sysinfo) timing "\fItable\fR" Flag
+On Tru64 UNIX systems, this option enables additional timing
+information which gets reported as part of the statistics
+display. (thanks to Jeff Detjen for adding this support!)
+.PP
+Flag:
+.RS
+.TP
+table
+Table(sysinfo) timing. (Default: disabled)
+.RE
+
+.SS System Log "syslog" Flag
+This flag controls logging startup/finish and errors being logged to
+the system logger. This can be helpful when correlating
+dt's errors with system (driver/file system) error
+messages. 
+.PP
+Flag:
+.RS
+.TP
+syslog
+Log errors to syslog. (Default: disabled)
+.RE
+
+.SS Timestamp Blocks "\fItimestamp\fR" Flag
+This flag controls whether blocks are timestamped when written. The
+timestamp is skipped during data comparisions, but \fIis\fR displayed
+if any remaining data is incorrect.
+.PP
+Special Notes
+.bu
+When IOT or lbdata patterns are used, the block number is overwritten
+by the timestamp.
+.bu
+This flag is a stop-gap, until block tagging (w/more information) is
+implemented.
+.RE
+.PP
+Flag:
+.RS
+.TP
+timestamp
+Timestamp each block. (Default: disabled)
+.RE
+
+.SS Unique Pattern "\fIunqiue\fR" Flag
+This flag controls whether multiple process, get a unqiue data
+pattern. This affects processes started with the "\fIslices=\fR" or
+the "\fIprocs=\fR" options. This only affects the \fIprocs=\fR option
+when writing to a regular file.
+.PP
+Flag:
+.RS
+.TP
+unique
+Unique pattern. (Default: enabled)
+.RE
+
+.SS Verbose Output "\fIverbose\fR" Flag
+This flag controls certain informational program messages such as
+reading and writing partial records. If you find these messages
+undesirable, then they can be turned off by disabling this
+flag.
+.PP
+\fB But beware, partial reads or writes of disk records if not at
+EOF is usually a problem!\fR 
+.PP
+Flag:
+.RS
+.TP
+verbose
+Verbose output. (Default: enabled)
+.RE
+
+.SS Verify Data "verify" Flag
+This flag controls whether the read verify pass is performed
+automatically after the write pass. Ordinarily, when specifying an
+output device via the "\fIof=\fR" option, a read verify pass is done
+to read and perform a data comparision. If you only wish to write the
+data, and omit the data verification read pass, then di able this
+flag.
+.PP
+Flag:
+.RS
+.TP
+verify
+Verify data written. (Default: enabled)
+.RE
+
+.PP
+Special Notes
+.bu
+If you don't plan to ever read the data being written, perhaps for
+performance reasons, specifying "\fIdisable=compare\fR" prevents the
+data buffer from being initialized with a data pattern.
+.bu
+This verify option has no affect when reading a device. You must
+disable data comparsions via "disable=compare".
+.RE
+
+.SS Program Delays
+\fIdt\fR allows you to specify various delays to use at certain points
+of the test. These delays are useful to slow down I/O requests or to
+prevent race conditions when testing terminals devices with multiple
+processes, or are useful for low level driver debugging. All delay
+values are in seconds, unless you specify "\fIenable=microdelay\fR",
+to enable micro-second delays.
+
+.SS Close File "\fIcdelay=\fR" Delay
+This delay, when enabled, is performed prior to closing a file
+descriptor.
+.PP
+Delay
+.RS
+.TP
+cdelay=value
+Delay before closing the file. (Def: 0)
+.RE
+
+.SS End of Test "\fIedelay=\fR" Delay
+This delay, when enabled, is used to delay after closing a device, but
+prior to re-opening the device between multiple passes.
+.PP
+Delay:
+.RS
+.TP
+edelay=value
+Delay between multiple passes. (Def: 0)
+.RE
+
+.SS Read Record "\fIrdelay=\fR" Delay
+This delay, when enabled, is used prior to issuing each read request
+(both synchronous read()'s and asynchronous aio_read()'s).
+.PP
+Delay:
+.RS
+.TP
+rdelay=value
+Delay before reading each record. (Def: 0)
+.RE
+
+.SS Start Test "\fIsdelay=\fR" Delay
+This delay, when enabled, is used prior to starting the test. When
+testing terminal devices, when not in self loopback mode, the writing
+process (the parent) automatically delays 1 second, to allow the
+reading process (the child) to startup and setup its' terminal
+characteristics. If this delay did not occur prior to the first write,
+the reader may not have its' terminal characteristics (flow, parity, &
+speed) setup yet, and may inadvertantly flush the writers data or
+receive garbled data.
+.PP
+Delay:
+.RS
+.TP
+sdelay=value
+Delay before starting the test. (Def: 0)
+.RE
+
+.SS Child Terminate "\fItdelay=\fR" Delay
+This delay is used by child processes before exiting, to give the
+parent process sufficient time to cleanup and wait for the child. This
+is necessary since if the child exits first, a SIGCHLD signal may
+force the parent to it's termination signal handler before it's ready
+to. This is a very simplistic approach to prevent this parent/child
+race condition and is only currently used by the child for terminal
+loopback testing.
+.PP
+Delay:
+.RS
+.TP
+tdelay=value
+Delay before child terminates. (Def: 1)
+.RE
+
+.SS Write Record "\fIwdelay=\fR" Delay
+This delay, when enabled, is used prior to issuing each write request
+(both synchronous write()'s and asynchronous aio_write()'s).
+.PP
+Delay:
+.RS
+.TP
+wdelay=value
+Delay before writing each record. (Def: 0)
+.RE
+
+.SS Numeric Input Parameters
+For any options accepting numeric input, the string entered may
+contain any combination of the following characters:
+.PP
+Special Characters:
+.RS
+.TP
+w
+words (4 bytes)
+.TP
+q
+quadwords (8 bytes)
+.TP
+b
+blocks (512 bytes)
+.TP
+k
+kilobytes (1024 bytes)
+.TP
+m
+megabytes (1048576 bytes)
+.TP
+p
+page size (8192 bytes)
+.TP
+g
+gigabytes (1073741824 bytes)
+.TP
+t
+terabytes (1099511627776 bytes)
+.TP
+inf or INF
+infinity (18446744073709551615 bytes)
+.RE
+
+.PP
+Arithmetic Characters:
+.RS
+.TP
++
+addition
+.TP
+-
+subtraction
+.TP
+* or x
+multiplication
+.TP
+/
+division
+.TP
+%
+remainder
+.RE
+
+.PP
+Bitwise Characters:
+.RS
+.TP
+~
+complement of value
+.TP
+>>
+shift bits right
+.TP
+<<
+shift bits left
+.TP
+&
+bitwise 'and' operation
+.TP
+|
+bitwise 'or' operation
+.TP
+^
+bitwise exclusive 'or'
+.RE
+
+.PP
+The default base for numeric input is decimal, but you can override
+this default by specifying 0x or 0X for hexadecimal coversions, or a
+leading zero '0' for octal conversions. 
+.PP
+NOTE: Certain values will vary depending on the operating system
+and/or machine you are running on. For example, the page size is
+system dependent, and the value for Infinity is the largest value that
+will fit into an unsigned long long (value shown above is for 64-bit
+systems), or double for systems which don't support
+"\fIlong long\fR".)
+
+.SS Time Input Parameters
+When specifying the run time "runtime=" option, the time string
+entered may contain any combination of the following characters:
+.PP
+Time Input:
+.RS
+.TP
+d
+days (86400 seconds)
+.TP
+h
+hours (3600 seconds)
+.TP
+m
+minutes (60 seconds)
+.TP
+s
+seconds (the default)
+.RE
+
+.PP
+Arithmetic characters are permitted, and implicit addition is performed
+on strings of the form '1d5h10m30s'.
+
+
+.SH Future Enhancements
+
+Initially \fIdt\fR was written to be a generic test tool, designed to
+test any device, and although that was (mostly) accomplished, device
+specific tests needed to be and were developed, based on the device
+type detected or specified by the "\fIdtype=\fR" option if not
+determined automatically.
+.PP
+Some of the features requested include:
+.bu
+Support for an initialization file () to setup frequent or common test
+parameters.
+.bu
+Develop corruption analysis logic. What is this? Folks familiar with
+HP's Hazard know how valuable this is: data re-read logic, I/O
+history, metadata prowlers, and detailed analysis of expected and
+received data. A lot of work is involved here, especially with file
+system prowlers, which are responsible for converting file system data
+structures to physical underlying LBA's, to help identify
+bad data in analyzer traces. 
+.bu
+Improved file system testing. Although not developed as a file system
+exerciser, many folks use it this way. Multiple processes creating
+unique data files generates a data load, but many file system specific
+features, such as truncating files, file locking, creating lots of
+metadata (via subdirectories), and many more are not tested
+well. Major effort here!
+.bu
+Supporting multiple devices in one invocation (perhaps a comma
+separated list). Although multiple processes or threads could
+accomplish this, it does add complexity requiring locking and
+switching to reentrant library API's, and the savings is
+shared code is minimal (I think) since most of the address space is
+data buffers. 
+.bu
+Multiple threads for I/O is likely to be implemented one day. The
+reason I haven't rushed this I/O method, is because POSIX AIO provides
+my need, and most modern day OS's now support POSIX AIO. Interestingly
+enough, the Linux AIO is implemented via POSIX threads! Threads are
+interesting to overcome OS's with a process limit, and threads
+(should) reduce system resources.
+.bu
+Incorporate SCSI library to implement bus/target/lun reset triggers, etc.
+.bu
+Interactive interface to keep the device open, like does, to allow
+more creative tests, especially for tapes and tape libraries (although
+most use for disk testing).
+.bu
+Add output formats to allow statistics to be imported to tools such as
+MS Excel, etc.
+.bu
+GUI front-end? Might be nice, but \fInot \fRnecessary for test
+automation. Volunteers?
+.bu
+Port to VMS? There's a need, so given the time, this will
+likely happen. 
+.bu
+Native Windows? Mostly there, thanks to the HP Hazard India team, but
+unfortuanatly I no longer have a Windows development environment, so I
+cannot supply updates. The code needs a few tweaks for file system
+testing, ported for raw I/O testing initially.
+.bu
+iozone supplies many of the features above, so you may wish to
+consider this tool too. It's difficult, if not impossible,
+to supply sufficient features for everyones test needs! 
+
+.SH Final Comments
+
+I'm happy to report that is getting wide spread use all over the
+world! Storage groups, terminal/lat groups, Q/A, developers, and other
+peripheral qualification groups are using as part of their testing. I
+guess maybe this will be my (computer) legacy?
+.PP
+Anyways, I hope you find as useful as I have. This is usually one of
+the first tools I port to a new operating system, since it's an
+excellent diagnostic and performance tool (it gives me a warm and
+fuzzy feeling ).
+
+.SH AUTHOR
+Written by Robin Miller <robin dot miller at netapp dot com>
+
+

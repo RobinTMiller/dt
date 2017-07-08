@@ -1,0 +1,10 @@
+#!/bin/ksh -p
+
+export DT_PATH=/u/rtmiller/Tools/tdt.d-WIP/linux2.6-x86-64/dt
+export DT_LIMIT=50m
+export DT_PROCS=3
+export DT_AIOS=3
+../Scripts/DiskTests.ksh /var/tmp/dt.data
+
+# Next, is to run various predefined workloads!
+

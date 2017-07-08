@@ -1,0 +1,31 @@
+﻿  dt.c
+  dtaio.c
+  dtbtag.c
+  dtfmt.c
+  dtfs.c
+  dtgen.c
+  dthist.c
+  dtinfo.c
+  dtiot.c
+  dtjobs.c
+  dtmem.c
+  dtmtrand64.c
+  dtprint.c
+  dtprocs.c
+  dtread.c
+  dtscsi.c
+  dtstats.c
+  dtusage.c
+  dtutil.c
+  dtverify.c
+  Generating Code...
+  Compiling...
+  dtwin.c
+  dtworkloads.c
+  dtwrite.c
+  libscsi.c
+  scsidata.c
+  scsilib.c
+  Generating Code...
+  dt.vcxproj -> C:\cygwin64\home\RMill7198650\dt.v21\windows\.\Release\dt.exe
+  dt.vcxproj -> .\Release/dt.pdb (Full PDB)

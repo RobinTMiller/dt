@@ -1,0 +1,143 @@
+.\" <<<<<<<<<<<< Nroff Name/Title Lines >>>>>>>>>>>>>>>>
+.\"
+.\".if n .ds Ff "Robin T. Miller          - Ext. 264-0565
+.if n .ds Ff "Robin T. Miller
+.if n .ds Fx "Consulting Software Engineer - ZK03-3/Y40 Pole Y/H1
+.\"
+.\" <<<<<<<<<<<< Troff Name/Title Lines >>>>>>>>>>>>>>>>
+.\"
+.\" The number '1.0' below controls line spacing out to '- Ext'
+.\" Increase or decrease as needed to align things up (ex. 0.8 or 1.2)
+.\" .if t .ds Ff "Robin T. Miller \l'0.62i ' - Ext. 264-0565
+.if t .ds Ff "Robin T. Miller
+.if t .ds Fx "Consulting Software Engineer - ZK03-3/Y40 Pole Y/H1
+.\"
+.\" <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+.ds Nn "Robin T. Miller
+.ds N~ \fB\*(Nn\fP
+.\" <<<<<<<<<<<<< Nroff Cover >>>>>>>>>>>>>>>>>>
+.if n \{\
+. nf
+. sp 11
+. tl ''\fIUser's Manual\fP''
+. sp
+. tl ''for''
+. sp
+. tl ''\fI\*(T~\fP''
+.  ce 1
+\*(V~
+. sp 1
+.ce 3
+by
+\*(Ff
+\*(DY
+. fi
+. LP \}
+.\" <<<<<<<<<<<<< Troff Cover >>>>>>>>>>>>>>>>>>
+.if t \{\
+.  nf
+. sp 11
+.  tl ''\fB\s14User\'s Manual\s0\fP''
+.sp .5v
+.  tl ''\fB\s12for\s0\fP''
+.sp .5v
+.  tl ''\fB\s16\fI\*(T~\s0\fP''
+.sp .5v
+.  ce 1
+\fI\s14\*(V~\s0\fP
+.  sp .5v
+.  ce 3
+\fI\s12by\s0\fP
+.sp .5v
+\fB\s12\*(Ff\s0\fR
+.sp .5v
+\fB\s12\*(DY\s0\fR
+.  fi
+.  LP \}
+.sp 5
+.TS
+center, doublebox;
+c.
+.sp 0.3
+\s+2EXTREME WARNING!!!\s-2
+.sp 0.3
+Use of this program is \fIalmost\fP guaranteed to find
+problems and cause your schedules to slip.  If you
+are afraid to find bugs or otherwise break your system,
+then \fIplease\fP do \fBnot\fP use this program for testing.
+.sp 0.2
+You can pay now or pay later, but you've been warned.
+.sp 0.2
+.TE
+.sp 3
+.EX 10
+The Author of \fIdt\fP,
+Robin's Nest Software Inc.      Home e-mail: rmiller@bit-net.com
+Robin T. Miller         or      Work e-mail: Robin.Miller@Compaq.com
+2 Paradise Lane,                QUICS Login: rtmiller
+Hudson, N.H. 03051
+Home: (603) 883-2355            Work: (603) 883-2355 (yep, work @ home!)
+.EE
+.nr % 0
+.bp
+.ce
+.B
+Change History
+.R
+.XS \n%
+Change History
+.XE
+.LP
+.sp 2
+.TS
+center tab (/);
+c c c c
+c l l lw(4i) .
+Version/Date/Author/Changes
+=
+14.1/February 2nd, 2001/Robin T. Miller/T{
+Added support for better random access device testing via multiple
+slices option (slices=value), controlling direction via "iodir=" option,
+variable request sizes (incr=var), setting device block size (dsize=),
+better support of multiple volumes via "volumes=" and "vrecords=" options.
+Also updated logic to allow random and reverse I/O to regular disk files.
+T}
+_
+13.22/November 10th, 2000/Robin T. Miller/T{
+Added more test features and options, including: read-after-write (raw),
+setting the random I/O seed (rseed), and multi-volume media testing.
+T}
+_
+12.0/July 24, 1999/Robin T. Miller/T{
+Add numerous new test features and parameters, including: AIO w/lbdata,
+AIO w/random, EEI & tape resets, IOT test pattern, larger data/record
+limits and statistics, Linux & Windows/NT support.
+T}
+_
+9.3/February 21, 1996/Robin T. Miller/T{
+Documented iotype={random or sequential} option.
+T}
+_
+9.0/December 11, 1995/Robin T. Miller/T{
+Logical block data feature, additional (higher) tty speeds, and other
+minor changes.
+T}
+_
+8.0/July 26, 1995/Robin T. Miller/T{
+Modem testing, child process control, pattern string enhancements, and
+other minor changes.
+T}
+_
+7.0/September 11, 1993/Robin T. Miller/Initial release of Users Manual.
+=
+.\"<vers>/<date>/<author>/<global description>
+.\"///T{
+.\"<optional further description1>
+.\"T}
+.\"///T{
+.\"<optional further description2>
+.\"T}
+.TE
+.nr % 0
+.bp
+.\" <<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>

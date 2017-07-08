@@ -1,0 +1,56 @@
+enable=scriptverify
+version
+
+# A simple script to demonstrate multiple mirror operations.
+
+logprefix="%et %prog %device (j:%job t:%thread): "
+
+# The slices option creates multiple threads to the same device/file.
+
+$LOGDIR=${LOGDIR:/var/tmp/dtlogs}
+$MIRROR_OPTIONS="bs=random iomode=mirror onerr=abort history=3 keepalivet=30 tag=mirror enable=btags job_log=${LOGDIR}/dtjob-j%jobt%thread.log log=${LOGDIR}/dtmirror-j%jobt%thread.log"
+$RUNTIME=${RUNTIME:5m}
+
+# Define debug options:
+
+$DEBUG_OPTIONS=${DEBUG_OPTIONS:enable=debug,hdump,htiming}
+
+# Cleanup old log files: (as required)
+system rm -rf ${LOGDIR}
+system mkdir ${LOGDIR}
+
+# For this test, these are paths to the same LUN!
+# Note: Override defaults with environment variables.
+$WRITER=${WRITER:/dev/sde}
+$MIRROR=${MIRROR:/dev/sdf}
+
+# Background jobs via &, bg, or enable=async
+# Each job has an ID, but a tag can be specified.
+# For this test, all jobs are synchronous except the last.
+
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} limit=250m
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} prefix="%U" iotype=random
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} pattern=iot prefix="%U" iotype=random
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} prefix="%U" pattern=incr enable=lbdata
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} pattern=iot slices=10 enable=raw
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} pattern=iot prefix="%d@%h" step=1m slices=3 passes=3
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} pattern=incr enable=lbdata aios=16
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} iodir=reverse enable=lbdata enable=timestamp
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} iodir=reverse pattern=iot slices=10
+dsf=${WRITER} dsf1=${MIRROR} ${MIRROR_OPTIONS} pattern=iot prefix="%d@%h" iotype=random
+dsf=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} pattern=incr prefix="%s" iodir=reverse enable=scsi_io
+dsf=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} slices=10 slice=7 prefix="%U" enable=lbdata
+dsf=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} pattern=iot slices=10 runtime=${RUNTIME} enable=unmap unmap=random disable=pstats iodir=vary iotype=vary &
+
+# Give threads a short time to get started.
+msleep=50
+
+# Show active jobs:
+jobs:full
+
+# Query thread status:
+query
+
+# Wait for all jobs/threads to complete.
+
+wait tag=mirror

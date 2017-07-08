@@ -1,0 +1,9 @@
+function check_error
+{
+    exit_status=$?
+    if [[ $exit_status -ne 0 ]]; then
+        echo "Error occurred, last exit status is ${exit_status}"
+	exit $exit_status
+    fi
+    return
+}

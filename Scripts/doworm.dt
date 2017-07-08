@@ -1,0 +1,96 @@
+enable=scriptverify
+version
+
+# A simple script to demonstrate Write Once Read Many (WORM) operations.
+
+# These options create 3 directories with 100 files each 1m in size.
+# Note: Overrode the default file postfix of "j%jobt%thread".
+
+#
+# Note: When using a prefix, don't use random block sizes or read workload will fail!
+#	You can vary the range, but the writes and reads *must* we exactly the same size.
+#	Similar issues occur for random I/O, unless the same random seed is specified.
+#	The rseed=value option can be added to specify the random seed (if desired).
+#
+# Note: The free space percentage is divided by the number of jobs (2 in this example).
+#       We're using 80% of the available (free) space, to avoid file system full conditions.
+#
+$CMN_OPTIONS="min=64 max=256k incr=1 files=100 onerr=abort threads=10 filepostfix=t%thread maxdatap=80/2 enable=fdebug"
+# This should be increased for larger file systems (I'm using VSIMs).
+$DATA_LIMIT="limit=1m"
+# Make this a large value to read many times.
+$READ_PASSES=2
+# Note: Using internal data patterns so we can do sub-block (<512 byte) record sizes.
+$PATTERN_OPTIONS="prefix=%d@%h"
+#$PATTERN_OPTIONS="prefix=%d@%h pattern=iot"
+$WRITE_OPTIONS="dispose=keep disable=verify"
+$JOB_MSLEEP_TIME=50
+
+$DEST_DIR=${DEST_DIR:/var/tmp}
+$WORM_DIR1=${DEST_DIR}/worm1
+$WORM_FILES1=${WORM_DIR1}/worm.data
+$WORM_DIR2=${DEST_DIR}/worm2
+$WORM_FILES2=${WORM_DIR2}/worm.data
+
+# Define our workloads:
+# Note: Multiple input/output files each get their own job!
+define write_once of=${WORM_FILES1},${WORM_FILES2} ${CMN_OPTIONS} ${DATA_LIMIT} ${PATTERN_OPTIONS} ${WRITE_OPTIONS}
+define read_many if=${WORM_FILES1},${WORM_FILES2} ${CMN_OPTIONS} ${DATA_LIMIT} ${PATTERN_OPTIONS} passes=${READ_PASSES}
+# Show our new workloads:
+workloads=write_once
+workloads=read_many
+
+# Let's see how much space we have first.
+system df -kP ${DEST_DIR}
+# Now, let's see how much space is in use.
+system du -sk ${DEST_DIR}
+# Destination may not exist, but errors are ignored!
+system du -sk ${WORM_DIR1} ${WORM_DIR2}
+# Remove the existing directory and files.
+system rm -rf ${WORM_DIR1} ${WORM_DIR2}
+# Now, recheck the space free/used.
+system df -kP ${DEST_DIR}
+# Now, let's see how much space is available.
+system du -sk ${DEST_DIR}
+
+#####################################
+# Populate the directory with files.
+workload=write_once tag=write_once enable=async
+
+# Wait for threads to start.
+msleep=${JOB_MSLEEP_TIME}
+
+# Show all active jobs.
+jobs:full
+
+# Test other jobs control commands.
+pause tag=write_once
+query tag=write_once
+modify tag=write_once enable=tdebug
+resume tag=write_once
+## For Testing! ##
+#stop tag=write_once
+#cancel tag=write_once
+#exit
+
+# Wait for this test case to complete.
+wait tag=write_once
+
+##############################################
+# Now, read the set of dirs/files repeatedly.
+workload=read_many tag=read_many enable=async
+msleep=${JOB_MSLEEP_TIME}
+jobs:full
+query
+wait tag=read_many
+
+##############################################
+# Let's see how much space we have left.
+system df -kP ${DEST_DIR}
+# Now, let's see how much space is in use.
+system du -sk ${DEST_DIR}
+system du -sk ${WORM_DIR1} ${WORM_DIR2}
+# Now report many files we created.
+system find ${WORM_DIR1} ${WORM_DIR2} -type f | wc -l
+# Finally, remove the directory and files created.
+system rm -rf ${WORM_DIR1} ${WORM_DIR2}

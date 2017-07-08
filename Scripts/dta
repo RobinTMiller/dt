@@ -1,0 +1,71 @@
+#!/bin/csh
+#
+#	Script file to test asynchronous communication lines.
+#
+# Arguments:
+#	$1	The input device.
+#	$2	The output device.
+#	$3	The baud rate(s).
+#	$4	The log file name.
+#
+# Modification History:
+#
+# October 30, 1993 by Robin Miller.
+#    o	Added "dtype=terminal" option so tty attributes get setup even
+#	when the device isn't recognized as a terminal device.
+#    o	Added extra quotes around SPEED variables so multiple speeds
+#	can be specified on the command line.  e.g.:
+#	    % dta tty00 tty01 "19200 4800 2400" dta.log &
+#
+set INPUT=$1
+set OUTPUT=$2
+set SPEED="$3"
+set LOGFILE=$4
+if ($INPUT == '') then
+	echo "Usage: $0 input_device output_device baud_rates logfile"
+	exit
+endif
+if (`dirname $INPUT` != '/dev') then
+	set INPUT=/dev/$INPUT
+endif
+if ($OUTPUT == '') then
+	echo "Usage: $0 input_device output_device baud_rates logfile"
+	exit
+endif
+if (`dirname $OUTPUT` != '/dev') then
+	set OUTPUT=/dev/$OUTPUT
+endif
+#
+# BEWARE: 38400 may fail on some systems (too fast?).
+#
+if ("$SPEED" == '') then
+#	set SPEED="50 75 110 134 150 200 300 600 1200 1800 2400 4800 9600 19200 38400"
+#	set SPEED="38400 19200 9600 4800 2400 1800 1200 600 300 200 150 134 110 75 50"
+	set SPEED="115200 57600 38400 19200 9600 4800"
+endif
+if ($LOGFILE == '') then
+	set LOGFILE=dta.log
+endif
+set PARITY="none even odd"
+#
+# Only scc unit 2 (/dev/tty01) has full modem control on Alpha flamingo.
+#
+#set FLOW="xon_xoff cts_rts"
+set FLOW="xon_xoff"
+
+file $INPUT > $LOGFILE
+file $OUTPUT >> $LOGFILE
+
+# Test all combinations of tty parameters.
+
+foreach flow ($FLOW)
+  foreach parity ($PARITY)
+    foreach speed ($SPEED)
+#	echo "dt if=$INPUT of=$OUTPUT limit=5k bs=64 flow=$flow parity=$parity speed=$speed log=$LOGFILE enable=debug,dump dtype=terminal" >> $LOGFILE
+	dt if=$INPUT of=$OUTPUT limit=5k bs=64 flow=$flow parity=$parity speed=$speed log=$LOGFILE enable=debug,dump dtype=terminal
+	echo "" >> $LOGFILE
+	echo "*** End of Test ***" >> $LOGFILE
+	echo "" >> $LOGFILE
+    end
+  end
+end

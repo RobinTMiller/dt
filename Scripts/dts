@@ -1,0 +1,96 @@
+#!/bin/csh
+#	%Z%%M% %I% %E%
+#
+#	Date:	August 7, 1990
+#	Author:	Robin Miller
+#
+#	Script file to gather disk performance data.
+#
+# Arguments:
+#	$1	The data file name.
+#	$2	The log file name.
+#	$3	The raw disk device.
+#	$4	The data file limit.
+#	$5	The block size(s).
+#	$6	The pass count.
+#	$7	Enable debug flag.
+#
+set DATA_FILE=$1
+set LOG_FILE=$2
+set RAW_DEVICE=$3
+set DATA_LIMIT=$4
+set BLOCK_SIZES=$5
+set PASS_COUNT=$6
+set DEBUG_FLAG=$7
+#
+if ($DATA_FILE == '') then
+    echo "Usage: dts data_file [ log_file raw_device data_file_limit block_sizes pass_count debug ]";
+    echo "Example: dts /usr/tmp/dt.data rrz11a.log rrz11a 10m &"
+    exit 1
+endif
+if ($DATA_FILE == '') then
+	set DATA_FILE=`pwd`/dt.data
+endif
+if ($LOG_FILE == '') then
+	set LOG_FILE=dts.log
+endif
+if ($DATA_LIMIT == '') then
+	set DATA_LIMIT=50m
+endif
+if ($BLOCK_SIZES == '') then
+	set BLOCK_SIZES="8k 16k 32k 64k 128k"
+endif
+#
+# The default is 2 passes to test buffer cache effect.
+#
+if ($PASS_COUNT == '') then
+	set PASS_COUNT=2
+endif
+#
+# Setup the debug options:
+#	Default: dump - dumps buffers on compare errors.
+#
+if ($DEBUG_FLAG == 'none') then
+	set DEBUG_OPTS=""
+else if ($DEBUG_FLAG == 'debug') then
+	set DEBUG_OPTS="enable=coredump,debug,dump"
+else
+	set DEBUG_OPTS="enable=dump"
+endif
+#
+# Test through the Unix file system first.
+#
+rm -f $LOG_FILE ; rm -f $DATA_FILE
+date > $LOG_FILE
+echo "" >> $LOG_FILE
+#df >>& $LOG_FILE
+#echo "" >> $LOG_FILE
+foreach bs ($BLOCK_SIZES)
+    set cmd_line="dt of=$DATA_FILE disable=compare limit=$DATA_LIMIT bs=$bs log=$LOG_FILE passes=$PASS_COUNT $DEBUG_OPTS"
+    echo $cmd_line >> $LOG_FILE
+    $cmd_line
+    set exit_status=$status
+    if ($exit_status) then
+	file $DEVICE
+	echo "" >> $LOG_FILE
+	date >> $LOG_FILE
+	echo "" >> $LOG_FILE
+	exit ($exit_status)
+    endif
+    echo "" >> $LOG_FILE
+    echo "*** End of Test ***" >> $LOG_FILE
+    echo "" >> $LOG_FILE
+end
+#
+# Now test the raw device (entire disk usually).
+#
+if ($RAW_DEVICE != '') then
+    if (`dirname $RAW_DEVICE` != '/dev') then
+	set RAW_DEVICE=/dev/$RAW_DEVICE
+    endif
+    set cmd_line="dt if=$RAW_DEVICE disable=compare limit=5g bs=64k log=$LOG_FILE passes=$PASS_COUNT $DEBUG_OPTS"
+    echo $cmd_line >> $LOG_FILE
+    $cmd_line
+    set exit_status=$status
+endif
+date >> $LOG_FILE

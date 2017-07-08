@@ -1,0 +1,1 @@
+make -f ../Makefile.linux VPATH=.. OS=linux PORG=-g

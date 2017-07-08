@@ -1,0 +1,15 @@
+#!/bin/ksh
+alias dt=/usr/software/test/bin/dt.latest
+export PATDIR=~rtmiller/Tools/dt.d/data
+rm -f pattern_dedup
+dt pf=${PATDIR}/pattern_0 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+dt pf=${PATDIR}/pattern_1 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+dt pf=${PATDIR}/pattern_2 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+dt pf=${PATDIR}/pattern_3 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+dt pf=${PATDIR}/pattern_4 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+dt pf=${PATDIR}/pattern_5 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+dt pf=${PATDIR}/pattern_6 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+dt pf=${PATDIR}/pattern_7 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+dt pf=${PATDIR}/pattern_8 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+dt pf=${PATDIR}/pattern_9 of=pattern_dedup oflags=append bs=4k records=2 disable=stats,compare dispose=keep
+ls -ls pattern_dedup

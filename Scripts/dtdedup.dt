@@ -1,0 +1,33 @@
+enable=scriptverify
+version
+
+# A script to generate suitable compression and/or dedupable data.
+
+$DIR=${DIR:/var/tmp}
+$FILE=${FILE:${DIR}/dtdedup.data}
+$LIMIT=100m
+$CMN="bs=random disable=pstats dispose=keep enable=async tag=dtdedup"
+
+system rm -rf ${FILE}*
+
+# Write unique data to the first slice.
+of=${FILE} ${CMN} pattern=iot limit=${LIMIT} slices=2 slice=1
+# Write repeated data to the second slice.
+of=${FILE} ${CMN} pattern=0xbadcafee limit=${LIMIT} slices=2 slice=2
+
+# Give threads a short time to get started.
+msleep=50
+
+# Show active jobs:
+jobs:full tag=dtdedup
+
+# Query thread status:
+query tag=dtdedup
+
+# Wait for all jobs to complete.
+
+wait tag=dtdedup
+
+system ls -ls ${FILE}
+system gzip -9 ${FILE}
+system ls -ls ${FILE}.gz

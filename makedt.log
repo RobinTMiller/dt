@@ -1,0 +1,554 @@
+
+	--> Building 'dt' for linux on staf-rhel5x64.rtp.netapp.com in subdirectory linux-rhel5x32 <--
+
+Executing cd ~/Tools/dt.v21.12/linux-rhel5x32; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.linux VPATH=.. OS=linux PORG='-O -m32 -DHAVE_UUID=0' LDFLAGS='-m32' EXTLIBS='-lrt -lpthread -lm'
+Linux staf-rhel5x64.rtp.netapp.com 2.6.18-194.26.1.el5 #1 SMP Fri Oct 29 14:21:16 EDT 2010 x86_64 x86_64 x86_64 GNU/Linux
+Using built-in specs.
+Target: x86_64-unknown-linux-gnu
+Configured with: ./configure --prefix=/usr/software --program-suffix=-4.1.1
+Thread model: posix
+gcc version 4.1.1
+cc -O -m32 -DHAVE_UUID=0 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtfmt.o ../dtfmt.c
+make: Warning: File `dtusage.c' has modification time 86 s in the future
+cc -O -m32 -DHAVE_UUID=0 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtusage.o ../dtusage.c
+loading dt ...make: done
+warning:  Clock skew detected.  Your build may be incomplete.
+dt: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), for GNU/Linux 2.6.9, dynamically linked (uses shared libs), for GNU/Linux 2.6.9, not stripped
+
+	--> Cleaning up 'dt' for linux on staf-rhel5x64.rtp.netapp.com in subdirectory linux-rhel5x64 <--
+
+
+	--> Building 'dt' for linux on staf-rhel5x64.rtp.netapp.com in subdirectory linux-rhel5x64 <--
+
+Executing cd ~/Tools/dt.v21.12/linux-rhel5x64; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.linux VPATH=.. OS=linux
+Linux staf-rhel5x64.rtp.netapp.com 2.6.18-194.26.1.el5 #1 SMP Fri Oct 29 14:21:16 EDT 2010 x86_64 x86_64 x86_64 GNU/Linux
+Using built-in specs.
+Target: x86_64-unknown-linux-gnu
+Configured with: ./configure --prefix=/usr/software --program-suffix=-4.1.1
+Thread model: posix
+gcc version 4.1.1
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dt.o ../dt.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtaio.o ../dtaio.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtapp.o ../dtapp.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtbtag.o ../dtbtag.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtfs.o ../dtfs.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtfmt.o ../dtfmt.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtgen.o ../dtgen.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dthist.o ../dthist.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtiot.o ../dtiot.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtinfo.o ../dtinfo.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtjobs.o ../dtjobs.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtmem.o ../dtmem.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtmmap.o ../dtmmap.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtmtrand64.o ../dtmtrand64.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtprint.o ../dtprint.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtprocs.o ../dtprocs.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtread.o ../dtread.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtwrite.o ../dtwrite.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtscsi.o ../dtscsi.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtstats.o ../dtstats.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dttape.o ../dttape.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtunix.o ../dtunix.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtutil.o ../dtutil.c
+make: Warning: File `dtusage.c' has modification time 75 s in the future
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtusage.o ../dtusage.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtverify.o ../dtverify.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtworkloads.o ../dtworkloads.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o libscsi.o ../libscsi.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o scsidata.o ../scsidata.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o scsilib.o scsilib.c
+loading dt ...done
+make: dt: ELF 64-bit LSB executable, AMD x86-64, version 1 (SYSV), for GNU/Linux 2.6.9, dynamically linked (uses shared libs), for GNU/Linux 2.6.9, not stripped
+warning:  Clock skew detected.  Your build may be incomplete.
+
+	--> Building 'dt' for linux on cycrh6rtp10.rtp.netapp.com in subdirectory linux-rhel6x64 <--
+
+Executing cd ~/Tools/dt.v21.12/linux-rhel6x64; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.linux VPATH=.. OS=linux
+Linux cycrh6rtp10.rtp.netapp.com 2.6.32-358.11.1.el6.x86_64 #1 SMP Wed May 15 10:48:38 EDT 2013 x86_64 x86_64 x86_64 GNU/Linux
+Using built-in specs.
+Target: x86_64-unknown-linux-gnu
+Configured with: ../gcc-4.2.1/configure --prefix=/usr/software/pkgs/gcc-4.2.1 --with-mpfr-include=/u/ssubrama/tgb/build/x86_64-redhat-rhel6/gcc-4.2.1-build/../gcc-4.2.1/mpfr --enable-languages=c,c++,fortran,java
+Thread model: posix
+gcc version 4.2.1
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtfmt.o ../dtfmt.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI   -c -o dtusage.o ../dtusage.c
+loading dt ...done
+dt: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.18, BuildID[sha1]=0x3f45e5bbc4b5de5cddfabd19e8864339c3f9f8ac, not stripped
+
+	--> Building 'dt' for aix on staf-aix5.rtp.netapp.com in subdirectory aix5.3 <--
+
+Executing cd ~/Tools/dt.v21.12/aix5.3; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.aix VPATH=.. OS=aix CC=/usr/bin/gcc
+AIX staf-aix5 3 5 000664DAD700
+Reading specs from /usr/software/lib/gcc-lib/powerpc-ibm-aix5.2.0.0/3.3.3/specs
+Configured with: /usr/software/src/gcc-3.3.3/configure --prefix=/usr/software --program-suffix=-3.3.3 --disable-nls --without-gnu-as
+Thread model: aix
+gcc version 3.3.3
+	/usr/bin/gcc -O3 -I.. -DAIO -DMMAP -DRAND48 -DAIX -D_LARGE_FILES -D_ALL_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtfmt.c
+	/usr/bin/gcc -O3 -I.. -DAIO -DMMAP -DRAND48 -DAIX -D_LARGE_FILES -D_ALL_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtusage.c
+done
+dt: executable (RISC System/6000) or object module not stripped
+
+	--> Building 'dt' for freebsd on bldfptc09.spin.eng.netapp.com in subdirectory FreeBSD-x86 <--
+
+Executing cd ~/Tools/dt.v21.12/FreeBSD-x86; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.freebsd VPATH=.. 
+FreeBSD bldfptc09.spin.eng.netapp.com 8.2-RELEASE FreeBSD 8.2-RELEASE #0: Fri Feb 18 02:24:46 UTC 2011     root@almeida.cse.buffalo.edu:/usr/obj/usr/src/sys/GENERIC  i386
+/usr/software/bin/gcc: 2: Syntax error: "(" unexpected
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dt.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtaio.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtapp.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtbtag.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtfs.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtfmt.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtgen.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dthist.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtiot.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtinfo.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtjobs.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtmem.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtmmap.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtmtrand64.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtprint.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtprocs.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtread.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtwrite.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtscsi.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtstats.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dttape.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtunix.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtutil.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtusage.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtverify.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtworkloads.c
+loading dt ...cc -o dt -O2 -pipe -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -static dt.o dtaio.o dtapp.o dtbtag.o dtfs.o dtfmt.o dtgen.o dthist.o dtiot.o dtinfo.o dtjobs.o dtmem.o dtmmap.o dtmtrand64.o dtprint.o dtprocs.o dtread.o dtwrite.o dtscsi.o dtstats.o dttape.o dtunix.o dtutil.o dtusage.o dtverify.o dtworkloads.o -lpthread -lm -lcompat
+dt: ELF 32-bit LSB executable, Intel 80386, version 1 (FreeBSD), statically linked, for FreeBSD 8.2, not stripped
+done
+dt: ELF 32-bit LSB executable, Intel 80386, version 1 (FreeBSD), statically linked, for FreeBSD 8.2, not stripped
+
+	--> Building 'dt' for freebsd on bldfrtp01 in subdirectory FreeBSD-x86-64 <--
+
+Executing cd ~/Tools/dt.v21.12/FreeBSD-x86-64; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.freebsd VPATH=.. 
+FreeBSD bldfrtp01.rtp.netapp.com 6.2-RELEASE FreeBSD 6.2-RELEASE #0: Fri Jan 12 08:43:30 UTC 2007     root@portnoy.cse.buffalo.edu:/usr/obj/usr/src/sys/SMP  amd64
+Reading specs from /usr/software/lib/gcc/amd64-unknown-freebsd6.0/3.4.6/specs
+Configured with: /usr/software/src/gcc-3.4.6/configure --prefix=/usr/software --program-suffix=-3.4.6
+Thread model: posix
+gcc version 3.4.6
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dt.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtaio.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtapp.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtbtag.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtfs.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtfmt.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtgen.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dthist.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtiot.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtinfo.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtjobs.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtmem.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtmmap.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtmtrand64.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtprint.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtprocs.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtread.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtwrite.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtscsi.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtstats.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dttape.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtunix.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtutil.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtusage.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtverify.c
+cc -O2 -fno-strict-aliasing -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtworkloads.c
+loading dt ...cc -o dt -O2 -fno-strict-aliasing -pipe -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -static dt.o dtaio.o dtapp.o dtbtag.o dtfs.o dtfmt.o dtgen.o dthist.o dtiot.o dtinfo.o dtjobs.o dtmem.o dtmmap.o dtmtrand64.o dtprint.o dtprocs.o dtread.o dtwrite.o dtscsi.o dtstats.o dttape.o dtunix.o dtutil.o dtusage.o dtverify.o dtworkloads.o -lpthread -lm -lcompat
+dt: ELF 64-bit LSB executable, AMD x86-64, version 1 (FreeBSD), statically linked, not stripped
+done
+dt: ELF 64-bit LSB executable, AMD x86-64, version 1 (FreeBSD), statically linked, not stripped
+
+	--> Building 'dt' for freebsd on osg-cycf8-64a.nane.netapp.com in subdirectory FreeBSD8.1-x86-64 <--
+
+Executing cd ~/Tools/dt.v21.12/FreeBSD8.1-x86-64; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.freebsd VPATH=.. 
+FreeBSD osg-cycf8-64a.nane.netapp.com 8.1-RELEASE FreeBSD 8.1-RELEASE #0: Mon Jul 19 02:36:49 UTC 2010     root@mason.cse.buffalo.edu:/usr/obj/usr/src/sys/GENERIC  amd64
+Reading specs from /usr/software/lib/gcc/i386-unknown-freebsd6.0/3.4.6/specs
+Configured with: /usr/software/src/gcc-3.4.6/configure --prefix=/usr/software --program-suffix=-3.4.6
+Thread model: posix
+gcc version 3.4.6
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dt.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtaio.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtapp.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtbtag.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtfs.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtfmt.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtgen.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dthist.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtiot.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtinfo.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtjobs.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtmem.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtmmap.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtmtrand64.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtprint.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtprocs.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtread.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtwrite.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtscsi.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtstats.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dttape.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtunix.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtutil.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtusage.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtverify.c
+cc -O2 -pipe  -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -c ../dtworkloads.c
+loading dt ...cc -o dt -O2 -pipe -O3 -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE -static dt.o dtaio.o dtapp.o dtbtag.o dtfs.o dtfmt.o dtgen.o dthist.o dtiot.o dtinfo.o dtjobs.o dtmem.o dtmmap.o dtmtrand64.o dtprint.o dtprocs.o dtread.o dtwrite.o dtscsi.o dtstats.o dttape.o dtunix.o dtutil.o dtusage.o dtverify.o dtworkloads.o -lpthread -lm -lcompat
+dt: ELF 64-bit LSB executable, AMD x86-64, version 1 (FreeBSD), for FreeBSD 8.1, statically linked, for FreeBSD 8.1, not stripped
+done
+dt: ELF 64-bit LSB executable, AMD x86-64, version 1 (FreeBSD), for FreeBSD 8.1, statically linked, for FreeBSD 8.1, not stripped
+
+	--> Building 'dt' for solaris on hyde in subdirectory solaris-sparc-5.10 <--
+
+Executing cd ~/Tools/dt.v21.12/solaris-sparc-5.10; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.solaris VPATH=.. OS=solaris
+SunOS hyde 5.10 Generic_142909-17 sun4v sparc SUNW,SPARC-Enterprise-T2000
+Using built-in specs.
+Target: sparc-sun-solaris2.10
+Configured with: /usr/software/src/gcc-4.1.1/configure --prefix=/usr/software --program-suffix=-4.1.1
+Thread model: posix
+gcc version 4.1.1
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dt.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtaio.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtapp.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtbtag.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtfs.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtfmt.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtgen.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dthist.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtiot.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtinfo.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtjobs.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtmem.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtmmap.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtmtrand64.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtprint.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtprocs.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtread.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtwrite.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtscsi.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtstats.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dttape.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtunix.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtutil.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtusage.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtverify.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtworkloads.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../libscsi.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../scsidata.c
+gcc -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  scsilib.c
+-n loading dt -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1 -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT ...
+gcc -o dt -O3 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  dt.o		 dtaio.o		 dtapp.o		 dtbtag.o	 dtfs.o		 dtfmt.o		 dtgen.o		 dthist.o	 dtiot.o		 dtinfo.o	 dtjobs.o	 dtmem.o		 dtmmap.o	 dtmtrand64.o	 dtprint.o	 dtprocs.o	 dtread.o	 dtwrite.o	 dtscsi.o	 dtstats.o	 dttape.o	 dtunix.o         dtutil.o	 dtusage.o	 dtverify.o	 dtworkloads.o libscsi.o	 scsidata.o	 scsilib.o  -lrt -lpthread -lm -lsocket -lnsl -luuid
+done
+dt: ELF 32-bit MSB executable, SPARC, version 1 (SYSV), dynamically linked (uses shared libs), not stripped
+
+	--> Building 'dt' for solaris-x86 on bldssvl04.eng.netapp.com in subdirectory solaris-x86 <--
+
+Executing cd ~/Tools/dt.v21.12/solaris-x86; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.solaris-x86 VPATH=.. OS=solaris PORG='-O3 -Dctid_t=id_t -Dzoneid_t=id_t'
+SunOS bldssvl04.eng.netapp.com 5.10 Generic_120012-14 i86pc i386 i86pc
+Reading specs from /usr/software/lib/gcc/i386-pc-solaris2.10/3.4.6/specs
+Configured with: /usr/software/src/gcc-3.4.6/configure --prefix=/usr/software --program-suffix=-3.4.6
+Thread model: posix
+gcc version 3.4.6
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dt.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtaio.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtapp.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtbtag.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtfs.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtfmt.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtgen.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dthist.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtiot.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtinfo.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtjobs.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtmem.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtmmap.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtmtrand64.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtprint.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtprocs.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtread.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtwrite.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtscsi.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtstats.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dttape.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtunix.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtutil.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtusage.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtverify.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../dtworkloads.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../libscsi.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  ../scsidata.c
+gcc -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  -c  scsilib.c
+-n loading dt -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT ...
+gcc -o dt -O3 -Dctid_t=id_t -Dzoneid_t=id_t -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64  -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT  dt.o		 dtaio.o		 dtapp.o		 dtbtag.o	 dtfs.o		 dtfmt.o		 dtgen.o		 dthist.o	 dtiot.o		 dtinfo.o	 dtjobs.o	 dtmem.o		 dtmmap.o	 dtmtrand64.o	 dtprint.o	 dtprocs.o	 dtread.o	 dtwrite.o	 dtscsi.o	 dtstats.o	 dttape.o	 dtunix.o         dtutil.o	 dtusage.o	 dtverify.o	 dtworkloads.o libscsi.o	 scsidata.o	 scsilib.o  -lrt -lpthread -lm -lsocket -lnsl -luuid
+done
+dt: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked (uses shared libs), not stripped
+
+	--> Building 'dt' for hpux on nbbldh1.eng.btc.netapp.in in subdirectory hpux-parisc-11.11 <--
+
+Executing cd ~/Tools/dt.v21.12/hpux-parisc-11.11; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.hpux VPATH=.. OS=hpux CC=cc PORG='-O3 -DNEEDS_SETENV_API'
+HP-UX nbbldh1 B.11.11 U 9000/800 3872207139 unlimited-user license
+Reading specs from /usr/software/lib/gcc/hppa2.0w-hp-hpux11.11/3.4.6/specs
+Configured with: /usr/software/src/gcc-3.4.6/configure --prefix=/usr/software --program-suffix=-3.4.6 --with-as=/usr/software/bin/gas
+Thread model: single
+gcc version 3.4.6
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dt.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtaio.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtapp.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtbtag.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtfs.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtfmt.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtgen.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dthist.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtiot.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtinfo.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtjobs.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmem.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmmap.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmtrand64.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtprint.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtprocs.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtread.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtwrite.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtscsi.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtstats.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dttape.c
+cc: "../dttape.c", line 1: warning 501: Empty source file.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtunix.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtutil.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtusage.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtverify.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtworkloads.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../libscsi.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../scsidata.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c scsilib.c
+cc: "/usr/include/sys/socket.h", line 504: warning 562: Redeclaration of "sendfile" with a different storage class specifier: "sendfile" will have internal linkage.
+cc: "/usr/include/sys/socket.h", line 505: warning 562: Redeclaration of "sendpath" with a different storage class specifier: "sendpath" will have internal linkage.
+	cc -o dt -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI  dt.o		 dtaio.o		 dtapp.o		 dtbtag.o	 dtfs.o		 dtfmt.o		 dtgen.o		 dthist.o	 dtiot.o		 dtinfo.o	 dtjobs.o	 dtmem.o		 dtmmap.o	 dtmtrand64.o	 dtprint.o	 dtprocs.o	 dtread.o	 dtwrite.o	 dtscsi.o	 dtstats.o	 dttape.o	 dtunix.o         dtutil.o	 dtusage.o	 dtverify.o	 dtworkloads.o libscsi.o	 scsidata.o	 scsilib.o  -lrt -lpthread -lm
+done
+dt:		PA-RISC1.1 shared executable dynamically linked -not stripped
+
+	--> Building 'dt' for hpux on bldhsvl07.eng.netapp.com in subdirectory hpux-parisc-11.31 <--
+
+Executing cd ~/Tools/dt.v21.12/hpux-parisc-11.31; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.hpux VPATH=.. OS=hpux CC=cc
+HP-UX bldhsvl0 B.11.31 U 9000/800 4114649404 unlimited-user license
+Reading specs from /usr/software/lib/gcc/hppa2.0w-hp-hpux11.11/3.4.6/specs
+Configured with: /usr/software/src/gcc-3.4.6/configure --prefix=/usr/software --program-suffix=-3.4.6 --with-as=/usr/software/bin/gas
+Thread model: single
+gcc version 3.4.6
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dt.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtaio.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtapp.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtbtag.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtfs.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtfmt.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtgen.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dthist.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtiot.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtinfo.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtjobs.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmem.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmmap.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmtrand64.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtprint.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtprocs.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtread.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtwrite.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtscsi.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtstats.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dttape.c
+cc: "../dttape.c", line 1: warning 501: Empty source file.
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtunix.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtutil.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtusage.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtverify.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtworkloads.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../libscsi.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c ../scsidata.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI -c scsilib.c
+	cc -o dt -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD32 -D_BIG_ENDIAN_=1 -DSCSI  dt.o		 dtaio.o		 dtapp.o		 dtbtag.o	 dtfs.o		 dtfmt.o		 dtgen.o		 dthist.o	 dtiot.o		 dtinfo.o	 dtjobs.o	 dtmem.o		 dtmmap.o	 dtmtrand64.o	 dtprint.o	 dtprocs.o	 dtread.o	 dtwrite.o	 dtscsi.o	 dtstats.o	 dttape.o	 dtunix.o         dtutil.o	 dtusage.o	 dtverify.o	 dtworkloads.o libscsi.o	 scsidata.o	 scsilib.o  -lrt -lpthread -lm
+done
+dt:		PA-RISC1.1 shared executable dynamically linked -not stripped dynamically linked
+
+	--> Building 'dt' for hpux-ia64 on bldhsvl01.eng.netapp.com in subdirectory hpux-ia64-11.23 <--
+
+Executing cd ~/Tools/dt.v21.12/hpux-ia64-11.23; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.hpux-ia64 VPATH=.. OS=hpux CC=cc PORG='-O3 -DNEEDS_SETENV_API'
+HP-UX bldhsvl0 B.11.23 U ia64 4267767128 unlimited-user license
+Reading specs from /usr/software/lib/gcc/hppa2.0w-hp-hpux11.11/3.4.6/specs
+Configured with: /usr/software/src/gcc-3.4.6/configure --prefix=/usr/software --program-suffix=-3.4.6 --with-as=/usr/software/bin/gas
+Thread model: single
+gcc version 3.4.6
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dt.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtaio.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtapp.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtbtag.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtfs.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtfmt.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtgen.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dthist.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtiot.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtinfo.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtjobs.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmem.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmmap.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmtrand64.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtprint.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtprocs.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtread.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtwrite.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtscsi.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtstats.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dttape.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtunix.c
+"../dtunix.c", line 772: warning #4232-D: conversion from "struct sockaddr *" to a more strictly aligned type "struct sockaddr_in *" may cause misaligned access
+  	    struct sockaddr_in *sainp = (struct sockaddr_in *)(aip->ai_addr);
+  	                                ^
+
+"../dtunix.c", line 807: warning #4232-D: conversion from "struct sockaddr *" to a more strictly aligned type "struct sockaddr_in6 *" may cause misaligned access
+  	    struct sockaddr_in6 *sain6p = (struct sockaddr_in6 *)(aip->ai_addr);
+  	                                  ^
+
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtutil.c
+"../dtutil.c", line 89: warning #2177-D: function "get_max_cpu_busy" was declared but never referenced
+  static int get_max_cpu_busy(dinfo_t *dip, char *cmd);
+             ^
+
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtusage.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtverify.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtworkloads.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../libscsi.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../scsidata.c
+	cc -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c scsilib.c
+	cc -o dt -O3 -DNEEDS_SETENV_API -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI  dt.o		 dtaio.o		 dtapp.o		 dtbtag.o	 dtfs.o		 dtfmt.o		 dtgen.o		 dthist.o	 dtiot.o		 dtinfo.o	 dtjobs.o	 dtmem.o		 dtmmap.o	 dtmtrand64.o	 dtprint.o	 dtprocs.o	 dtread.o	 dtwrite.o	 dtscsi.o	 dtstats.o	 dttape.o	 dtunix.o         dtutil.o	 dtusage.o	 dtverify.o	 dtworkloads.o libscsi.o	 scsidata.o	 scsilib.o  -lrt -lpthread -lm
+done
+dt:		ELF-64 executable object file - IA64
+
+	--> Building 'dt' for hpux-ia64 on bldhsvl03.eng.netapp.com in subdirectory hpux-ia64-11.31 <--
+
+Executing cd ~/Tools/dt.v21.12/hpux-ia64-11.31; umask 022; uname -a ; PATH=/usr/software/bin:/sbin:/bin:/usr/bin:/usr/sbin:/usr/ucb:/etc:/usr/ccs/bin:/x/eng/localtest/noarch/bin:/usr/local/bin:/x/eng/utils/bin:/usr/software/bin:/usr/software/test/bin:/usr/software/utils/bin:/usr/local/share:/u/p4/bin:/usr/software/rats/bin:. ; gcc -v ; make -f ../Makefile.hpux-ia64 VPATH=.. OS=hpux CC=cc
+HP-UX bldhsvl0 B.11.31 U ia64 2311142695 unlimited-user license
+Reading specs from /usr/software/lib/gcc/hppa2.0w-hp-hpux11.11/3.4.6/specs
+Configured with: /usr/software/src/gcc-3.4.6/configure --prefix=/usr/software --program-suffix=-3.4.6 --with-as=/usr/software/bin/gas
+Thread model: single
+gcc version 3.4.6
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dt.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtaio.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtapp.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtbtag.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtfs.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtfmt.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtgen.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dthist.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtiot.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtinfo.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtjobs.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmem.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmmap.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtmtrand64.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtprint.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtprocs.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtread.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtwrite.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtscsi.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtstats.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dttape.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtunix.c
+"../dtunix.c", line 772: warning #4232-D: conversion from "struct sockaddr *" to a more strictly aligned type "struct sockaddr_in *" may cause misaligned access
+  	    struct sockaddr_in *sainp = (struct sockaddr_in *)(aip->ai_addr);
+  	                                ^
+
+"../dtunix.c", line 807: warning #4232-D: conversion from "struct sockaddr *" to a more strictly aligned type "struct sockaddr_in6 *" may cause misaligned access
+  	    struct sockaddr_in6 *sain6p = (struct sockaddr_in6 *)(aip->ai_addr);
+  	                                  ^
+
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtutil.c
+"../dtutil.c", line 89: warning #2177-D: function "get_max_cpu_busy" was declared but never referenced
+  static int get_max_cpu_busy(dinfo_t *dip, char *cmd);
+             ^
+
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtusage.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtverify.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../dtworkloads.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../libscsi.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c ../scsidata.c
+	cc -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI -c scsilib.c
+	cc -o dt -O3 -mt -I.. -DAIO -DMMAP -DRAND48  -D_FILE_OFFSET_BITS=64 -DHP_UX +DD64 -D_BIG_ENDIAN_=1 -DSCSI  dt.o		 dtaio.o		 dtapp.o		 dtbtag.o	 dtfs.o		 dtfmt.o		 dtgen.o		 dthist.o	 dtiot.o		 dtinfo.o	 dtjobs.o	 dtmem.o		 dtmmap.o	 dtmtrand64.o	 dtprint.o	 dtprocs.o	 dtread.o	 dtwrite.o	 dtscsi.o	 dtstats.o	 dttape.o	 dtunix.o         dtutil.o	 dtusage.o	 dtverify.o	 dtworkloads.o libscsi.o	 scsidata.o	 scsilib.o  -lrt -lpthread -lm
+done
+dt:		ELF-64 executable object file - IA64
+233246606  864 -rwxr-xr-x   1 rtmiller engr       878452 Mar  9 12:43 ./aix5.3/dt
+215665773  908 -rwxr-xr-x   1 rtmiller engr       922418 Feb 20 08:00 ./aix6.1/dt
+209768521 1244 -rwxr-xr-x   1 rtmiller engr      1263807 Mar  9 12:45 ./FreeBSD-x86/dt
+202599708 1328 -rwxr-xr-x   1 rtmiller engr      1347850 Mar  9 12:45 ./FreeBSD-x86-64/dt
+214702475 1360 -rwxr-xr-x   1 rtmiller engr      1382253 Mar  9 12:48 ./FreeBSD8.1-x86-64/dt
+222600991 1700 -rwxr-xr-x   1 rtmiller engr      1732024 Mar  9 13:49 ./hpux-ia64-11.23/dt
+222600994 1692 -rwxr-xr-x   1 rtmiller engr      1722880 Mar  9 14:01 ./hpux-ia64-11.31/dt
+222600997  712 -rwxr--r-x   1 rtmiller engr       724992 Mar  9 13:26 ./hpux-parisc-11.11/dt
+222601000  712 -rwxr--r-x   1 rtmiller engr       724992 Mar  9 13:35 ./hpux-parisc-11.31/dt
+215889884  468 -rwxr-xr-x   1 rtmiller engr       474867 Mar  9 12:42 ./linux-rhel5x32/dt
+229118988  572 -rwxr-xr-x   1 rtmiller engr       579926 Mar  9 12:43 ./linux-rhel5x64/dt
+215825119  592 -rwxr-xr-x   1 rtmiller engr       599441 Mar  9 12:43 ./linux-rhel6x64/dt
+206105144  484 -rwxr-xr-x   1 rtmiller engr       490596 Feb 20 07:53 ./mac_darwin/dt
+227423401  608 -rwxr-xr-x   1 rtmiller engr       617429 Mar  9 12:51 ./solaris-sparc-5.10/dt
+231956471  548 -rwxr-xr-x   1 rtmiller engr       555649 Mar  9 12:55 ./solaris-x86/dt
+230566874    4 drwxr-xr-x   3 rtmiller engr         4096 Jul 28  2015 ./windows/.vs/dt
+230566883 1652 -rwxr-xr-x   1 rtmiller engr      1682432 Feb 20 07:38 ./windows/Debug/dt.exe
+206143383  736 -rwxr-xr-x   1 rtmiller engr       747008 Feb 20 07:37 ./windows/Release/dt.exe
+210064691 2096 -rwxr-xr-x   1 rtmiller engr      2131456 Feb 20 07:37 ./windows/x64/Debug/dt.exe
+221495192  904 -rwxr-xr-x   1 rtmiller engr       920576 Feb 20 07:37 ./windows/x64/Release/dt.exe
