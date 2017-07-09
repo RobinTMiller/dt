@@ -79,7 +79,7 @@ AWK=	awk
 CFLAGS+= $(PORG) -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE
 CPP=	/usr/bin/cpp
 CPPOPTS= 
-# Build *without* shared libraries since ONTAP's FreeBSD lacks libpthread.so!
+# Build *without* shared libraries (for now).
 LDFLAGS="-static"
 
 # end of system makefile definitions
