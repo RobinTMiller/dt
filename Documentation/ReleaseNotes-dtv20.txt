@@ -30,7 +30,6 @@ will break, since the output format has changed, esp. the log prefix.
 	  - script=FILE.dt to execute
 	  - a start script is also supported (~/.datatestrc)
 	o predefined workloads
-	  - Note: Only a few exist after removing NetApp workloads.
 	  - Please send me your favorite workloads, I can add them! ;)
 	o ability to define custom workloads (see "define" option)
 	  - Note: WOrkloads can be define in the dt startup script.
@@ -568,9 +567,9 @@ dt (j:1 t:1):                 OS information: Linux 2.6.18-164.el5 #1 SMP Tue Au
 dt (j:1 t:1): 
 dt (j:1 t:1): SCSI Information:
 dt (j:1 t:1):               SCSI Device Name: /dev/mapper/3600a098042425457422b43696a737435
-dt (j:1 t:1):          Vendor Identification: NETAPP
-dt (j:1 t:1):         Product Identification: LUN C-Mode
-dt (j:1 t:1):        Firmware Revision Level: 8200
+dt (j:1 t:1):          Vendor Identification: VID
+dt (j:1 t:1):         Product Identification: PID
+dt (j:1 t:1):        Firmware Revision Level: REV
 dt (j:1 t:1):      Target Port Group Support: 1 (implicit ALUA)
 dt (j:1 t:1):                   Block Length: 512
 dt (j:1 t:1):               Maximum Capacity: 2097152 (1024.000 Mbytes)
@@ -802,7 +801,7 @@ dt (j:1 t:1):                     Process ID: 3228
 dt (j:1 t:1):                 OS information: Linux 2.6.18-164.el5 #1 SMP Tue Aug 18 15:51:48 EDT 2009 x86_64
 dt (j:1 t:1): 
 dt (j:1 t:1): SCSI Information:
-dt (j:1 t:1):            Inquiry information: Vid=NETAPP, Pid=LUN C-Mode, Rev=8200
+dt (j:1 t:1):            Inquiry information: Vid=VID, Pid=PID, Rev=REV
 dt (j:1 t:1):           Capacity information: Block Length=512, Capacity=2097152 (1024.000 Mbytes)
 dt (j:1 t:1):        Provisioning management: Full Provisioned
 dt (j:1 t:1):              Device identifier: 600a-0980-4242-5457-422b-4369-6a73-7435

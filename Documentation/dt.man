@@ -2418,6 +2418,6 @@ excellent diagnostic and performance tool (it gives me a warm and
 fuzzy feeling ).
 
 .SH AUTHOR
-Written by Robin Miller <robin dot miller at netapp dot com>
+Written by Robin Miller <Robin.T.Miller@gmail.com>
 
 

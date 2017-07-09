@@ -426,8 +426,6 @@ dt (j:1 t:1): Record #1 - Reading 2048 bytes (4 blocks) into buffer 0x5b60000, l
 dt (j:1 t:1): Reread data matches previous data read, possible write failure!
 dt (j:1 t:1): Command line to re-read the corrupted data:
 dt (j:1 t:1): -> /u/rtmiller/Tools/tdt.d-WIP/linux-rhel5x64/dt if=dtcopy.data bs=2048 count=1 position=0 pattern=0x39c39c39 flags=direct enable=btag
-dt (j:1 t:1): Note: For more information regarding data corruptions, please visit this link:
-dt (j:1 t:1):     https://wikid.netapp.com/w/User:Rtmiller/datatest_(dt)_Corruption_BURTs
 dt (j:1 t:1): 
 dt (j:1 t:1): Operating System Information:
 dt (j:1 t:1):                      Host name: ssan-rhel5u4-21 (10.229.136.235)
