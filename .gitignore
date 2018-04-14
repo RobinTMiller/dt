@@ -1,5 +1,5 @@
 *.o
 *.obj
 *.tlog
-windows/*.h
 windows/*.c
+windows/*.h

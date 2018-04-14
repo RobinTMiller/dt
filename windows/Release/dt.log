@@ -21,11 +21,13 @@
   Generating Code...
   Compiling...
   dtwin.c
+c:\cygwin64\home\robin\github\dt\windows\dtwin.c(1302): warning C4996: 'GetVersionExA': was declared deprecated
+  c:\program files (x86)\windows kits\8.1\include\um\sysinfoapi.h(433): note: see declaration of 'GetVersionExA'
   dtworkloads.c
   dtwrite.c
   libscsi.c
   scsidata.c
   scsilib.c
+c:\program files (x86)\windows kits\8.1\include\shared\ntddscsi.h(719): warning C4091: 'typedef ': ignored on left of '_NV_SEP_WRITE_CACHE_TYPE' when no variable is declared
   Generating Code...
-  dt.vcxproj -> C:\cygwin64\home\RMill7198650\dt.v21\windows\.\Release\dt.exe
-  dt.vcxproj -> .\Release/dt.pdb (Full PDB)
+  dt.vcxproj -> C:\cygwin64\home\robin\GitHub\dt\windows\.\Release\dt.exe

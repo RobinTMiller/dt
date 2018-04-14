@@ -21,12 +21,14 @@
   Generating Code...
   Compiling...
   dtwin.c
-dtwin.c(238): warning C4311: 'type cast': pointer truncation from 'void *' to 'unsigned int'
+c:\cygwin64\home\robin\github\dt\windows\dtwin.c(238): warning C4311: 'type cast': pointer truncation from 'void *' to 'unsigned int'
+c:\cygwin64\home\robin\github\dt\windows\dtwin.c(1302): warning C4996: 'GetVersionExA': was declared deprecated
+  c:\program files (x86)\windows kits\8.1\include\um\sysinfoapi.h(433): note: see declaration of 'GetVersionExA'
   dtworkloads.c
   dtwrite.c
   scsidata.c
   scsilib.c
+c:\program files (x86)\windows kits\8.1\include\shared\ntddscsi.h(719): warning C4091: 'typedef ': ignored on left of '_NV_SEP_WRITE_CACHE_TYPE' when no variable is declared
   Generating Code...
   libscsi.c
-  dt.vcxproj -> C:\cygwin64\home\RMill7198650\dt.v21\windows\x64\Release\dt.exe
-  dt.vcxproj -> C:\cygwin64\home\RMill7198650\dt.v21\windows\x64\Release\dt.pdb (Full PDB)
+  dt.vcxproj -> C:\cygwin64\home\robin\GitHub\dt\windows\x64\Release\dt.exe

@@ -1,24 +1,14 @@
 
-October 13th, 2014
+April 14th, 2018
 
 o Use realtime timers for microsecond resolution.
   - this will mean older OS's without this are NOT supported!
   - Windows now uses high resolution couonter for gettimeofday().
 
-o Modify Windows to use extended API's, such as WriteFileEx().
-  - this to allow threads to be in alertable state for other API's
-
-o Modify Windows code to use native API's only to avoid multi-thread libc.
-  - the threaded libc imposes too many restrictions, like excluding thread
-    suspend/resume which may/will hang with threaded libc.
-
 o Add multiple device/file support. (done, but very unclean!)
 
 o Multiple threads per device/file. (done)
   - includes dynamic job control and script support
-
-o Implement different I/O behaviours: (crud, hammer, and sio are done)
-  - crud, disk hogger, sio, fops, hammer (move towards one tool for all I/O)
 
 o Add SCSI I/O via SCSI library (done)
   - include SCSI triggers
@@ -29,3 +19,8 @@ o Remove tape support. (cleans up code alot!)
 
 o Switch to pread/pwrite. (retain the input/output file offset)
 
+o Refactor main and parser to be thread safe for Python ctypes API.
+
+o Add JSON support where appropriate, like total statistics, etc.
+
+o Add SCSI Write Same, Unmap, etc directly in dt, to avoid spt.
