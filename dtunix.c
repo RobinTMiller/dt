@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2017			    *
+ *			  COPYRIGHT (c) 2006 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,10 @@
  *	This module contains *unix OS specific functions.
  * 
  * Modification History:
+ * 
+ * March 1st, 2018 by Robin T Miller
+ *      Add isDeviceMounted() for Linux only (right now), to determine if
+ * a /dev disk name is mounted to prevent overwriting mounted file systems.
  * 
  * May 29th, 2015 by Robin T. Miller
  * 	Increase the mount file system options buffer, since the previous
@@ -252,6 +256,15 @@ FindMountDevice(dinfo_t *dip, char *path, hbool_t debug)
     return(match);
 }
 
+hbool_t
+isDeviceMounted(dinfo_t *dip, char *path, hbool_t debug)
+{
+    if (debug) {
+	Printf(dip, "isDeviceMounted: This needs implmented for this OS!\n");
+    }
+    return(False);
+}
+
 /* ----------------------------------------------------------------------------------- */
 
 #elif defined(SOLARIS)
@@ -310,6 +323,15 @@ FindMountDevice(dinfo_t *dip, char *path, hbool_t debug)
     return(match);
 }
 
+hbool_t
+isDeviceMounted(dinfo_t *dip, char *path, hbool_t debug)
+{
+    if (debug) {
+	Printf(dip, "isDeviceMounted: This needs implmented for this OS!\n");
+    }
+    return(False);
+}
+
 /* ----------------------------------------------------------------------------------- */
 
 #elif defined(MOUNT_FILE) /* Linux, HP-UX */
@@ -360,6 +382,60 @@ FindMountDevice(dinfo_t *dip, char *path, hbool_t debug)
 		strncpy(filesystem_options, mnt->mnt_opts, sizeof(filesystem_options)-1);
 		match = True;
 	    }
+	}
+    }
+    if (match == True) {
+	dip->di_mounted_from_device = strdup(mounted_match);
+	dip->di_mounted_on_dir = strdup(mounted_path);
+	dip->di_filesystem_type = strdup(filesystem_type);
+	dip->di_filesystem_options = strdup(filesystem_options);
+    }
+    (void)endmntent(fp);
+    return(match);
+}
+
+hbool_t
+isDeviceMounted(dinfo_t *dip, char *path, hbool_t debug)
+{
+    char mounted_path[PATH_BUFFER_SIZE];
+    char mounted_match[PATH_BUFFER_SIZE];
+    char filesystem_type[SMALL_BUFFER_SIZE];
+    char filesystem_options[PATH_BUFFER_SIZE];
+    char path_dir[PATH_BUFFER_SIZE];
+    struct mntent *mnt;
+    size_t path_len = strlen(path);
+    hbool_t match = False;
+    FILE *fp;
+
+    fp = setmntent(MOUNT_FILE, "r");
+    if (fp == NULL) return (match);
+
+    memset(mounted_path, '\0', sizeof(mounted_path));
+    memset(mounted_match, '\0', sizeof(mounted_match));
+
+    while ( (mnt = getmntent(fp)) != NULL ) {
+	if (debug) {
+	    Printf(dip, "dir = %s, fsname = %s, type = %s\n", mnt->mnt_dir, mnt->mnt_fsname, mnt->mnt_type);
+	}
+	/*
+	 * Normally users will specific /dev/sda, for example, while file systems 
+	 * are mounted from partitions such as /dev/sda1. We also must be careful 
+	 * for matching /dev/sda and /dev/sdaa, etc. when we have many disk names. 
+	 * DM-MP paths looks like this: /dev/mapper/35000cca2510285c8-part1 
+	 *  
+	 * Note: We do *not* catch this type of mount today: (sigh)
+	 *  /dev/mapper/centos_cos--lab--l4--test01-root -> ../dm-0 -> /dev/sdm
+	 */
+	if ( (strncmp(path, mnt->mnt_fsname, path_len) == 0) && !isalpha(mnt->mnt_fsname[path_len]) ) {
+	    if (debug) {
+		Printf(dip, "Found match! -> %s on %s\n", mnt->mnt_fsname, mnt->mnt_dir);
+	    }
+	    strncpy(mounted_path, mnt->mnt_dir, sizeof(mounted_path)-1);
+	    strncpy(mounted_match, mnt->mnt_fsname, sizeof(mounted_match)-1);
+	    strncpy(filesystem_type, mnt->mnt_type, sizeof(filesystem_type)-1);
+	    strncpy(filesystem_options, mnt->mnt_opts, sizeof(filesystem_options)-1);
+	    match = True;
+	    break;
 	}
     }
     if (match == True) {
@@ -480,6 +556,15 @@ FindMountDevice(dinfo_t *dip, char *path, hbool_t debug)
     return(match);
 }
 
+hbool_t
+isDeviceMounted(dinfo_t *dip, char *path, hbool_t debug)
+{
+    if (debug) {
+	Printf(dip, "isDeviceMounted: This needs implmented for this OS!\n");
+    }
+    return(False);
+}
+
 #else /* We don't have support for this OS yet! */
 
 hbool_t
@@ -489,6 +574,15 @@ FindMountDevice(dinfo_t *dip, char *path, hbool_t debug)
 	Printf(dip, "FindMountDevice: Don't know how to find mount device yet!\n");
     }
     return (False);
+}
+
+hbool_t
+isDeviceMounted(dinfo_t *dip, char *path, hbool_t debug)
+{
+    if (debug) {
+	Printf(dip, "isDeviceMounted: This needs implmented for this OS!\n");
+    }
+    return(False);
 }
 
 #endif /* defined(SOLARIS */

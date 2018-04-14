@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,21 @@
  *	Write routines for generic data test program.
  * 
  * Modification History:
+ * 
+ * January 5th, 2018 by Robin T. Miller
+ *      When doing percentages and verifying the write data, then exclude
+ * the read verify statistics so our read/write percentages are accurate.
+ * Note: By default, read-after-write is enabled to verify data written.
+ * 
+ * January 4th, 2018 by Robin T. Miller
+ *      When prefilling a file, exclude the record limir and fill to the
+ * data limit, otherwise random I/O may read a premature end of file.
+ * 
+ * December 28th, 2017 by Robin T. Miller
+ *      Added support for multiple threads via I/O lock and shared data.
+ * 
+ * September 1st, 2017 by Robin T. Miller
+ *      Add support for separate read/write random percentages.
  * 
  * December 21st, 2016 by Robin T. Miller
  *      Only use pwrite() for random access devices, and normal write() for
@@ -67,6 +82,14 @@
 #  include <sys/file.h>
 #endif /* !defined(_QNX_SOURCE) && !defined(WIN32) */
 
+/*
+ * Forward References:
+ */
+int prefill_file_iolock(dinfo_t *dip, size_t block_size, large_t data_limit, Offset_t starting_offset);
+int write_data_iolock(struct dinfo *dip);
+
+/* ---------------------------------------------------------------------- */
+
 int
 prefill_file(dinfo_t *dip, size_t block_size, large_t data_limit, Offset_t starting_offset)
 {
@@ -93,7 +116,8 @@ prefill_file(dinfo_t *dip, size_t block_size, large_t data_limit, Offset_t start
     init_buffer(dip, data_buffer, block_size, pattern);
 
     while ( (data_written < data_limit) &&
-	    (records_written < dip->di_record_limit) ) {
+	    (dip->di_error_count < dip->di_error_limit) &&
+	    (data_written < data_limit) ) {
 
 	PAUSE_THREAD(dip);
 	if ( THREAD_TERMINATING(dip) ) break;
@@ -107,7 +131,6 @@ prefill_file(dinfo_t *dip, size_t block_size, large_t data_limit, Offset_t start
 
 	if (dip->di_Debug_flag) {
 	    large_t iolba = (offset / dip->di_dsize);
-	    Offset_t iopos = (Offset_t) 0;
 	    long files = (dip->di_files_written + 1);
 	    long records = (long)(records_written + 1);
 	    report_record(dip, files, records, iolba, offset, WRITE_MODE, data_buffer, bsize);
@@ -169,6 +192,9 @@ write_data(struct dinfo *dip)
 {
     dinfo_t *idip = dip->di_output_dinfo; /* For mirror mode. */
     struct dtfuncs *dtf = dip->di_funcs;
+#if defined(DT_IOLOCK)
+    io_global_data_t *iogp = dip->di_job->ji_opaque;
+#endif
     register ssize_t count;
     register size_t bsize, dsize;
     large_t data_limit;
@@ -181,13 +207,21 @@ write_data(struct dinfo *dip)
     iotype_t iotype = dip->di_io_type;
     optype_t optype = WRITE_OP;
     int probability_reads = 0, probability_random = 0;
+    int random_percentage = dip->di_random_percentage;
     hbool_t compare_flag = dip->di_compare_flag;
     hbool_t percentages_flag = False;
     hbool_t read_after_write_flag = dip->di_raw_flag;
     uint32_t loop_usecs;
     struct timeval loop_start_time, loop_end_time;
 
-    dsize = get_data_size(dip);
+#if defined(DT_IOLOCK)
+    /* Note: Temporary until we define a new I/O behavior! */
+    if (iogp) {
+	return( write_data_iolock(dip) );
+    }
+#endif /* defined(DT_IOLOCK) */
+
+    dsize = get_data_size(dip, optype);
     data_limit = get_data_limit(dip);
 
     if ( (dip->di_fill_always == True) || (dip->di_fill_once == True) ) {
@@ -226,7 +260,8 @@ write_data(struct dinfo *dip)
 	dip->di_actual_total_usecs = 0;
 	dip->di_target_total_usecs = 0;
     }
-    if (dip->di_read_percentage || dip->di_random_percentage) {
+    if (dip->di_read_percentage || dip->di_random_percentage ||
+	dip->di_random_rpercentage || dip->di_random_wpercentage) {
 	percentages_flag = True;
     }
 
@@ -271,17 +306,22 @@ write_data(struct dinfo *dip)
 		set_Eof(dip);
 		break;
 	    }
-	    probability_reads  = (int)(get_random(dip) % 100);
-	    probability_random = (int)(get_random(dip) % 100);
-
 	    if (read_percentage == -1) {
 		read_percentage = (int)(get_random(dip) % 100);
 	    }
+	    if (read_percentage) {
+		probability_reads  = (int)(get_random(dip) % 100);
+	    }
+	    probability_random = (int)(get_random(dip) % 100);
+
 	    if (probability_reads < read_percentage) {
 		optype = READ_OP;
 		dip->di_mode = READ_MODE;
 		compare_flag = False;
 		read_after_write_flag = False;
+		if (dip->di_min_size == 0) {
+		    dsize = get_data_size(dip, optype);
+		}
 	    } else {
 		optype = WRITE_OP;
 		dip->di_mode = WRITE_MODE;
@@ -292,8 +332,18 @@ write_data(struct dinfo *dip)
 		    /* Writing only, no reading/verifying! */
 		    read_after_write_flag = False;
 		}
+		if (dip->di_min_size == 0) {
+		    dsize = get_data_size(dip, optype);
+		}
 	    }
-	    if (probability_random < dip->di_random_percentage) {
+	    if ( (optype == READ_OP) && dip->di_random_rpercentage) {
+		random_percentage = dip->di_random_rpercentage;
+	    } else if ((optype == WRITE_OP) && dip->di_random_wpercentage) {
+		random_percentage = dip->di_random_wpercentage;
+	    } else {
+		random_percentage = dip->di_random_percentage;
+	    }
+	    if (probability_random < random_percentage) {
 		iotype = RANDOM_IO;
 	    } else {
 		iotype = SEQUENTIAL_IO;
@@ -460,7 +510,23 @@ write_data(struct dinfo *dip)
 		if (status == FAILURE) break;
 	    }
 	    status = write_verify(dip, dip->di_data_buffer, count, dsize, dip->di_offset);
-	    if ( (status == FAILURE) && (dip->di_error_count >= dip->di_error_limit) ) break;
+	    if (status == FAILURE) {
+		if (dip->di_error_count >= dip->di_error_limit) {
+		    break;
+		}
+	    } else if (percentages_flag) {
+		/* Note: Undue the read statistics, so percentages are more accurate. */
+		dip->di_records_read--;
+		dip->di_dbytes_read -= count;
+		dip->di_fbytes_read -= count;
+		dip->di_vbytes_read -= count;
+		dip->di_maxdata_read -= count;
+		if ((size_t)count == dsize) {
+		    dip->di_full_reads--;
+		} else {
+		    dip->di_partial_reads--;
+		}
+	    }
 	} else if ( (optype == READ_OP) && (status != FAILURE) ) {
 	    if ( (compare_flag == True) && (dip->di_io_mode == TEST_MODE) ) {
 		ssize_t vsize = count;
@@ -575,6 +641,607 @@ write_data(struct dinfo *dip)
     }
     return(status);
 }
+
+#if defined(DT_IOLOCK)
+
+int
+prefill_file_iolock(dinfo_t *dip, size_t block_size, large_t data_limit, Offset_t starting_offset)
+{
+    io_global_data_t *iogp = dip->di_job->ji_opaque;
+    void *data_buffer = dip->di_data_buffer;
+    large_t data_written = 0;
+    large_t records_written = 0;
+    ssize_t count;
+    uint32_t pattern;
+    size_t bsize, dsize = block_size;
+    u_long io_record = 0;
+    int status = SUCCESS;
+
+    (void)dt_acquire_iolock(dip, iogp);
+    if (dip->di_random_access) {
+	if (iogp->io_initialized == False) {
+	    iogp->io_starting_offset = iogp->io_sequential_offset = dip->di_offset = get_position(dip);
+	    iogp->io_initialized = True;
+	}
+    } else {
+	iogp->io_starting_offset = iogp->io_sequential_offset = dip->di_offset;
+    }
+    (void)dt_release_iolock(dip, iogp);
+
+    if (dip->di_user_fpattern == True) {
+	pattern = dip->di_fill_pattern;
+    } else {
+	pattern = ~dip->di_pattern;
+    }
+    /* Note: Debug instead of verbose since too noisy with many files/threads! */
+    if ( (dip->di_debug_flag || dip->di_Debug_flag) && (dip->di_thread_number == 1) ) {
+	Printf(dip, "Filling %s at offset "FUF", block size "SUF", data limit "LUF", pattern 0x%08x...\n",
+	       dip->di_dname, iogp->io_starting_offset, block_size, data_limit, pattern);
+    }
+
+    init_buffer(dip, data_buffer, block_size, pattern);
+
+    while ( (iogp->io_end_of_file == False) &&
+	    (iogp->io_bytes_written < data_limit) &&
+	    (dip->di_error_count < dip->di_error_limit) ) {
+
+	PAUSE_THREAD(dip);
+	if ( THREAD_TERMINATING(dip) ) break;
+	if (dip->di_terminating) break;
+
+	(void)dt_acquire_iolock(dip, iogp);
+	/*
+	 * With multiple threads, we must check limits after unlocking.
+	 */
+	if ( (iogp->io_end_of_file == True) ||
+	     (iogp->io_bytes_written >= data_limit) ) {
+	    set_Eof(dip);
+	    iogp->io_end_of_file = dip->di_end_of_file;
+	    (void)dt_release_iolock(dip, iogp);
+	    break;
+	}
+	if ( (iogp->io_bytes_written + dsize) > data_limit) {
+	    bsize = (size_t)(data_limit - iogp->io_bytes_written);
+	} else {
+	    bsize = dsize;
+	}
+	dip->di_offset = iogp->io_sequential_offset;
+	iogp->io_sequential_offset += bsize;
+	/* Note: Must set these before I/O for other threads! */
+	iogp->io_bytes_written += bsize;
+	iogp->io_records_written++;
+	io_record = iogp->io_records_written;
+	(void)dt_release_iolock(dip, iogp);
+
+	if (dip->di_Debug_flag) {
+	    large_t iolba = (dip->di_offset / dip->di_dsize);
+	    long files = (dip->di_files_written + 1);
+	    report_record(dip, files, io_record,
+			  iolba, dip->di_offset,
+			  WRITE_MODE, dip->di_data_buffer, bsize);
+	}
+
+	do {
+	    count = write_record(dip, data_buffer, bsize, dsize, dip->di_offset, &status);
+	} while (status == RETRYABLE);
+
+	if (status == FAILURE) break;
+	if (dip->di_end_of_file) break;
+
+	if ((size_t)count == dsize) {
+	    dip->di_full_writes--;
+	} else {
+	    dip->di_partial_writes--;
+	}
+	data_written += count;
+	records_written++;
+	/* Note: This is maintained for external functions. */
+	dip->di_records_written++;
+    }
+    if (dip->di_end_of_file == False) {
+	set_Eof(dip);
+    }
+    iogp->io_end_of_file = dip->di_end_of_file;
+
+    if (dip->di_fsync_flag == True) {
+	int rc = dt_flush_file(dip, dip->di_dname, &dip->di_fd, NULL, True);
+	if (rc == FAILURE) status = rc;
+    }
+    wait_for_threads_done(dip);
+    /* Reset statistics. */
+    dip->di_dbytes_written -= data_written;
+    dip->di_fbytes_written -= data_written;
+    dip->di_vbytes_written -= data_written;
+    dip->di_maxdata_written -= data_written;
+    dip->di_records_written -= (u_long)records_written;
+
+    return(status);
+}
+
+/************************************************************************
+ *									*
+ * write_data_iolock() - Write specified data to the output file.       * 
+ *      							        * 
+ * Description: 						        * 
+ * 	This function supports writing with multiple threads.	        * 
+ *									*
+ * Inputs:	dip = The device information pointer.			*
+ *									*
+ * Outputs:	Returns SUCCESS/FAILURE = Ok/Error.			*
+ *									*
+ ************************************************************************/
+int
+write_data_iolock(struct dinfo *dip)
+{
+    struct dtfuncs *dtf = dip->di_funcs;
+    io_global_data_t *iogp = dip->di_job->ji_opaque;
+    register ssize_t count;
+    register size_t bsize, dsize;
+    large_t data_limit;
+    int status = SUCCESS;
+    Offset_t lock_offset = 0;
+    hbool_t lock_full_range = False;
+    hbool_t partial = False;
+    lbdata_t lba;
+    iotype_t iotype = dip->di_io_type;
+    optype_t optype = WRITE_OP;
+    int probability_reads = 0, probability_random = 0;
+    int random_percentage = dip->di_random_percentage;
+    hbool_t compare_flag = dip->di_compare_flag;
+    hbool_t percentages_flag = False;
+    hbool_t read_after_write_flag = dip->di_raw_flag;
+    uint32_t loop_usecs;
+    u_long io_record = 0;
+    struct timeval loop_start_time, loop_end_time;
+
+    dsize = get_data_size(dip, optype);
+    data_limit = get_data_limit(dip);
+
+    if ( (dip->di_fill_always == True) || (dip->di_fill_once == True) ) {
+	if ( (dip->di_fill_always == True) || (dip->di_pass_count == 0) ) {
+	    status = prefill_file_iolock(dip, dip->di_block_size, data_limit, dip->di_offset);
+	    if (status == FAILURE) {
+		return(status);
+	    }
+	}
+    }
+
+    (void)dt_acquire_iolock(dip, iogp);
+    if (dip->di_random_access) {
+	if (iogp->io_initialized == False) {
+	    if ( (dip->di_io_type == SEQUENTIAL_IO) && (dip->di_io_dir == REVERSE) ) {
+		dip->di_offset = set_position(dip, (Offset_t)dip->di_rdata_limit, False);
+	    }
+	    lba = get_lba(dip);
+	    iogp->io_starting_offset = iogp->io_sequential_offset = dip->di_offset = get_position(dip);
+	    iogp->io_initialized = True;
+	} else {
+	    lba = make_lbdata(dip, iogp->io_starting_offset);
+	}
+    } else {
+	lba = make_lbdata(dip, dip->di_offset);
+	iogp->io_starting_offset = iogp->io_sequential_offset = dip->di_offset;
+    }
+    (void)dt_release_iolock(dip, iogp);
+
+    if ( (dip->di_lock_files == True) && dt_test_lock_mode(dip, LOCK_RANGE_FULL) ) {
+	lock_full_range = True;
+	lock_offset = dip->di_offset;
+	status = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+				LOCK_TYPE_WRITE, lock_offset, (Offset_t)data_limit);
+	if (status == FAILURE) return(status);
+    }
+    if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
+	dip->di_actual_total_usecs = 0;
+	dip->di_target_total_usecs = 0;
+    }
+    if (dip->di_read_percentage || dip->di_random_percentage ||
+	dip->di_random_rpercentage || dip->di_random_wpercentage) {
+	percentages_flag = True;
+    }
+
+    /*
+     * Now write the specifed number of records.
+     */
+    while ( (iogp->io_end_of_file == False) &&
+	    (dip->di_error_count < dip->di_error_limit) &&
+	    (iogp->io_bytes_written < data_limit) &&
+	    (iogp->io_records_written < dip->di_record_limit) ) {
+
+	PAUSE_THREAD(dip);
+	if ( THREAD_TERMINATING(dip) ) break;
+	if (dip->di_terminating) break;
+
+	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
+	    gettimeofday(&loop_start_time, NULL);
+	    if (dip->di_records_written) {
+		/* Adjust the actual usecs to adjust for possible usleep below! */
+		dip->di_actual_total_usecs += timer_diff(&loop_end_time, &loop_start_time);
+	    }
+	}
+
+	if ( dip->di_max_data && (dip->di_max_data >= dip->di_max_data) ) {
+	    dip->di_maxdata_reached = True;
+	    break;
+	}
+
+	if (dip->di_volumes_flag && (dip->di_multi_volume >= dip->di_volume_limit) &&
+		  (dip->di_volume_records >= dip->di_volume_records)) {
+	    break;
+	}
+
+	(void)dt_acquire_iolock(dip, iogp);
+	/*
+	 * With multiple threads, we must check limits after unlocking.
+	 */
+	if ( (iogp->io_end_of_file == True) ||
+	     (iogp->io_bytes_written >= data_limit) ||
+	     (iogp->io_records_written >= dip->di_record_limit) ) {
+	    set_Eof(dip);
+	    iogp->io_end_of_file = dip->di_end_of_file;
+	    (void)dt_release_iolock(dip, iogp);
+	    break;
+	}
+
+	/*
+	 * Setup for read/write and/or random/sequential percentages (if enabled).
+	 */
+	if (percentages_flag) {
+	    int read_percentage = dip->di_read_percentage;
+
+	    if ( ((iogp->io_bytes_read + iogp->io_bytes_written) >= data_limit) ||
+		 ((iogp->io_records_read + iogp->io_records_written) >= dip->di_record_limit) ) {
+		dip->di_mode = WRITE_MODE;
+		set_Eof(dip);
+		iogp->io_end_of_file = dip->di_end_of_file;
+		(void)dt_release_iolock(dip, iogp);
+		break;
+	    }
+	    if (read_percentage == -1) {
+		read_percentage = (int)(get_random(dip) % 100);
+	    }
+	    if (read_percentage) {
+		probability_reads  = (int)(get_random(dip) % 100);
+	    }
+	    probability_random = (int)(get_random(dip) % 100);
+
+	    if (probability_reads < read_percentage) {
+		optype = READ_OP;
+		dip->di_mode = READ_MODE;
+		compare_flag = False;
+		read_after_write_flag = False;
+		if (dip->di_min_size == 0) {
+		    dsize = get_data_size(dip, optype);
+		}
+	    } else {
+		optype = WRITE_OP;
+		dip->di_mode = WRITE_MODE;
+		compare_flag = dip->di_compare_flag;
+		if (dip->di_verify_flag == True) {
+		    read_after_write_flag = dip->di_raw_flag;
+		} else {
+		    /* Writing only, no reading/verifying! */
+		    read_after_write_flag = False;
+		}
+		if (dip->di_min_size == 0) {
+		    dsize = get_data_size(dip, optype);
+		}
+	    }
+	    if ( (optype == READ_OP) && dip->di_random_rpercentage) {
+		random_percentage = dip->di_random_rpercentage;
+	    } else if ((optype == WRITE_OP) && dip->di_random_wpercentage) {
+		random_percentage = dip->di_random_wpercentage;
+	    } else {
+		random_percentage = dip->di_random_percentage;
+	    }
+	    if ( (iogp->io_bytes_read + iogp->io_bytes_written + dsize) > data_limit) {
+		bsize = (size_t)(data_limit - (iogp->io_bytes_read + iogp->io_bytes_written));
+	    } else {
+		bsize = dsize;
+	    }
+	    if (probability_random < random_percentage) {
+		iotype = RANDOM_IO;
+	    } else {
+		iotype = SEQUENTIAL_IO;
+		dip->di_offset = iogp->io_sequential_offset;
+		if (dip->di_io_dir == REVERSE) {
+		    bsize = MIN((size_t)(iogp->io_sequential_offset - dip->di_file_position), bsize);
+		    dip->di_offset = set_position(dip, (Offset_t)(iogp->io_sequential_offset - bsize), False);
+		    iogp->io_sequential_offset = dip->di_offset;
+		} else {
+		    iogp->io_sequential_offset += bsize;
+		}
+	    }
+	    if (optype == READ_OP) {
+		iogp->io_bytes_read += bsize;
+		iogp->io_records_read++;
+		io_record = iogp->io_records_read;
+	    } else {
+		iogp->io_bytes_written += bsize;
+		iogp->io_records_written++;
+		io_record = iogp->io_records_written;
+	    }
+	} else { /* percentages_flag is False */
+	    if ( (iogp->io_bytes_written + dsize) > data_limit) {
+		bsize = (size_t)(data_limit - iogp->io_bytes_written);
+	    } else {
+		bsize = dsize;
+	    }
+	    if (iotype == SEQUENTIAL_IO) {
+		dip->di_offset = iogp->io_sequential_offset;
+		if (dip->di_io_dir == REVERSE) {
+		    bsize = MIN((size_t)(dip->di_offset - dip->di_file_position), bsize);
+		    dip->di_offset = set_position(dip, (Offset_t)(dip->di_offset - bsize), False);
+		    iogp->io_sequential_offset = dip->di_offset;
+		} else {
+		    iogp->io_sequential_offset += bsize;
+		}
+	    }
+	    /* Note: Must set these before I/O for other threads! */
+	    iogp->io_bytes_written += bsize;
+	    iogp->io_records_written++;
+	    io_record = iogp->io_records_written;
+	} /* end of percentages_flag */
+
+	if ( (iotype == SEQUENTIAL_IO) && dip->di_step_offset) {
+	    Offset_t offset = iogp->io_sequential_offset;
+	    if (dip->di_io_dir == FORWARD) {
+		/* Note: Useful for debug, but we don't need to set position! */
+		offset = set_position(dip, (offset + dip->di_step_offset), True);
+		/* Linux returns EINVAL when seeking too far! */
+		if (offset == (Offset_t)-1) {
+		    set_Eof(dip);
+		    break;
+		}
+		/* 
+		 * This check prevents us from writing past the end of a slice.
+		 * Note: Without slices, we expect to encounter end of file/media.
+		 */ 
+		if ( dip->di_slices &&
+		     ((offset + (Offset_t)dsize) >= dip->di_end_position) ) {
+		    set_Eof(dip);
+		    break;
+		}
+	    } else { /* io_dir = REVERSE */
+		offset -= dip->di_step_offset;
+		if (offset <= (Offset_t) dip->di_file_position) {
+		    set_Eof(dip);
+		    dip->di_beginning_of_file = True;
+		    break;
+		}
+	    }
+	    iogp->io_sequential_offset = offset;
+	}
+	(void)dt_release_iolock(dip, iogp);
+
+	if (dip->di_write_delay) {
+	    mySleep(dip, dip->di_write_delay);
+	}
+
+	if (iotype == RANDOM_IO) {
+	    dip->di_offset = do_random(dip, True, bsize);
+	}
+
+        if (dip->di_debug_flag && (bsize != dsize) && !dip->di_variable_flag) {
+	    if (optype == READ_OP) {
+		Printf (dip, "Record #%lu, Reading a partial record of %lu bytes...\n",
+			io_record, bsize);
+	    } else {
+		Printf (dip, "Record #%lu, Writing a partial record of %lu bytes...\n",
+			io_record, bsize);
+	    }
+        }
+
+	if (dip->di_iot_pattern || dip->di_lbdata_flag) {
+	    lba = make_lbdata(dip, (Offset_t)(dip->di_volume_bytes + dip->di_offset));
+	}
+
+	/*
+	 * If requested, rotate the data buffer through ROTATE_SIZE
+	 * bytes to force various unaligned buffer accesses.
+	 */
+	if (dip->di_rotate_flag) {
+	    dip->di_data_buffer = (dip->di_base_buffer + (dip->di_rotate_offset++ % ROTATE_SIZE));
+	}
+
+	/*
+	 * Initialize the data buffer with a pattern.
+	 */
+	if ( (compare_flag == True) && (optype == WRITE_OP) && (dip->di_io_mode == TEST_MODE) ) {
+	    if (dip->di_iot_pattern) {
+		lba = init_iotdata(dip, dip->di_data_buffer, bsize, lba, dip->di_lbdata_size);
+	    } else {
+		fill_buffer(dip, dip->di_data_buffer, bsize, dip->di_pattern);
+	    }
+	    /*
+	     * Initialize the logical block data (if enabled).
+	     */
+	    if ( dip->di_lbdata_flag && dip->di_lbdata_size && (dip->di_iot_pattern == False) ) {
+		lba = init_lbdata(dip, dip->di_data_buffer, bsize, lba, dip->di_lbdata_size);
+	    }
+#if defined(TIMESTAMP)
+	    /*
+	     * If timestamps are enabled, initialize buffer accordingly.
+	     */
+	    if (dip->di_timestamp_flag) {
+		init_timestamp(dip, dip->di_data_buffer, bsize, dip->di_lbdata_size);
+	    }
+#endif /* defined(TIMESTAMP) */
+	    if (dip->di_btag) {
+		update_buffer_btags(dip, dip->di_btag, dip->di_offset,
+				    dip->di_data_buffer, bsize, io_record);
+	    }
+	}
+
+	if (dip->di_Debug_flag) {
+	    large_t iolba = make_lbdata(dip, dip->di_offset);
+	    long files = (dip->di_files_written + 1);
+	    report_record(dip, files, io_record,
+			  iolba, dip->di_offset,
+			  (optype == WRITE_OP) ? WRITE_MODE : READ_MODE,
+			   dip->di_data_buffer, bsize);
+	}
+
+	if ( (dip->di_lock_files == True) && (lock_full_range == False) ) {
+	    lock_offset = dip->di_offset;
+	    /* Lock a partial byte range! */
+	    status = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+				    LOCK_TYPE_WRITE, lock_offset, (Offset_t)bsize);
+	    if (status == FAILURE) break;
+	}
+
+	dip->di_retry_count = 0;
+	do {
+	    if (optype == READ_OP) {
+		count = read_record(dip, dip->di_data_buffer, bsize, dsize, dip->di_offset, &status);
+	    } else {
+		count = write_record(dip, dip->di_data_buffer, bsize, dsize, dip->di_offset, &status);
+	    }
+	} while (status == RETRYABLE);
+
+	if (dip->di_end_of_file) break;
+
+	if (status == FAILURE) {
+	    if (dip->di_error_count >= dip->di_error_limit) break;
+	} else {
+	    partial = (count < (ssize_t)bsize) ? True : False;
+	}
+	/*
+	 * If we had a partial transfer, perhaps due to an error, adjust
+	 * the logical block address in preparation for the next request.
+	 */
+	if (dip->di_iot_pattern && ((size_t)count < bsize)) {
+	    size_t resid = (bsize - count);
+	    lba -= (lbdata_t)howmany(resid, (size_t)dip->di_lbdata_size);
+	}
+
+	if (optype == READ_OP) {
+	    dip->di_records_read++;
+	} else {
+	    dip->di_records_written++;
+	}
+	dip->di_volume_records++;
+
+	/*
+	 * Flush data *before* verify (required for buffered mode to catch ENOSPC).
+	 */ 
+	if ( dip->di_fsync_frequency && ((dip->di_records_written % dip->di_fsync_frequency) == 0) ) {
+	    status = (*dtf->tf_flush_data)(dip);
+	    if ( (status == FAILURE) && (dip->di_error_count >= dip->di_error_limit) ) break;
+	}
+
+	if ( (count > (ssize_t) 0) && read_after_write_flag) {
+	    /* Release write lock and apply a read lock (as required). */
+	    if ( (dip->di_lock_files == True) && (lock_full_range == False) ) {
+		/* Unlock a partial byte range! */
+		status = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+					LOCK_TYPE_UNLOCK, lock_offset, (Offset_t)bsize);
+		if (status == FAILURE) break;
+		/* Lock a partial byte range! */
+		status = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+					LOCK_TYPE_READ, lock_offset, (Offset_t)bsize);
+		if (status == FAILURE) break;
+	    }
+	    status = write_verify(dip, dip->di_data_buffer, count, dsize, dip->di_offset);
+	    if (status == FAILURE) {
+		if (dip->di_error_count >= dip->di_error_limit) {
+		    break;
+		}
+	    } else if (percentages_flag) {
+		/* Note: Undue the read statistics, so percentages are more accurate. */
+		dip->di_records_read--;
+		dip->di_dbytes_read -= count;
+		dip->di_fbytes_read -= count;
+		dip->di_vbytes_read -= count;
+		dip->di_maxdata_read -= count;
+		if ((size_t)count == dsize) {
+		    dip->di_full_reads--;
+		} else {
+		    dip->di_partial_reads--;
+		}
+	    }
+	} else if ( (optype == READ_OP) && (status != FAILURE) ) {
+	    if ( (compare_flag == True) && (dip->di_io_mode == TEST_MODE) ) {
+		ssize_t vsize = count;
+		status = (*dtf->tf_verify_data)(dip, dip->di_data_buffer, vsize, dip->di_pattern, &lba, False);
+	    }
+	}
+
+	/*
+	 * After the first partial write to a regular file, we set a premature EOF, 
+	 * to avoid any further writes. This logic is necessary, since subsequent 
+	 * writes may succeed, but our read pass will try to read an entire record, 
+	 * and will report a false data corruption, depending on the data pattern 
+	 * and I/O type, so we cannot read past this point to be safe.
+	 * Note: A subsequent write may return ENOSPC, but not always!
+	 */
+	if ( partial &&	(optype == WRITE_OP) && (dip->di_dtype->dt_dtype == DT_REGULAR) ) {
+	    dip->di_last_write_size = count;
+	    dip->di_last_write_attempted = dsize;
+	    dip->di_last_write_offset = dip->di_offset;
+	    dip->di_no_space_left = True;
+	    dip->di_file_system_full = True;
+	    set_Eof(dip);
+	    break;
+	}
+
+	/*
+	 * For variable length records, adjust the next record size.
+	 */
+	if (dip->di_min_size) {
+	    if (dip->di_variable_flag) {
+		dsize = get_variable(dip);
+	    } else {
+		dsize += dip->di_incr_count;
+		if (dsize > dip->di_max_size) dsize = dip->di_min_size;
+	    }
+	}
+
+	if (dip->di_io_dir == FORWARD) {
+	    dip->di_offset += count;	/* Maintain our own position too! */
+	} else if ( (iotype == SEQUENTIAL_IO) &&
+		    (dip->di_offset == (Offset_t)dip->di_file_position) ) {
+	    set_Eof(dip);
+	    dip->di_beginning_of_file = True;
+	    break;
+	}
+
+	if ( (dip->di_lock_files == True) && (lock_full_range == False) ) {
+	    /* Unlock a partial byte range! */
+	    status = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+				    LOCK_TYPE_UNLOCK, lock_offset, (Offset_t)bsize);
+	    if (status == FAILURE) break;
+	}
+	/* For IOPS, track usecs and delay as necessary. */
+	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
+	    gettimeofday(&loop_end_time, NULL);
+	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
+            dip->di_target_total_usecs += dip->di_iops_usecs;
+	    if (read_after_write_flag == True) {
+		dip->di_target_total_usecs += dip->di_iops_usecs; /* Two I/O's! */
+	    }
+            dip->di_actual_total_usecs += loop_usecs;
+            if (dip->di_target_total_usecs > dip->di_actual_total_usecs) {
+		unsigned int usecs = (unsigned int)(dip->di_target_total_usecs - dip->di_actual_total_usecs);
+		mySleep(dip, usecs);
+            }
+	}
+    }
+    /* Propagate end of file for other threads and outer loops. */
+    if (dip->di_end_of_file == False) {
+	set_Eof(dip);
+    }
+    iogp->io_end_of_file = dip->di_end_of_file;
+
+    if (lock_full_range == True) {
+	int rc = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+				LOCK_TYPE_UNLOCK, lock_offset, (Offset_t)data_limit);
+	if (rc == FAILURE) status = rc;
+    }
+    return (status);
+}
+
+#endif /* defined(DT_IOLOCK) */
 
 /************************************************************************
  *									*
@@ -774,7 +1441,7 @@ retry:
  *		buffer = The data buffer written.			*
  *		bsize = The number of bytes written.			*
  * 		dsize = The users' requested size.		        * 
- * 		offset = The starting record offset.			*						        * 
+ * 		offset = The starting record offset.			*
  *									*
  * Outputs:	status = SUCCESS/FAILURE/WARNING = Ok/Error/Warning	*
  *									*

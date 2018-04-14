@@ -77,7 +77,7 @@ typedef struct scsi_opcodes {
 #define CAW_DEFAULT_BLOCKS	1		/* The default CDB blocks.  */
 
 /* 
- * Punch Hole / Unmap Definitions: (a moving target between release! :-( 
+ * Unmap Definitions:
  */
 #define UNMAP_MAX_LBA	0xFFFFFFFFFFFFFFFFLL	/* Max Unmap LBA.	    */
 #define UNMAP_MAX_BLOCKS	0x80000	/* 256MB - Max blocks per request.  */

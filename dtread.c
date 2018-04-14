@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,12 @@
  *
  * Modification History:
  *
+ * December 28th, 2017 by Robin T. Miller
+ *      Added support for multiple threads via I/O lock and shared data.
+ * 
+ * September 1st, 2017 by Robin T. Miller
+ *      Add support for random read percentage only.
+ * 
  * December 21st, 2016 by Robin T. Miller
  *      Only use pread() for random access devices, and normal read() for
  * other device types such as pipes or tapes. This update allows dt to read
@@ -85,6 +91,13 @@
 #endif /* !defined(_QNX_SOURCE) && !defined(WIN32) */
 #include <sys/stat.h>
 
+/*
+ * Forward References:
+ */
+int read_data_iolock(struct dinfo *dip);
+
+/* ---------------------------------------------------------------------- */
+
 int
 check_last_write_info(dinfo_t *dip, Offset_t offset, size_t bsize, size_t dsize)
 {
@@ -127,6 +140,9 @@ int
 read_data(struct dinfo *dip)
 {
     dinfo_t *odip = dip->di_output_dinfo; /* For copy/verify modes. */
+#if defined(DT_IOLOCK)
+    io_global_data_t *iogp = dip->di_job->ji_opaque;
+#endif
     register ssize_t count;
     register size_t bsize, dsize;
     large_t data_limit;
@@ -142,8 +158,16 @@ read_data(struct dinfo *dip)
     uint32_t loop_usecs;
     struct timeval loop_start_time, loop_end_time;
     int probability_random = 0;
+    int random_percentage = (dip->di_random_rpercentage) ? dip->di_random_rpercentage : dip->di_random_percentage;
 
-    dsize = get_data_size(dip);
+#if defined(DT_IOLOCK)
+    /* Note: Temporary until we define a new I/O behavior! */
+    if (iogp) {
+	return( read_data_iolock(dip) );
+    }
+#endif /* defined(DT_IOLOCK) */
+
+    dsize = get_data_size(dip, READ_OP);
     data_limit = get_data_limit(dip);
 
     if (dip->di_random_access) {
@@ -218,9 +242,9 @@ read_data(struct dinfo *dip)
 	    break;
 	}
 
-	if (dip->di_random_percentage) {
+	if (random_percentage) {
 	    probability_random = (int)(get_random(dip) % 100);
-	    if (probability_random < dip->di_random_percentage) {
+	    if (probability_random < random_percentage) {
 		iotype = RANDOM_IO;
 	    } else {
 		iotype = SEQUENTIAL_IO;
@@ -479,6 +503,348 @@ read_data(struct dinfo *dip)
     }
     return(status);
 }
+
+#if defined(DT_IOLOCK)
+
+/************************************************************************
+ *									*
+ * read_data_iolock() - Read and optionally verify data read.		*
+ *									*
+ * Description: 						        * 
+ * 	This function supports reading with multiple threads.	        * 
+ *									*
+ * Inputs:	dip = The device information pointer.			*
+ *									*
+ * Outputs:	Returns SUCCESS/FAILURE = Ok/Error.			*
+ *									*
+ ************************************************************************/
+int
+read_data_iolock(struct dinfo *dip)
+{
+    io_global_data_t *iogp = dip->di_job->ji_opaque;
+    register ssize_t count;
+    register size_t bsize, dsize;
+    large_t data_limit;
+    int status = SUCCESS;
+    struct dtfuncs *dtf = dip->di_funcs;
+    Offset_t lock_offset = 0;
+    hbool_t lock_full_range = False;
+    hbool_t check_rwbytes = False;
+    hbool_t check_write_limit = False;
+    u_long io_record = 0;
+    lbdata_t lba;
+    iotype_t iotype = dip->di_io_type;
+    uint32_t loop_usecs;
+    struct timeval loop_start_time, loop_end_time;
+    int probability_random = 0;
+    int random_percentage = (dip->di_random_rpercentage) ? dip->di_random_rpercentage : dip->di_random_percentage;
+
+    dsize = get_data_size(dip, READ_OP);
+    data_limit = get_data_limit(dip);
+
+    (void)dt_acquire_iolock(dip, iogp);
+    if (dip->di_random_access) {
+	if (iogp->io_initialized == False) {
+	    if ( (dip->di_io_type == SEQUENTIAL_IO) && (dip->di_io_dir == REVERSE) ) {
+		dip->di_offset = set_position(dip, (Offset_t)dip->di_rdata_limit, False);
+	    }
+	    lba = get_lba(dip);
+	    iogp->io_starting_offset = iogp->io_sequential_offset = dip->di_offset = get_position(dip);
+	    iogp->io_initialized = True;
+	} else {
+	    lba = make_lbdata(dip, iogp->io_starting_offset);
+	}
+    } else {
+	lba = make_lbdata(dip, dip->di_offset);
+	iogp->io_starting_offset = iogp->io_sequential_offset = dip->di_offset;
+    }
+    (void)dt_release_iolock(dip, iogp);
+
+    /* Prime the common btag data, except for IOT pattern. */
+    if ( (dip->di_btag_flag == True) && (dip->di_iot_pattern == False) ) {
+	update_btag(dip, dip->di_btag, dip->di_offset, (uint32_t)0, (size_t)0, io_record);
+    }
+    if ( (dip->di_lock_files == True) && dt_test_lock_mode(dip, LOCK_RANGE_FULL) ) {
+	lock_full_range = True;
+	lock_offset = dip->di_offset;
+	status = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+				LOCK_TYPE_READ, lock_offset, (Offset_t)data_limit);
+	if (status == FAILURE) return(status);
+    }
+    if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
+	dip->di_actual_total_usecs = 0;
+	dip->di_target_total_usecs = 0;
+    }
+
+    /*
+     * Now read and optionally verify the input records.
+     */
+    while ( (iogp->io_end_of_file == False) &&
+	    (dip->di_error_count < dip->di_error_limit) &&
+	    (iogp->io_bytes_read < data_limit) &&
+	    (iogp->io_records_read < dip->di_record_limit) ) {
+
+	PAUSE_THREAD(dip);
+	if ( THREAD_TERMINATING(dip) ) break;
+	if (dip->di_terminating) break;
+
+	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
+	    gettimeofday(&loop_start_time, NULL);
+	    if (dip->di_records_read) {
+		/* Adjust the actual usecs to adjust for possible usleep below! */
+		dip->di_actual_total_usecs += timer_diff(&loop_end_time, &loop_start_time);
+	    }
+	}
+
+	if ( dip->di_max_data && (dip->di_maxdata_read >= dip->di_max_data) ) {
+	    dip->di_maxdata_reached = True;
+	    break;
+	}
+
+	if ( dip->di_volumes_flag &&
+	     (dip->di_multi_volume >= dip->di_volume_limit) &&
+	     (dip->di_volume_records >= dip->di_volume_records)) {
+	    break;
+	}
+
+	(void)dt_acquire_iolock(dip, iogp);
+	/*
+	 * Setup the random/sequential percentages (if enabled).
+	 */
+	if (random_percentage) {
+	    probability_random = (int)(get_random(dip) % 100);
+	    if (probability_random < random_percentage) {
+		iotype = RANDOM_IO;
+	    } else {
+		iotype = SEQUENTIAL_IO;
+		dip->di_offset = iogp->io_sequential_offset;
+	    }
+	}
+
+	if (dip->di_read_delay) {			/* Optional read delay.	*/
+	    mySleep(dip, dip->di_read_delay);
+	}
+
+	/*
+	 * With multiple threads, we must check limits after unlocking.
+	 */
+	if ( (iogp->io_end_of_file == True) ||
+	     (iogp->io_bytes_read >= data_limit) ||
+	     (iogp->io_records_read >= dip->di_record_limit) ) {
+	    set_Eof(dip);
+	    iogp->io_end_of_file = dip->di_end_of_file;
+	    (void)dt_release_iolock(dip, iogp);
+	    break;
+	}
+
+	/*
+	 * If data limit was specified, ensure we don't exceed it.
+	 */
+	if ( (iogp->io_bytes_read + dsize) > data_limit) {
+	    bsize = (size_t)(data_limit - iogp->io_bytes_read);
+	} else {
+	    bsize = dsize;
+	}
+
+       if (iotype == SEQUENTIAL_IO) {
+	    dip->di_offset = iogp->io_sequential_offset;
+	    if (dip->di_io_dir == REVERSE) {
+		bsize = (size_t)MIN((dip->di_offset - dip->di_file_position), (Offset_t)bsize);
+		dip->di_offset = set_position(dip, (Offset_t)(dip->di_offset - bsize), False);
+		iogp->io_sequential_offset = dip->di_offset;
+	    } else {
+		iogp->io_sequential_offset += bsize;
+	    }
+	} else if (iotype == RANDOM_IO) {
+	    /*
+	     * BEWARE: The size *must* match the write size, or you'll get
+	     * a different offset, since the size is used in calculations.
+	     */
+	    dip->di_offset = do_random(dip, True, bsize);
+	}
+	iogp->io_bytes_read += bsize;
+	iogp->io_records_read++;
+	io_record = iogp->io_records_read;
+
+	if ( (iotype == SEQUENTIAL_IO) && dip->di_step_offset) {
+	    Offset_t offset = iogp->io_sequential_offset;
+	    if (dip->di_io_dir == FORWARD) {
+		/* Note: Useful for debug, but we don't need to set position! */
+		offset = set_position(dip, (offset + dip->di_step_offset), True);
+		/* Linux returns EINVAL when seeking too far! */
+		if (offset == (Offset_t)-1) {
+		    set_Eof(dip);
+		    break;
+		}
+		/* 
+		 * This check prevents us from writing past the end of a slice.
+		 * Note: Without slices, we expect to encounter end of file/media.
+		 */ 
+		if ( dip->di_slices &&
+		     ((offset + (Offset_t)dsize) >= dip->di_end_position) ) {
+		    set_Eof(dip);
+		    break;
+		}
+	    } else { /* io_dir = REVERSE */
+		offset -= dip->di_step_offset;
+		if (offset <= (Offset_t) dip->di_file_position) {
+		    set_Eof(dip);
+		    dip->di_beginning_of_file = True;
+		    break;
+		}
+	    }
+	    iogp->io_sequential_offset = offset;
+	}
+	(void)dt_release_iolock(dip, iogp);
+
+        if (dip->di_debug_flag && (bsize != dsize) && !dip->di_variable_flag) {
+            Printf(dip, "Record #%lu, Reading a partial record of %lu bytes...\n",
+		   io_record, bsize);
+        }
+
+	if (dip->di_iot_pattern || dip->di_lbdata_flag) {
+	    lba = make_lbdata(dip, (Offset_t)(dip->di_volume_bytes + dip->di_offset));
+	}
+
+	/*
+	 * If requested, rotate the data buffer through ROTATE_SIZE bytes
+	 * to force various unaligned buffer accesses.
+	 */
+	if (dip->di_rotate_flag) {
+	    dip->di_data_buffer = (dip->di_base_buffer + (dip->di_rotate_offset++ % ROTATE_SIZE));
+	}
+
+	/*
+	 * If we'll be doing a data compare after the read, then
+	 * fill the data buffer with the inverted pattern to ensure
+	 * the buffer actually gets written into (driver debug mostly).
+	 */
+	if ( (dip->di_io_mode == TEST_MODE) && (dip->di_compare_flag == True) ) {
+	    /* Note: Initializing the data buffer moved to read_record()! */
+	    init_padbytes(dip->di_data_buffer, bsize, ~dip->di_pattern);
+	    if (dip->di_iot_pattern) {
+		if (dip->di_btag) {
+		    update_buffer_btags(dip, dip->di_btag, dip->di_offset,
+					dip->di_pattern_buffer, bsize, io_record);
+		}
+		lba = init_iotdata(dip, dip->di_pattern_buffer, bsize, lba, dip->di_lbdata_size);
+	    }
+	}
+
+	if (dip->di_Debug_flag) {
+	    large_t iolba = make_lbdata(dip, dip->di_offset);
+	    long files = (dip->di_files_read + 1);
+	    report_record(dip, files, io_record,
+			  iolba, dip->di_offset,
+			  READ_MODE, dip->di_data_buffer, bsize);
+	}
+	
+	if ( (dip->di_lock_files == True) && (lock_full_range == False) ) {
+	    lock_offset = dip->di_offset;
+	    /* Lock a partial byte range! */
+	    status = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+				    LOCK_TYPE_READ, lock_offset, (Offset_t)bsize);
+	    if (status == FAILURE) break;
+	}
+
+	dip->di_retry_count = 0;
+	do {
+	    count = read_record(dip, dip->di_data_buffer, bsize, dsize, dip->di_offset, &status);
+	} while (status == RETRYABLE);
+
+	if (status == FAILURE) {
+	    if (dip->di_error_count >= dip->di_error_limit) break;
+	}
+
+	/*
+	 * Verify the data (unless disabled).
+	 */
+	if ( (status != FAILURE) && dip->di_compare_flag && (dip->di_io_mode == TEST_MODE) ) {
+	    ssize_t vsize = count;
+	    status = (*dtf->tf_verify_data)(dip, dip->di_data_buffer, vsize, dip->di_pattern, &lba, False);
+	    /*
+	     * Verify the pad bytes (if enabled).
+	     */
+	    if ( (status == SUCCESS) && dip->di_pad_check) {
+		int rc = verify_padbytes(dip, dip->di_data_buffer, vsize, ~dip->di_pattern, bsize);
+		if (rc == FAILURE) status = rc;
+	    }
+	}
+
+	/*
+	 * If we had a partial transfer, perhaps due to an error, adjust
+	 * the logical block address in preparation for the next request.
+	 */
+	if (dip->di_iot_pattern && ((size_t)count < bsize)) {
+	    size_t resid = (bsize - count);
+	    lba -= (lbdata_t)howmany((lbdata_t)resid, dip->di_lbdata_size);
+	}
+
+	/*
+	 * For variable length records, adjust the next record size.
+	 */
+	if (dip->di_min_size) {
+	    if (dip->di_variable_flag) {
+		dsize = get_variable(dip);
+	    } else {
+		dsize += dip->di_incr_count;
+	        if (dsize > dip->di_max_size) dsize = dip->di_min_size;
+	    }
+	}
+
+	dip->di_records_read++;
+	dip->di_volume_records++;
+
+	if (dip->di_io_dir == FORWARD) {
+	    dip->di_offset += count;	/* Maintain our own position too! */
+	} else if ( (iotype == SEQUENTIAL_IO) &&
+		    (dip->di_offset == (Offset_t)dip->di_file_position) ) {
+	    set_Eof(dip);
+	    break;
+	}
+
+	/*
+	 * For regular files, if we've read as much as we've written,
+	 * then set a fake EOF to stop this read pass.
+	 */
+	if ( check_rwbytes &&
+	     (dip->di_fbytes_read == dip->di_last_fbytes_written) ) {
+	    set_Eof(dip);
+	    break;
+	}
+	if ( (dip->di_lock_files == True) && (lock_full_range == False) ) {
+	    /* Unlock a partial byte range! */
+	    status = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+				    LOCK_TYPE_UNLOCK, lock_offset, (Offset_t)bsize);
+	    if (status == FAILURE) break;
+	}
+	/* For IOPS, track usecs and delay as necessary. */
+	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
+	    gettimeofday(&loop_end_time, NULL);
+	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
+            dip->di_target_total_usecs += dip->di_iops_usecs; 
+            dip->di_actual_total_usecs += loop_usecs;
+            if (dip->di_target_total_usecs > dip->di_actual_total_usecs) {
+		unsigned int usecs = (unsigned int)(dip->di_target_total_usecs - dip->di_actual_total_usecs);
+		mySleep(dip, usecs);
+            }
+	}
+    }
+    /* Propagate end of file for other threads and outer loops. */
+    if (dip->di_end_of_file == False) {
+	set_Eof(dip);
+    }
+    iogp->io_end_of_file = dip->di_end_of_file;
+
+    if (lock_full_range == True) {
+	int rc = dt_lock_unlock(dip, dip->di_dname, &dip->di_fd,
+				LOCK_TYPE_UNLOCK, lock_offset, (Offset_t)data_limit);
+	if (rc == FAILURE) status = rc;
+    }
+    return(status);
+}
+
+#endif /* defined(DT_IOLOCK) */
 
 /************************************************************************
  *									*

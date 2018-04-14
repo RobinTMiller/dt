@@ -31,6 +31,9 @@
  * 
  * Modification History:
  * 
+ * September 1st, 2017 by Robin T. Miller
+ *      Update get_data_size() to handle separate read/write block sizes.
+ * 
  * June 9th, 2015 by Robin T. Miller
  * 	Added support for block tags (btags).
  *
@@ -1200,7 +1203,7 @@ dt_unlock_file_chance(dinfo_t *dip)
 #endif /* !defined(INLINE_FUNCS) */
 
 size_t
-get_data_size(dinfo_t *dip)
+get_data_size(dinfo_t *dip, optype_t optype)
 {
     size_t data_size;
 
@@ -1211,7 +1214,13 @@ get_data_size(dinfo_t *dip)
 	    data_size = dip->di_min_size;
         }
     } else {
-	data_size = dip->di_block_size;
+	if ( (optype == READ_OP) && dip->di_iblock_size) {
+	    data_size = dip->di_iblock_size;
+	} else if ( (optype == WRITE_OP) && dip->di_oblock_size) {
+	    data_size = dip->di_oblock_size;
+	} else {
+	    data_size = dip->di_block_size;
+	}
     }
     return(data_size);
 }

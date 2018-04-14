@@ -42,6 +42,10 @@
  * Note: Host names can be very long, but we don't wish to waste space. 
  */ 
 #define HOST_SIZE       24
+
+/* 
+ * Note: NetApp serial numbers are only 12 characters, but we round up!
+ */
 #define SERIAL_SIZE     16              /* SAN LUN serial number size. */
 /* 
  * FYI: The device identifier may be more appropriate. than the serial #.

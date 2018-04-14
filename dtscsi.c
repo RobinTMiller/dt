@@ -1,7 +1,7 @@
 #if defined(SCSI)
 /****************************************************************************
  *      								    *
- *      		  COPYRIGHT (c) 1988 - 2017     		    *
+ *      		  COPYRIGHT (c) 1988 - 2018     		    *
  *      		   This Software Provided       		    *
  *      			     By 				    *
  *      		  Robin's Nest Software Inc.    		    *
@@ -453,23 +453,9 @@ do_unmap_blocks(dinfo_t *dip)
 	unmap_type = ( rand() % NUM_UNMAP_TYPES );
     }
 
-    /*
-     * Must be Thin Provisioned for SCSI Unmap operations.
-     */
-    if ( (unmap_type == UNMAP_TYPE_UNMAP) &&
-	 (dip->di_lbpmgmt_valid == True) && (dip->di_lbpme_flag == False) ) {
-	Wprintf(dip, "This LUN is NOT thinly provisioned, so unmapping via Punch Hole!\n");
-	Printf(dip, "Note: Get LBA Status *always* reports ALL blocks mapped, so disabling.\n");
-	dip->di_get_lba_status_flag = False;
-	dip->di_unmap_type = unmap_type = UNMAP_TYPE_PUNCH_HOLE;
-    }
-
     switch (unmap_type) {
 	case UNMAP_TYPE_UNMAP:
 	    status = unmap_blocks(dip, offset, data_bytes);
-	    break;
-	case UNMAP_TYPE_PUNCH_HOLE:
-	    status = punch_hole(dip, offset, data_bytes);
 	    break;
 	case UNMAP_TYPE_WRITE_SAME:
 	    status = write_same_unmap(dip, offset, data_bytes);
@@ -481,31 +467,6 @@ do_unmap_blocks(dinfo_t *dip)
     /* SCSI commands are via spt are present, so map failure! */
     if (status == 255) status = FAILURE;
     return(status);
-}
-
-int
-punch_hole(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
-{
-    char cmd[STRING_BUFFER_SIZE];
-    uint32_t block_length = dip->di_block_length;
-    int status;
-    
-    if (block_length == 0) block_length = BLOCK_SIZE;
-    /* Note: The starting block and limit is converted to SCSI sized blocks! */
-    (void)sprintf(cmd, "%s dsf=%s cdb=0xc1 starting="FUF" limit="FUF"b enable=sense,recovery",
-		  (dip->di_spt_path) ? dip->di_spt_path : spt_path,
-		  dip->di_sgp->dsf,
-		  (starting_offset / block_length),
-		  (data_bytes / block_length) );
-
-    add_common_spt_options(dip, cmd);
-
-    status = ExecuteCommand(dip, cmd, True);
-
-    if (status || dip->di_debug_flag) {
-	Printf(dip, "spt exited with status %d...\n", status);
-    }
-    return (status);
 }
 
 #define WRITE_SAME_MAX_BYTES	(4 * MBYTE_SIZE)

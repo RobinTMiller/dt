@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -269,7 +269,7 @@ report_pass(struct dinfo *dip, enum stats stats_type)
     /*
      * To help with triage, report whether the requested data limit was *not* reached.
      */
-    if ( (dip->di_iobehavior == DT_IO) &&
+    if ( (dip->di_iobehavior == DT_IO) && (dip->di_iolock == False) &&
 	 (dip->di_fsfile_flag == True) && (dip->di_verbose_flag == True) &&
 	 (dip->di_read_percentage == 0) && (dip->di_random_percentage == 0) &&
 	 ((stats_type == RAW_STATS) || (stats_type == WRITE_STATS) ) &&

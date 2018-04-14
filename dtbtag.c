@@ -31,6 +31,10 @@
  *
  * Modification History:
  *
+ * December 29th, 2017 by Robin T. Miller
+ *      When the I/O lock flag is enabled, don't compare the thread number.
+ *	The I/O lock indicates multiple threads are accessing the same file.
+ *
  * May 13th, 2015 by Robin T Miller
  * 	Initial creation.
  * 
@@ -125,7 +129,11 @@ initialize_btag(dinfo_t *dip, uint8_t opaque_type)
     if ( (dip->di_ftype == INPUT_FILE) && (dip->di_io_mode != MIRROR_MODE) ) {
 	dip->di_btag_vflags &= ~BTAGV_READONLY_DISABLE;
     }
-    return(btag);
+    if (dip->di_iolock) {
+	/* Multiple threads to the same file/device. */
+	dip->di_btag_vflags &= ~BTAGV_THREAD_NUMBER;
+    }
+    return (btag);
 }
 
 char *

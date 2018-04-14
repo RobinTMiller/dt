@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,19 @@
  *	Main line code for generic data test program 'dt'.
  *
  * Modification History:
+ * 
+ * April 12th, 2018 by Robin T. Miller
+ *      For Linux file systems with direct I/O, get the disk block size.
+ * This disk block size is required for later sanity checks for direct I/O.
+ * Failure to enforce DIO I/O sizes leads to EINVAL errors, misleading for
+ * everyone (including this author). This occurs on disks with 4k sectors!
+ * 
+ * March 1st, 2018 by Robin T. Miller
+ *      Add mounted file system check when writing to /dev/ disk devices.
+ * Note: This is *not* full proof, since LVM devices are not handled, and
+ * will not detect /dev/sd* when DM-MP /dev/mapper partitions are mounted.
+ * But that said, this is better than what we did before.
+ * FYI: This is Linux only right now, since I no longer have other OS's.
  * 
  * January 21st, 2017 by Robin T. Miller
  *	For Windows, parse <cr><lf> properly for continuation lines.
@@ -1889,6 +1902,8 @@ doio(void *arg)
 	    }
 
 	    do_read_pass = (dip->di_dbytes_written != (large_t) 0);
+	    if (dip->di_iolock) do_read_pass = True;
+
 	    /*
 	     * Now verify (read and compare) the data just written.
 	     */
@@ -1900,6 +1915,9 @@ doio(void *arg)
 		    report_pass(dip, RAW_STATS);	/* Report read-after-write. */
 		} else {
 		    report_pass(dip, WRITE_STATS);	/* Report write stats.	*/
+		}
+		if (dip->di_iolock) {
+		    wait_for_threads_done(dip);
 		}
 		/*
 		 * For multiple files, reset the pattern/IOT seed for read pass!
@@ -1949,6 +1967,11 @@ doio(void *arg)
 		if (dip->di_end_delay) {		/* Optional end delay. 	*/
 		    mySleep(dip, dip->di_end_delay);
 		}
+		if ( (dip->di_pass_limit > 1) || dip->di_runtime) {
+		    if (dip->di_iolock) {
+			wait_for_threads_done(dip);
+		    }
+		}
 	    } else {
 		dip->di_pass_count++;			/* End of write pass.	*/
 		if ( (dip->di_pass_limit > 1) || dip->di_runtime) {
@@ -1960,6 +1983,9 @@ doio(void *arg)
 		    }
 		    if (dip->di_end_delay) {		/* Optional end delay. 	*/
 			mySleep(dip, dip->di_end_delay);
+		    }
+		    if (dip->di_iolock) {
+			wait_for_threads_done(dip);
 		    }
 		}
 	    }
@@ -2018,6 +2044,9 @@ doio(void *arg)
 		if (dip->di_end_delay) {	/* Optional end delay. 	*/
 		    mySleep(dip, dip->di_end_delay);
 		}
+		if (dip->di_iolock) {
+		    wait_for_threads_done(dip);
+		}
 	    }
 	    if (dip->di_pass_cmd) {
 		rc = ExecutePassCmd(dip);
@@ -2043,7 +2072,7 @@ doio(void *arg)
     }
     /*
      * Triggers may bump the error count, but the status won't be failure.
-    */
+     */
     if (dip->di_error_count && (status != FAILURE) ) {
 	status = FAILURE;
     }
@@ -3678,6 +3707,14 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_image_copy = True;
 		goto eloop;
 	    }
+	    if (match(&string, "iolock")) {
+		dip->di_iolock = True;
+		dip->di_fileperthread = False;
+		dip->di_unique_pattern = False;
+		dip->di_keep_existing = True;
+		dip->di_dispose_mode = KEEP_FILE;
+		goto eloop;
+	    }
 	    if ( match(&string, "mdebug") || match(&string, "memory_debug") ) {
 		dip->di_mDebugFlag = mDebugFlag = True;
 		goto eloop;
@@ -3737,6 +3774,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if (match(&string, "xerrors")) {
 		dip->di_extended_errors = True;
+		goto eloop;
+	    }
+	    if (match(&string, "fileperthread")) {
+		dip->di_fileperthread = True;
 		goto eloop;
 	    }
 	    if (match(&string, "fsincr")) {
@@ -4092,6 +4133,12 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_image_copy = False;
 		goto dloop;
 	    }
+	    if (match(&string, "iolock")) {
+		dip->di_iolock = False;
+		dip->di_fileperthread = True;
+		dip->di_unique_pattern = True;
+		goto dloop;
+	    }
 	    if ( match(&string, "mdebug") || match(&string, "memory_debug") ) {
 		dip->di_mDebugFlag = mDebugFlag = False;
 		goto dloop;
@@ -4146,6 +4193,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if (match(&string, "errors")) {
 		dip->di_errors_flag = False;
+		goto dloop;
+	    }
+	    if (match(&string, "fileperthread")) {
+		dip->di_fileperthread = False;
 		goto dloop;
 	    }
 	    if (match(&string, "fsincr")) {
@@ -4701,6 +4752,23 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    continue;
 	}
+        if (match (&string, "iobehavior=")) {
+            if (match (&string, "dt")) {
+                dip->di_iobehavior = DT_IO;
+                continue;
+            //} else if (match (&string, "pio")) {
+            //    dip->di_iobehavior = PURE_IO;
+            //    pio_set_iobehavior_funcs(dip);
+            } else {
+                Eprintf(dip, "Valid I/O behaviors are: dt or pio.\n");
+                return ( HandleExit(dip, FAILURE) );
+            }
+            status = (*dip->di_iobf->iob_initialize)(dip);
+            if (status == FAILURE) {
+                return ( HandleExit(dip, status) );
+            }
+            continue;
+        }
 	if (match (&string, "iodir=")) {
 	    /* Note: iodir={reverse|vary} are special forms of random I/O! */
 	    if (match (&string, "for")) {
@@ -5152,6 +5220,30 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    continue;
 	}
+	if (match(&string, "rrandp=")) {
+	    dip->di_random_rpercentage = (int)number(dip, string, ANY_RADIX, &status, True);
+	    if (dip->di_random_rpercentage > 100) {
+		Eprintf(dip, "The random read percentage must be in the range of 0-100!\n");
+		status = FAILURE;
+		return ( HandleExit(dip, status) );
+	    }
+	    if (dip->di_random_percentage) {
+		dip->di_random_io = True;
+	    }
+	    continue;
+	}
+	if (match(&string, "wrandp=")) {
+	    dip->di_random_wpercentage = (int)number(dip, string, ANY_RADIX, &status, True);
+	    if (dip->di_random_wpercentage > 100) {
+		Eprintf(dip, "The random write percentage must be in the range of 0-100!\n");
+		status = FAILURE;
+		return ( HandleExit(dip, status) );
+	    }
+	    if (dip->di_random_percentage) {
+		dip->di_random_io = True;
+	    }
+	    continue;
+	}
 	if (match (&string, "rseed=")) {
 	    dip->di_random_seed = large_number(dip, string, ANY_RADIX, &status, True);
 	    if (status == FAILURE) {
@@ -5389,14 +5481,12 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	if (match (&string, "unmap=")) {
 	    if (match(&string, "unmap")) {
 		dip->di_unmap_type = UNMAP_TYPE_UNMAP;
-	    } else if (match(&string, "punch_hole")) {
-		dip->di_unmap_type = UNMAP_TYPE_PUNCH_HOLE;
 	    } else if (match(&string, "write_same")) {
 		dip->di_unmap_type = UNMAP_TYPE_WRITE_SAME;
 	    } else if (match(&string, "random")) {
 		dip->di_unmap_type = UNMAP_TYPE_RANDOM;
 	    } else {
-		Eprintf(dip, "Valid unmap types are: unmap, punch_hole, write_same, and random.\n");
+		Eprintf(dip, "Valid unmap types are: unmap, write_same, and random.\n");
 		return ( HandleExit(dip, FAILURE) );
 	    }
 	    dip->di_unmap_flag = True;
@@ -7711,7 +7801,7 @@ init_device_defaults(dinfo_t *dip)
     dip->di_lbdata_flag = DEFAULT_LBDATA_FLAG;
     dip->di_timestamp_flag = DEFAULT_TIMESTAMP_FLAG;
     dip->di_user_pattern = DEFAULT_USER_PATTERN;
-    
+
 #if defined(SCSI)
     dip->di_fua = False;
     dip->di_dpo = False;
@@ -7898,6 +7988,8 @@ init_device_defaults(dinfo_t *dip)
     dip->di_random_seed = 0;
     dip->di_read_percentage = 0;
     dip->di_random_percentage = 0;
+    dip->di_random_rpercentage = 0;
+    dip->di_random_wpercentage = 0;
     dip->di_variable_flag = False;
     dip->di_variable_limit = False;
     
@@ -8536,15 +8628,19 @@ do_datatest_validate(dinfo_t *dip)
 
     if (dip->di_iobehavior == DT_IO) {
 	if ( ((dip->di_aio_flag == True) || (dip->di_mmap_flag == True)) &&
-	      (dip->di_read_percentage || dip->di_random_percentage) ) {
+	      (dip->di_read_percentage || dip->di_random_percentage ||
+	       dip->di_random_rpercentage || dip->di_random_wpercentage) ) {
 	    Wprintf(dip, "Percentage options are NOT support with AIO/MMAP I/O, so disabling!\n");
 	    dip->di_read_percentage = 0;
 	    dip->di_random_percentage = 0;
+	    dip->di_random_rpercentage = 0;
+	    dip->di_random_wpercentage = 0;
 	}
-	if (dip->di_read_percentage) {
+	if (dip->di_read_percentage || dip->di_random_wpercentage) {
 	    dip->di_raw_flag = True; /* Force read/write access! */
 	}
-	if (dip->di_read_percentage || dip->di_random_percentage) {
+	if (dip->di_read_percentage || dip->di_random_percentage ||
+	    dip->di_random_rpercentage || dip->di_random_wpercentage) {
 	    dip->di_reread_flag = False;
 	}
     }
@@ -8608,7 +8704,23 @@ do_datatest_validate(dinfo_t *dip)
 	    Wprintf(dip, "The slices option (%d) overrides the threads (%d) specified!\n",
 		   dip->di_slices, dip->di_threads);
 	}
+	dip->di_iolock = False;
 	dip->di_threads = dip->di_slices;
+    }
+    /*
+     * Multiple threads to the same device cannot use random I/O to avoid false corruptions. 
+     * Random I/O with a write/read pass is only possible when the same random seed is used, 
+     * but basically this doesn't make sense since each thread uses the same offset. ;( 
+     * Lots of flags being checked, but I'm trying not to force improper behavior. ;) 
+     */
+    if ( (dip->di_iobehavior == DT_IO) && (dip->di_bypass_flag == False) &&
+	 dip->di_iolock && (dip->di_threads > 1) && dip->di_output_file &&
+	 dip->di_verify_flag && dip->di_compare_flag &&
+	 (dip->di_io_type == RANDOM_IO) && (dip->di_user_rseed == False) ) {
+	dip->di_raw_flag = True;
+	dip->di_reread_flag = False;
+	dip->di_read_percentage = 50;
+	dip->di_random_percentage = 100;
     }
 
     if ( (dip->di_io_mode != TEST_MODE) &&
@@ -8633,6 +8745,9 @@ do_datatest_validate(dinfo_t *dip)
     if (dip->di_max_size) {
 	if (dip->di_block_size > dip->di_max_size) dip->di_block_size = dip->di_max_size;
     }
+    /* Set the block size accordingly if seperate read/write block sizes are specified. */
+    dip->di_block_size = max(dip->di_block_size, dip->di_iblock_size);
+    dip->di_block_size = max(dip->di_block_size, dip->di_oblock_size);
 
     /*
      * If specified, verify the variable data limits.
@@ -8783,6 +8898,7 @@ do_common_copy_setup(dinfo_t *idip, dinfo_t *odip)
 int
 do_common_device_setup(dinfo_t *dip)
 {
+    char *device = (dip->di_input_file) ? dip->di_input_file : dip->di_output_file;
     int status;
 
     /*
@@ -8867,11 +8983,19 @@ do_common_device_setup(dinfo_t *dip)
 	    if (dip->di_dir) {
 		(void)FindMountDevice(dip, dip->di_dir, dip->di_mntDebugFlag);
 	    } else {
-		char *device = (dip->di_input_file) ? dip->di_input_file : dip->di_output_file;
 		(void)FindMountDevice(dip, device, dip->di_mntDebugFlag);
 	    }
-	    if (dip->di_debug_flag && dip->di_mounted_from_device) {
-		Printf(dip, "Mounted from device: %s\n", dip->di_mounted_from_device);
+	    if (dip->di_mounted_from_device) {
+		if (dip->di_debug_flag) {
+		    Printf(dip, "Mounted from device: %s\n", dip->di_mounted_from_device);
+		}
+#if defined(__linux__)
+		/* Note: Eventually, this may be required for other OS's! */
+		if ( dip->di_dio_flag || (dip->di_bufmode_count != 0) ) {
+		    /* Get device block size for DIO sanity checks later. */
+		    os_get_block_size(dip, dip->di_fd, dip->di_mounted_from_device);
+		}
+#endif /* defined(__linux__) */
 	    }
 	    /* Note: For Copy/Verify, may wish to do both devices? */
 	}
@@ -8895,6 +9019,35 @@ do_common_device_setup(dinfo_t *dip)
 	    return(FAILURE);
 	}
 #endif /* defined(SCSI) */
+    } else if (strncmp(device, DEV_PREFIX, sizeof(DEV_PREFIX)-1) == 0) { 
+	if (dip->di_mount_lookup) {
+	    if ( isDeviceMounted(dip, device, dip->di_mntDebugFlag) == True ) {
+		if (dip->di_output_file) {
+		    Eprintf(dip, "Device %s is mounted on %s, writing disallowd!\n",
+			    device, dip->di_mounted_on_dir);
+		    return(FAILURE);
+		}
+	    }
+	}
+	if (dip->di_debug_flag && dip->di_mounted_from_device) {
+	    Printf(dip, "Device %s is mounted on %s\n", device, dip->di_mounted_on_dir);
+	}
+	if (dip->di_io_mode == COPY_MODE) {
+	    dinfo_t *odip = dip->di_output_dinfo;
+	    char *odevice = (odip->di_input_file) ? odip->di_input_file : odip->di_output_file;
+	    if (dip->di_mount_lookup) {
+		if ( isDeviceMounted(odip, odevice, dip->di_mntDebugFlag) == True ) {
+		    if (odip->di_output_file) {
+			Eprintf(dip, "Device %s is mounted on %s, writing disallowd!\n",
+				odevice, odip->di_mounted_on_dir);
+			return(FAILURE);
+		    }
+		}
+	    }
+	    if (dip->di_debug_flag && odip->di_mounted_from_device) {
+		Printf(dip, "Device %s is mounted on %s\n", odevice, odip->di_mounted_on_dir);
+	    }
+	}
     } /* end if (dip->di_fsfile_flag) */
 
     /*

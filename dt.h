@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,8 +31,6 @@
 
 /* Note: This is *required* for AIX, but defining for all OS's! */
 #define _THREAD_SAFE 1
-
-#define HGST	1
 
 #if defined(AIX_WORKAROUND)
 # include "aix_workaround.h"
@@ -277,6 +275,7 @@ typedef enum {
 #define UseRandomSeed(dip)	\
   ( isRandomIO(dip) || (dip->di_lock_files == True) || \
     (dip->di_read_percentage || dip->di_random_percentage) || \
+    (dip->di_random_rpercentage || dip->di_random_wpercentage) || \
     (dip->di_variable_limit == True) )
 
 #if defined(AIO)
@@ -472,10 +471,9 @@ typedef enum trigger_action {
 typedef enum unmap_type {
     UNMAP_TYPE_NONE = -1,
     UNMAP_TYPE_UNMAP = 0,
-    UNMAP_TYPE_PUNCH_HOLE = 1,
-    UNMAP_TYPE_WRITE_SAME = 2,
-    UNMAP_TYPE_RANDOM = 3,
-    NUM_UNMAP_TYPES = 3
+    UNMAP_TYPE_WRITE_SAME = 1,
+    UNMAP_TYPE_RANDOM = 2,
+    NUM_UNMAP_TYPES = 2
 } unmap_type_t;
 
 #define NUM_TRIGGERS	5
@@ -720,9 +718,11 @@ typedef struct dinfo {
 	vu_long	di_error_count;		/* Number of errors detected.	*/
 	u_long	di_error_limit;		/* Number of errors tolerated.	*/
 	hbool_t	di_extended_errors;	/* Report extended error info.	*/
+        hbool_t di_fileperthread;       /* Create a file per thread.    */
 	vbool_t	di_file_system_full;	/* The file system is full.	*/
 	vbool_t	di_fsfull_restart;	/* Restart writes on FS full.	*/
 	hbool_t	di_flushing;		/* The file is being flushed.	*/
+	hbool_t di_iolock;		/* The I/O lock control flag.	*/
 	u_int32	di_dsize;		/* The device block size.	*/
 	u_int32	di_rdsize;		/* The real device block size.	*/
         u_int   di_qdepth;              /* The device queue depth.      */
@@ -734,7 +734,6 @@ typedef struct dinfo {
 	vbool_t	di_no_space_left;	/* The "no space left" flag.	*/
 	hbool_t	di_eof_processing;	/* End of file proessing.	*/
 	hbool_t	di_eom_processing;	/* End of media processing.	*/
-        hbool_t di_fileperthread;       /* Create a file per thread.    */
 	hbool_t	di_random_io;		/* Random I/O selected flag.	*/
 	hbool_t	di_random_access;	/* Random access device flag.	*/
 	u_long	di_pass_count;		/* Number of passes completed.	*/
@@ -1217,6 +1216,8 @@ typedef struct dinfo {
 	 */
 	int	di_read_percentage;	/* The read/write perecentage.	*/
 	int	di_random_percentage;	/* The random/sequential perc.	*/
+	int	di_random_rpercentage;	/* The read random percentage.	*/
+	int	di_random_wpercentage;	/* The write random percentage.	*/
 	/*
 	 * Trigger Definitions: 
 	 */
@@ -1404,10 +1405,32 @@ typedef struct job_info {
     time_t	ji_job_end;		/* The job end time.		*/
     time_t	ji_job_stopped;		/* The job stopped time.	*/
     time_t	ji_threads_started;	/* The threads start time.	*/
-    pthread_mutex_t ji_print_lock;	/* The job print lock.	*/
+    pthread_mutex_t ji_print_lock;	/* The job print lock.		*/
+    pthread_mutex_t ji_thread_lock;	/* The thread wait lock.	*/
     threads_info_t *ji_tinfo;		/* The thread(s) information.	*/
     void        *ji_opaque;     	/* Test specific opaque data.   */
 } job_info_t;
+
+#define DT_IOLOCK 1
+
+/*
+ * Shared data for jobs with multiple threads (not slices). 
+ */
+typedef struct io_global_data {
+    pthread_mutex_t io_lock;
+    vbool_t	    io_waiting_active;
+    vbool_t         io_initialized;
+    vbool_t         io_end_of_file;
+    v_int	    io_threads_done;
+    v_int	    io_threads_waiting;
+    v_large         io_bytes_read;
+    v_large         io_bytes_written;
+    vu_long         io_error_count;
+    vu_long         io_records_read;
+    vu_long         io_records_written;
+    Offset_t        io_starting_offset;
+    volatile Offset_t io_sequential_offset;
+} io_global_data_t;
 
 /*
  * Modify Parameters:
@@ -1553,11 +1576,6 @@ typedef struct workload_entry {
 
 #define make_position(dip, lba)	((Offset_t)(lba * dip->di_lbdata_size))
 
-/* Real functions used now that we have SCSI I/O support! */
-/* Note: These will go away once we switch to pread/pwrite API's! */
-//#define get_position(dip) seek_position(dip, (Offset_t)0, SEEK_CUR, False)
-//#define dt_get_position(dip, file, fdp, errors, retrys) dt_seek_position(dip, file, fdp, (Offset_t)0, SEEK_CUR, errors, retrys)
-
 #endif /* defined(INLINE_FUNCS) */
 
 extern FILE *efp, *ofp;
@@ -1613,6 +1631,7 @@ extern int MakeArgList(char **argv, char *s);
 
 extern pthread_attr_t *tdattrp, *tjattrp;
 extern pthread_mutex_t print_lock;
+extern int create_detached_thread(dinfo_t *dip, void *(*func)(void *));
 extern int do_monitor_processing(dinfo_t *mdip, dinfo_t *dip);
 extern void do_setup_keepalive_msgs(dinfo_t *dip);
 extern int do_prejob_start_processing(dinfo_t *mdip, dinfo_t *dip);
@@ -1790,13 +1809,16 @@ extern void save_history_data(	struct dinfo	*dip,
 extern struct dtype *setup_device_type(char *str);
 extern int setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp);
 //extern void system_device_info(struct dinfo *dip);
+#if defined(__linux__)
+extern void os_get_block_size(dinfo_t *dip, int fd, char *device_name);
+#endif /* defined(__linux__) */
 
 /* dtiot.c */
 extern u_int32 init_iotdata(	dinfo_t		*dip,
-				u_char		*buffer,
-				size_t		bcount,
-				u_int32		lba,
-				u_int32		lbsize );
+                                u_char		*buffer,
+                                size_t		bcount,
+                                u_int32		lba,
+                                u_int32		lbsize );
 extern void process_iot_data(dinfo_t *dip, u_char *pbuffer, u_char *vbuffer, size_t bcount, hbool_t raw_flag);
 extern void analyze_iot_data(dinfo_t *dip, u_char *pbuffer, u_char *vbuffer, size_t bcount, hbool_t raw_flag);
 extern void display_iot_data(dinfo_t *dip, u_char *pbuffer, u_char *vbuffer, size_t bcount, hbool_t raw_flag);
@@ -1814,6 +1836,10 @@ extern int acquire_job_lock(dinfo_t *dip, job_info_t *job);
 extern int release_job_lock(dinfo_t *dip, job_info_t *job);
 extern int acquire_job_print_lock(dinfo_t *dip, job_info_t *job);
 extern int release_job_print_lock(dinfo_t *dip, job_info_t *job);
+extern int acquire_job_thread_lock(dinfo_t *dip, job_info_t *job);
+extern int release_job_thread_lock(dinfo_t *dip, job_info_t *job);
+extern int dt_acquire_iolock(dinfo_t *dip, io_global_data_t *iogp);
+extern int dt_release_iolock(dinfo_t *dip, io_global_data_t *iogp);
 extern job_info_t *find_job_by_id(dinfo_t *dip, uint32_t job_id, hbool_t lock_jobs);
 extern job_info_t *find_job_by_tag(dinfo_t *dip, char *tag, hbool_t lock_jobs);
 extern job_info_t *find_jobs_by_tag(dinfo_t *dip, char *tag, job_info_t *pjob, hbool_t lock_jobs);
@@ -1882,6 +1908,7 @@ extern int wait_for_job_by_tag(dinfo_t *dip, char *tag);
 extern int wait_for_jobs_by_tag(dinfo_t *dip, char *job_tag);
 extern int wait_for_jobs(dinfo_t *dip, job_id_t job_id, char *job_tag);
 extern int wait_for_threads(dinfo_t *mdip, threads_info_t *tip);
+extern void wait_for_threads_done(dinfo_t *dip);
 extern void *a_job(void *arg);
 extern int execute_threads(dinfo_t *mdip, dinfo_t **initial_dip, job_id_t *job_id);
 
@@ -2000,7 +2027,6 @@ extern void report_scsi_information(dinfo_t *dip);
 extern void report_vdisk_attributes(dinfo_t *dip);
 extern int get_lba_status(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes);
 extern int do_unmap_blocks(dinfo_t *dip);
-extern int punch_hole(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes);
 extern int unmap_blocks(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes);
 extern int write_same_unmap(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes);
 extern int do_scsi_triage(dinfo_t *dip);
@@ -2210,7 +2236,7 @@ extern hbool_t dt_unlock_file_chance(dinfo_t *dip);
 
 #endif /* defined(INLINE_FUNCS) */
 
-extern size_t get_data_size(dinfo_t *dip);
+extern size_t get_data_size(dinfo_t *dip, optype_t optype);
 extern size_t get_variable(struct dinfo *dip);
 extern large_t get_data_limit(dinfo_t *dip);
 extern large_t get_variable_limit(dinfo_t *dip);
@@ -2476,9 +2502,10 @@ extern void ReportLbdataError(	struct dinfo	*dip,
 
 /*
  * OS Specific Functions: (dtunix.c and dtwin.c)
- * Note: These must be here since they reference the dinfo structure! :-(
+ * Note: These must be here since they reference the dinfo structure!
  */
 extern hbool_t FindMountDevice(dinfo_t *dip, char *path, hbool_t debug);
+extern hbool_t isDeviceMounted(dinfo_t *dip, char *path, hbool_t debug);
 extern char *os_getcwd(void);
 extern hbool_t os_isdir(char *dirpath);
 extern hbool_t os_isdisk(HANDLE handle);
@@ -2533,3 +2560,8 @@ extern void initialize_workloads_data(void);
 extern void add_workload_entry(char *workload_name, char *workload_desc, char *workload_options);
 extern workload_entry_t *find_workload(char *workload_name);
 extern void show_workloads(dinfo_t *dip, char *workload_name);
+
+/*
+ * Other I/O Behaviors:
+ */
+extern void pio_set_iobehavior_funcs(dinfo_t *dip);

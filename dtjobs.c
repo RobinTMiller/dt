@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -222,6 +222,46 @@ release_job_print_lock(dinfo_t *dip, job_info_t *job)
     int status = pthread_mutex_unlock(&job->ji_print_lock);
     if (status != SUCCESS) {
 	tPerror(dip, status, "Failed to unlock per job print mutex!");
+    }
+    return(status);
+}
+
+int
+acquire_thread_lock(dinfo_t *dip, job_info_t *job)
+{
+    int status = pthread_mutex_lock(&job->ji_thread_lock);
+    if (status != SUCCESS) {
+        tPerror(dip, status, "Failed to acquire job thread lock!");
+    }
+    return(status);
+}
+
+int
+release_thread_lock(dinfo_t *dip, job_info_t *job)
+{
+    int status = pthread_mutex_unlock(&job->ji_thread_lock);
+    if (status != SUCCESS) {
+        tPerror(dip, status, "Failed to unlock job thread lock!");
+    }
+    return(status);
+}
+
+int
+dt_acquire_iolock(dinfo_t *dip, io_global_data_t *iogp)
+{
+    int status = pthread_mutex_lock(&iogp->io_lock);
+    if (status != SUCCESS) {
+        tPerror(dip, status, "Failed to acquire dt I/O lock!");
+    }
+    return(status);
+}
+
+int
+dt_release_iolock(dinfo_t *dip, io_global_data_t *iogp)
+{
+    int status = pthread_mutex_unlock(&iogp->io_lock);
+    if (status != SUCCESS) {
+        tPerror(dip, status, "Failed to unlock dt I/O lock!");
     }
     return(status);
 }
@@ -1942,6 +1982,130 @@ wait_for_jobs_by_tag(dinfo_t *dip, char *job_tag)
 }
 
 /*
+ * do_wait_for_threads_done() - Wait for all job threads to complete. 
+ *  
+ * Description: 
+ *      This function is used to wait for dt I/O threads when the I/O lock
+ * for multiple concurrent threads to same file/device is enabled. This is 
+ * required for multiple passes or runtime so thread global data can be reset. 
+ * The job lock is used to synchronize the I/O threads, just like startup time! 
+ *  
+ * Inputs: 
+ * 	arg = The device information pointer.
+ */
+void *
+do_wait_for_threads_done(void *arg)
+{
+    dinfo_t *dip = arg;
+    job_info_t *job = dip->di_job;
+    io_global_data_t *iogp = job->ji_opaque;
+    int loops = 0, max_loops = 500, ms_delay = 50;
+    int status;
+
+    status = acquire_thread_lock(dip, job);
+    iogp->io_waiting_active = True;
+    /* Give the caller time to detect us active! */
+    os_msleep(ms_delay);
+
+    if (dip->di_tDebugFlag) {
+	Printf(dip, ">- Starting threads done loop, threads done %d...\n", iogp->io_threads_done);
+    }
+    while (iogp->io_threads_done) {
+	/* Note: Theads are joined in order, so this calculation won't work! */
+	//int threads_active = (job->ji_tinfo->ti_threads - job->ji_tinfo->ti_finished);
+	int threads_active = get_threads_state_count(job->ji_tinfo, TS_RUNNING);
+	if ( THREAD_TERMINATING(dip) ) break;
+	loops++;
+	if (iogp->io_threads_done > threads_active) {
+	    Printf(dip, "-> BUG: Threads done of %d exceeds threads active %d, should NEVER happen!\n",
+		   iogp->io_threads_done, dip->di_threads);
+	    //break;
+	}
+	/* We may need to loop many times when file systems flush our file data. */
+	if (loops > max_loops) {
+	    Printf(dip, "-> do_wait_for_threads_done() max loops of %d reached, threads done %d\n",
+		   max_loops, iogp->io_threads_done);
+	    Printf(dip, "Please check for hung I/O or threads exiting abnormally!\n");
+	    break;
+	}
+	if (dip->di_tDebugFlag) {
+	    if ((loops % 100) == 0) {
+		Printf(dip, "Loop #%d, threads active %d, threads done %d...\n",
+		       loops, threads_active, iogp->io_threads_done);
+	    }
+	}
+	if (iogp->io_threads_done >= threads_active) {
+	    iogp->io_threads_done = 0;
+	    iogp->io_end_of_file = False;
+	    iogp->io_bytes_read = 0;
+	    iogp->io_bytes_written = 0;
+	    iogp->io_records_read = 0;
+	    iogp->io_records_written = 0;
+	    iogp->io_sequential_offset = iogp->io_starting_offset;
+	    break;
+	}
+	os_msleep(ms_delay);
+    }
+    iogp->io_waiting_active = False;
+    if (dip->di_tDebugFlag) {
+	Printf(dip, ">- Ending threads done loop, threads done %d...\n", iogp->io_threads_done);
+    }
+    release_thread_lock(dip, job);
+    pthread_exit(dip);
+    return(NULL);
+}
+
+void
+wait_for_threads_done(dinfo_t *dip)
+{
+    job_info_t *job = dip->di_job;
+    io_global_data_t *iogp = job->ji_opaque;
+    int loops = 0, max_loops = 500, ms_delay = 10;
+
+    /* We must wait for all threads to continue *before* starting next wait! */
+    /* This occurs with more threads than I/O, causing to reenter quickly. */
+    while ((iogp->io_waiting_active == False) && iogp->io_threads_waiting) {
+	loops++;
+	if (loops > max_loops) {
+	    Printf(dip, "-> wait_for_threads_done() max loops of %d reached, suspect hung thread!\n", max_loops);
+	    break;
+	}
+	if (dip->di_tDebugFlag) {
+	    if ((loops % 100) == 0) {
+		Printf(dip, "Loop #%d, threads waiting %d...\n", loops, iogp->io_threads_waiting);
+	    }
+	}
+	os_msleep(ms_delay);
+    }
+    (void)dt_acquire_iolock(dip, iogp);
+    iogp->io_threads_done++;
+    iogp->io_threads_waiting++;
+    if (dip->di_tDebugFlag) {
+	Printf(dip, "Adjusted threads done %d...\n", iogp->io_threads_done);
+    }
+    if (iogp->io_waiting_active == False) {
+	(void)create_detached_thread(dip, &do_wait_for_threads_done);
+        /* Give thread time to startup! */
+        while (iogp->io_waiting_active == False) {
+            os_msleep(ms_delay);
+        }
+	if (dip->di_tDebugFlag) {
+	    Printf(dip, "Waiting thread is now active, continuing...\n");
+	}
+    }
+    (void)dt_release_iolock(dip, iogp);
+    (void)acquire_thread_lock(dip, job);
+    (void)release_thread_lock(dip, job);
+    (void)dt_acquire_iolock(dip, iogp);
+    iogp->io_threads_waiting--;
+    if (dip->di_tDebugFlag) {
+	Printf(dip, "Finished, threads waiting is %d...\n", iogp->io_threads_waiting);
+    }
+    (void)dt_release_iolock(dip, iogp);
+    return;
+}
+
+/*
  * a_job() - Wait for an async (background) job.
  */ 
 void *  
@@ -2049,6 +2213,29 @@ execute_threads(dinfo_t *mdip, dinfo_t **initial_dip, job_id_t *job_id)
 	    (void)cleanup_job(dip, job, True);
 	    return(FAILURE);
 	}
+    } else if ( (dip->di_iobehavior == DT_IO) && dip->di_iolock && (dip->di_slices == 0) ) {
+#if defined(DT_IOLOCK)
+	/* Note: This moves to job init once I/O behavior implemented for dt. */
+	io_global_data_t *iogp = Malloc(dip, sizeof(*iogp));
+	if (iogp == NULL) {
+	    release_job_lock(dip, job);
+	    (void)cleanup_job(dip, job, True);
+	    return(FAILURE);
+	}
+	if ( (status = pthread_mutex_init(&iogp->io_lock, NULL)) != SUCCESS) {
+	    tPerror(dip, status, "pthread_mutex_init() of global I/O lock failed!");
+	    release_job_lock(dip, job);
+	    (void)cleanup_job(dip, job, True);
+	    return(FAILURE);
+	}
+	job->ji_opaque = iogp;
+	if ( (status = pthread_mutex_init(&job->ji_thread_lock, NULL)) != SUCCESS) {
+	    tPerror(dip, status, "pthread_mutex_init() of thread wait lock failed!");
+	    release_job_lock(dip, job);
+	    (void)cleanup_job(dip, job, True);
+	    return(FAILURE);
+	}
+#endif /* defined(DT_IOLOCK) */
     }
     /* Show the tool parameters once. */
     if (dip->di_iobf && dip->di_iobf->iob_show_parameters) {
@@ -2258,6 +2445,15 @@ wait_for_threads(dinfo_t *mdip, threads_info_t *tip)
         if (dip->di_iobf->iob_job_cleanup) {
             (*dip->di_iobf->iob_job_cleanup)(dip, dip->di_job);
         }
+#if defined(DT_IOLOCK)
+	 else if ( (dip->di_iobehavior == DT_IO) && dip->di_job->ji_opaque) {
+	    /* Note: This moves after I/O behavior defined for dt. */
+	    io_global_data_t *iogp = dip->di_job->ji_opaque;
+	    (void)pthread_mutex_destroy(&iogp->io_lock);
+	    FreeMem(mdip, iogp, sizeof(*iogp));
+	    dip->di_job->ji_opaque = NULL;
+	}
+#endif /* defined(DT_IOLOCK) */
     }
     /* Do common test processing, dump history, syslog, etc.*/
     /* Note: We may wish to control this, but for non-dt I/O, we need! */

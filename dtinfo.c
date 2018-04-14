@@ -1,6 +1,6 @@
 /****************************************************************************
  *      								    *
- *      		  COPYRIGHT (c) 1988 - 2017     		    *
+ *      		  COPYRIGHT (c) 1988 - 2018     		    *
  *      		   This Software Provided       		    *
  *      			     By 				    *
  *      		  Robin's Nest Software Inc.    		    *
@@ -32,6 +32,11 @@
  * 
  * Modification History:
  *
+ * April 12th, 2018 by Robin T. Miller
+ *      For Linux, add function to set device block size. This is required
+ * for file systems when direct I/O is enabled, where I/O sizes muct be
+ * modulo the device size, otherwise EINVAL errors occur (misleading).
+ * 
  * June 15th, 2014 by Robin T. Miller
  * 	On Linux for direct disks, ensure the DIO flag is set true, since
  * new logic for handling Direct I/O and buffering mode, requires this!
@@ -775,6 +780,37 @@ os_system_device_info(struct dinfo *dip)
 	}
     }
 
+    if (temp_fd) (void)close(fd);
+    return;
+}
+
+/* TODO: Move OS functions to OS file and recouple from dt. */
+/* Note: This is a duplication of above, but does not set device type. */
+/*       This is being called for mounted file systems to get block size. */
+
+void
+os_get_block_size(dinfo_t *dip, int fd, char *device_name)
+{
+    hbool_t temp_fd = False;
+    int sect_size;
+
+    if (fd == NoFd) {
+	temp_fd = True;
+	if ( (fd = open (device_name, (O_RDONLY | O_NDELAY))) < 0) {
+	    return;
+	}
+    }
+
+    /*
+     * Try to obtain the sector size.
+     */
+    if (ioctl (fd, BLKSSZGET, &sect_size) == SUCCESS) {
+	dip->di_rdsize = sect_size;
+	dip->di_dsize = dip->di_rdsize; /* override previous dsize! */
+	if (dip->di_debug_flag) {
+	    Printf(dip, "BLKSSZGET Sector Size: %u bytes\n", dip->di_dsize);
+	}
+    }
     if (temp_fd) (void)close(fd);
     return;
 }

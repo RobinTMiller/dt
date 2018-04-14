@@ -704,7 +704,7 @@ dtaio_read_data(struct dinfo *dip)
 	}
     }
 
-    dsize = get_data_size(dip);
+    dsize = get_data_size(dip, READ_OP);
     data_limit = get_data_limit(dip);
 
     /* Prime the common btag data, except for IOT pattern. */
@@ -1203,7 +1203,7 @@ dtaio_write_data(struct dinfo *dip)
     }
     dip->di_aio_data_bytes = dip->di_aio_file_bytes = dip->di_aio_record_count = 0;
 
-    dsize = get_data_size(dip);
+    dsize = get_data_size(dip, WRITE_OP);
     data_limit = get_data_limit(dip);
 
     if ( (dip->di_fill_always == True) || (dip->di_fill_once == True) ) {

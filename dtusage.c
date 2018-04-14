@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: June 6th, 2017"VARIANT", Version: 21.21, Author: Robin T. Miller";
+char *version_str = "Date: April 12th, 2018"VARIANT", Version: 21.27, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -91,6 +91,8 @@ dthelp(dinfo_t *dip)
     P (dip, "\tbs=value              The block size to read/write.\n");
     P (dip, "    or");
     P (dip, "\tbs=random             Random size between 512 and 256k.\n");
+    P (dip, "\tibs=value             The read block size. (overrides bs=)\n");
+    P (dip, "\tobs=value             The write block size. (overrides bs=)\n");
     P (dip, "\tjob_log=filename      The job log file name.\n");
     P (dip, "\tlog[atu]=filename     The log file name to write.\n");
     P (dip, "\t                      a=append, t=truncate, u=unique (w/tid)\n");
@@ -192,6 +194,8 @@ dthelp(dinfo_t *dip)
     P (dip, "\t                      'random' keyword makes the read/write percentage random.\n");
     P (dip, "\trandp=value           Percentage of accesses that are random. Range [0,100].\n");
     P (dip, "\t                      Sequential accesses = 0%%, else random percentage\n");
+    P (dip, "\trrandp=value          Percentage of read accesses that are random. Range [0,100].\n");
+    P (dip, "\twrandp=value          Percentage of write accesses that are random. Range [0,100].\n");
     P (dip, "\truntime=time          The number of seconds to execute.\n");
     P (dip, "\tscript=filename       The script file name to execute.\n");
     P (dip, "\tslice=value           The specific disk slice to test.\n");
@@ -222,6 +226,13 @@ dthelp(dinfo_t *dip)
     P (dip, "\tshell                 Startup a system shell.\n");
     P (dip, "\tusage                 Display the program usage.\n");
     P (dip, "\tversion               Display the version information.\n");
+
+    P (dip, "\n    I/O Behaviors:\n");
+    P (dip, "\tiobehavior=type       Specify the I/O behavior to use.\n");
+    P (dip, "\t  Where type is:\n");
+    P (dip, "\t    dt                The dt I/O behavior (default).\n");
+    //P (dip, "\t    pio               The pure I/O behavior.\n");
+    P (dip, "\n    For help on each I/O behavior use: \"iobehavior=type help\"\n");
 
     P (dip, "\n    Block Tag Verify Flags: (prefix with ~ to clear flag)\n");
     P (dip, "\tlba,offset,devid,inode,serial,hostname,signature,version\n");
@@ -395,6 +406,8 @@ dthelp(dinfo_t *dip)
 				(dip->di_extended_errors) ? enabled_str : disabled_str);
     P (dip, "\teof              EOF/EOM exit status.       (Default: %s)\n",
 				(dip->di_eof_status_flag) ? enabled_str : disabled_str);
+    P (dip, "\tfileperthread    File per thread.           (Default: %s)\n",
+				(dip->di_fileperthread == True) ? enabled_str : disabled_str);
     P (dip, "\tfill_always      Always fill files.         (Default: %s)\n",
 				(dip->di_fill_always == True) ? enabled_str : disabled_str);
     P (dip, "\tfill_once        Fill the file once.        (Default: %s)\n",
@@ -420,6 +433,8 @@ dthelp(dinfo_t *dip)
 				(dip->di_history_timing) ? enabled_str : disabled_str);
     P (dip, "\timage            Image mode copy (disks).   (Default: %s)\n",
 			 	(dip->di_image_copy) ? enabled_str : disabled_str);
+    P (dip, "\tiolock           I/O lock control.	   (Default: %s)\n",
+			 	(dip->di_iolock) ? enabled_str : disabled_str);
     P (dip, "\tlbdata           Logical block data.        (Default: %s)\n",
 				(dip->di_lbdata_flag) ? enabled_str : disabled_str);
     P (dip, "\tlogpid           Log process ID.            (Default: %s)\n",

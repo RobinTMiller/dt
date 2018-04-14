@@ -976,6 +976,15 @@ FindMountDevice(dinfo_t *dip, char *path, hbool_t debug)
     return(match);
 }
 
+hbool_t
+isDeviceMounted(dinfo_t *dip, char *path, hbool_t debug)
+{
+    if (debug) {
+	Printf(dip, "isDeviceMounted: This needs implmented for this OS!\n");
+    }
+    return(False);
+}
+
 char *
 os_ctime(time_t *timep, char *time_buffer, int timebuf_size)
 {
@@ -2923,7 +2932,8 @@ os_symlink_file(char *oldpath, char *newpath)
 
 #endif /* !deifned(WINDOWS_XP) */
 
-#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
+//#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
+#if 0
 
 //#include <ntifs.h>
 
