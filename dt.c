@@ -44,6 +44,13 @@
  * But that said, this is better than what we did before.
  * FYI: This is Linux only right now, since I no longer have other OS's.
  * 
+ * January 5th, 2018 by Robin T. Miller
+ *      Added separate read/write percentage options: rrandp and wrandp.
+ * This allows us to control these separately, or to allow sequential read
+ * while supporting random writes, for example. Separate read/write block
+ * sizes via ibs and obs, provide further flexability for workloads.
+ * Also added I/O lock option to control multiple threads to same disk/file.
+ * 
  * January 21st, 2017 by Robin T. Miller
  *	For Windows, parse <cr><lf> properly for continuation lines.
  *      Allows comments on continuation lines, including leading spaces.
@@ -138,6 +145,10 @@
  * January 29th, 2015 by Robin T. Miller
  * 	Allow empty pattern options to undue thier affect, to allow this
  * method to overide previous pattern options. Reverts to their defaults.
+ * 
+ * January 28th, 2015 by Robin T. Miller
+ * 	Adding parsing of "ibs=" and "obs=" options for separate read/write
+ * sizes, only for sio behavior.
  * 
  * December 19th, 2014 by Robin T. Miller
  * 	Fixed a problem in the dt I/O loop where a runtime=-1 was setting

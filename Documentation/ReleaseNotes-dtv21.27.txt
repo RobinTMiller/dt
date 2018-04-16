@@ -1,0 +1,98 @@
+ Hi All,						Last Update: April 16th, 2018
+	This is the updated dt v21.27 release notes.
+	This file resides in the Documentation directory as "ReleaseNotes-dtv21.27.txt".
+ 
+        Latest dt files are now kept in github here:
+            https://github.com/RobinTMiller/dt
+                Also note spt is here too:
+            https://github.com/RobinTMiller/spt
+
+	The new features include:
+
+        o Options to allow read/write block sizes and random percentages:
+          ibs=value             The read block size. (overrides bs=)
+          obs=value             The write block size. (overrides bs=)
+          randp=value           Percentage of accesses that are random. Range [0,100].
+          rrandp=value          Percentage of read accesses that are random. Range [0,100].
+          wrandp=value          Percentage of write accesses that are random. Range [0,100].
+
+        o Added an I/O lock to allow multiple threads to access the same
+          file/disk concurrently, which is enabled via: enable=iolock
+
+          Enable/Disable Flag:
+            iolock          I/O lock control.         (Default: disabled)
+
+        o Added mounted file system check when doing writing to disks.
+          Please Note: This does not catch disks under RAID/LVM control.
+
+        o For Linux direct I/O (DIO) to file systems with underlying disks
+          with block size > 512 bytes, adjust min/max or flag block size must
+          be modulo the disk sector size, for example 4k. Otherwise, I/O will
+          report an EINVAL which can be misleading, even to the author! ;)
+
+          As you may recall, dt's default is a separate file per thread, but
+          this I/O lock also applies to direct disk access, and may be useful
+          instead of using slices. Direct disk I/O performance is ~double.
+
+	Please let me know of any questions or issues you may encounter.
+
+Cheers,
+Robin
+======================================================================================
+
+Here’s an example: (remove disable=verify to read/compare data, and remove limit= for full disk)
+
+# ./dt version
+    --> Date: January 5th, 2017, Version: 21.25, Author: Robin T. Miller <--
+# 
+# ./dt of=/dev/sdl ibs=4k obs=1m readp=20 rrandp=20 limit=25g workload=job_stats_only enable=iolock threads=6 disable=verify
+dt (j:1 t:1): 
+dt (j:1 t:1): SCSI Information:
+dt (j:1 t:1):               SCSI Device Name: /dev/sdl
+dt (j:1 t:1):          Vendor Identification: HGST
+dt (j:1 t:1):         Product Identification: HUH721010AL4204
+dt (j:1 t:1):        Firmware Revision Level: C386
+dt (j:1 t:1):      Target Port Group Support: 0 (ALUA not supported)
+dt (j:1 t:1):                   Block Length: 4096
+dt (j:1 t:1):               Maximum Capacity: 2441609216 (9537536.000 Mbytes)
+dt (j:1 t:1):        Provisioning Management: Full Provisioned
+dt (j:1 t:1):              Device Identifier: 5000-cca2-5102-85c8
+dt (j:1 t:1):           Device Serial Number:         7PG1D07R
+dt (j:1 t:1): 
+dt (j:1 t:1): 
+dt (j:1 t:1): Operating System Information:
+dt (j:1 t:1):                      Host name: DenaliStorage-TH2 (127.0.1.1)
+dt (j:1 t:1):                      User name: hgst
+dt (j:1 t:1):                     Process ID: 13912
+dt (j:1 t:1):                 OS information: Linux 4.4.0-89-generic #112-Ubuntu SMP Mon Jul 31 19:38:41 UTC 2017 x86_64
+dt (j:1 t:1): 
+dt (j:1 t:1): SCSI Information:
+dt (j:1 t:1):            Inquiry information: Vid=HGST, Pid=HUH721010AL4204, Rev=C386
+dt (j:1 t:1):           Capacity information: Block Length=4096, Capacity=2441609216 (9537536.000 Mbytes)
+dt (j:1 t:1):        Provisioning management: Full Provisioned
+dt (j:1 t:1):              Device identifier: 5000-cca2-5102-85c8
+dt (j:1 t:1):           Device serial number:         7PG1D07R
+dt (j:1 t:1): 
+dt (j:1 t:1): Job Statistics:
+dt (j:1 t:1):        Output device/file name: /dev/sdl (device type=disk)
+dt (j:1 t:1):        Type of I/O's performed: sequential (forward, rseed=0x5a4fe28f000c5b00, read-after-write)
+dt (j:1 t:1):       Job Information Reported: Job 1
+dt (j:1 t:1):              Number of threads: 6
+dt (j:1 t:1):           Data pattern written: 0x39c39c39 (read verify disabled)
+dt (j:1 t:1):             Total records read: 6389 (20%)
+dt (j:1 t:1):               Total bytes read: 26169344 (25556.000 Kbytes, 24.957 Mbytes, 0.024 Gbytes)
+dt (j:1 t:1):          Total records written: 25576 (80%)
+dt (j:1 t:1):            Total bytes written: 26817376256 (26188844.000 Kbytes, 25575.043 Mbytes, 24.976 Gbytes)
+dt (j:1 t:1):        Total records processed: 31964 @ 1048576 bytes/record, 1 partial
+dt (j:1 t:1):        Total bytes transferred: 26843545600 (26214400.000 Kbytes, 25600.000 Mbytes)
+dt (j:1 t:1):         Average transfer rates: 153514335 bytes/sec, 149916.343 Kbytes/sec
+dt (j:1 t:1):        Number I/O's per second: 182.803
+dt (j:1 t:1):         Number seconds per I/O: 0.0055 (5.47ms)
+dt (j:1 t:1):         Total passes completed: 1/1
+dt (j:1 t:1):          Total errors detected: 0/1
+dt (j:1 t:1):             Total elapsed time: 02m54.86s
+dt (j:1 t:1):              Total system time: 00m03.15s
+dt (j:1 t:1):                Total user time: 01m08.21s
+dt (j:1 t:1):                  Starting time: Fri Jan  5 13:39:43 2018
+dt (j:1 t:1):                    Ending time: Fri Jan  5 13:42:38 2018
+#

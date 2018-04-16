@@ -36,8 +36,12 @@
  * the read verify statistics so our read/write percentages are accurate.
  * Note: By default, read-after-write is enabled to verify data written.
  * 
+ * January 5th, 2018 by Robin T. Miller
+ *      Added separate read/write percentage optionis and also I/O lcok
+ * to control multiple threads to the same disk or file.
+ *
  * January 4th, 2018 by Robin T. Miller
- *      When prefilling a file, exclude the record limir and fill to the
+ *      When prefilling a file, exclude the record limit and fill to the
  * data limit, otherwise random I/O may read a premature end of file.
  * 
  * December 28th, 2017 by Robin T. Miller
