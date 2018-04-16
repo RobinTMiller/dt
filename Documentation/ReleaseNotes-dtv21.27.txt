@@ -22,17 +22,21 @@
           Enable/Disable Flag:
             iolock          I/O lock control.         (Default: disabled)
 
-        o Added mounted file system check when doing writing to disks.
+          As you may recall, dt's default is a separate file per thread, but
+          this I/O lock also applies to direct disk access, and may be useful
+          instead of using slices. Sequential I/O with multiple threads via I/O
+          lock increases Hard Disk Drive (HDD) performance significately, since
+          head movement is minimized compared to slices which randomized I/O.
+          Note: Solid State Disks (SSD's) and storage array virtual LUNs are
+          not impacted by head movement (of course).
+
+        o Added mounted file system check when writing to disk devices.
           Please Note: This does not catch disks under RAID/LVM control.
 
         o For Linux direct I/O (DIO) to file systems with underlying disks
           with block size > 512 bytes, adjust min/max or flag block size must
           be modulo the disk sector size, for example 4k. Otherwise, I/O will
           report an EINVAL which can be misleading, even to the author! ;)
-
-          As you may recall, dt's default is a separate file per thread, but
-          this I/O lock also applies to direct disk access, and may be useful
-          instead of using slices. Direct disk I/O performance is ~double.
 
 	Please let me know of any questions or issues you may encounter.
 
@@ -44,7 +48,6 @@ Here’s an example: (remove disable=verify to read/compare data, and remove limit
 
 # ./dt version
     --> Date: January 5th, 2017, Version: 21.25, Author: Robin T. Miller <--
-# 
 # ./dt of=/dev/sdl ibs=4k obs=1m readp=20 rrandp=20 limit=25g workload=job_stats_only enable=iolock threads=6 disable=verify
 dt (j:1 t:1): 
 dt (j:1 t:1): SCSI Information:
@@ -96,3 +99,19 @@ dt (j:1 t:1):                Total user time: 01m08.21s
 dt (j:1 t:1):                  Starting time: Fri Jan  5 13:39:43 2018
 dt (j:1 t:1):                    Ending time: Fri Jan  5 13:42:38 2018
 #
+
+====================================================================================================================
+
+# dt version
+    --> Date: March 1st, 2018, Version: 21.26, Author: Robin T. Miller <--
+# ./dt of=/dev/sdgu offset=2441609215*4k count=1 disable=compare,stats enable=debug
+00m00.00s dt (j:0 t:0): Cloning device 0x2147010
+00m00.00s dt (j:0 t:0): BLKSSZGET Sector Size: 4096 bytes
+00m00.00s dt (j:0 t:0): BLKGETSIZE Capacity: 19532873728 blocks (512 byte blocks).
+00m00.00s dt (j:0 t:0): ERROR: Error number 1 occurred on Thu Mar  1 18:11:25 2018
+00m00.00s dt (j:0 t:0): ERROR: Device /dev/sdgu is mounted on /mnt/blockstoreCN, writing disallowd!
+00m00.00s dt (j:0 t:0): Cleaning up device 0x21502b0, master 0...
+00m00.00s dt (j:0 t:0): Exiting with status -1...
+00m00.00s dt (j:0 t:0): Program is exiting with status -1...
+root@Site1-R01-C01-SE01:/home/hgstsupport/Robin#
+
