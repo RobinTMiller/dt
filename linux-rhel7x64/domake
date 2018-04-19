@@ -1,1 +1,3 @@
-make -f ../Makefile.linux VPATH=.. OS=linux PORG=-g
+make -f ../Makefile.linux VPATH=.. OS=linux
+# Use this command for debug version of dt!
+#make -f ../Makefile.linux VPATH=.. OS=linux PORG=-g
