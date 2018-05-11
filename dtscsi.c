@@ -33,6 +33,10 @@
  * 
  * Modification History:
  * 
+ * April 26th, 2018 by Robin T. Miller
+ *      If the serial number contains spaces, copy serial number without spaces.
+ *      Note: This is limited to HGST compile right now, where this is prevalent.
+ * 
  * July 14th, 2014 by Robin T. Miller
  * 	Add support for SCSI I/O.
  *
@@ -293,6 +297,29 @@ init_scsi_info(dinfo_t *dip)
 						 NULL, &sgp, inquiry, dip->di_scsi_timeout);
 	dip->di_serial_number = GetSerialNumber(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
 						NULL, &sgp, inquiry, dip->di_scsi_timeout);
+#if defined(HGST)
+	/*
+	 * Some vendors like HGST and Sandisk right justify their serial number and pad with spaces. 
+	 * Since this causes the btag serial numbers to be truncated, I'm stripping spaces here!
+	 * Note: This is because I don't wish to expand btag serial number just for extra spaces.
+	 */
+	if ( dip->di_serial_number && strchr(dip->di_serial_number, ' ') ) {
+	    char serial[MEDIUM_BUFFER_SIZE];
+	    char *sbp = serial;
+	    char *snp = dip->di_serial_number;
+	    memset(serial, '\0', sizeof(serial));
+	    /* Copy the serial number without the goofy spaces! */
+	    while (*snp) {
+		if (*snp != ' ') {
+		    *sbp = *snp;
+		    sbp++;
+		}
+		snp++;
+	    }
+	    Free(dip, dip->di_serial_number);
+	    dip->di_serial_number = strdup(serial);
+	}
+#endif /* defined(HGST) */
     }
     if ( NEL(dip->di_vendor_id, "HGST", 4) ) {
 	dip->di_mgmt_address = GetMgmtNetworkAddress(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,

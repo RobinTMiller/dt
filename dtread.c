@@ -31,10 +31,6 @@
  *
  * Modification History:
  *
- * January 5th, 2018 by Robin T. Miller
- *      Added separate read percentage option and also I/O lcok to control
- * multiple threads to the same disk or file.
- *
  * December 28th, 2017 by Robin T. Miller
  *      Added support for multiple threads via I/O lock and shared data.
  * 

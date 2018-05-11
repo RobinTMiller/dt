@@ -32,6 +32,8 @@
 /* Note: This is *required* for AIX, but defining for all OS's! */
 #define _THREAD_SAFE 1
 
+//#define HGST	1
+
 #if defined(AIX_WORKAROUND)
 # include "aix_workaround.h"
 #endif /* defined(AIX_WORKAROUND) */
@@ -141,6 +143,7 @@
 #endif
 
 #define DEFAULT_COMPARE_FLAG	True
+#define DEFAULT_XCOMPARE_FLAG	False
 #define DEFAULT_COREDUMP_FLAG	False
 #define DEFAULT_FILEPERTHREAD   True
 #define DEFAULT_LBDATA_FLAG	False
@@ -710,7 +713,8 @@ typedef struct dinfo {
 	bufmodes_t di_buffer_mode;	/* The current buffering mode.	*/
 	char	*di_bufmode_type;	/* The buffering mode type.	*/
 	hbool_t	di_closing;		/* The device is being closed.	*/
-	hbool_t	di_compare_flag;	/* Controls data comparisions.	*/
+	hbool_t	di_compare_flag;	/* Controls data comparisons.	*/
+	hbool_t	di_xcompare_flag;	/* Controls extra comparison.	*/
 	hbool_t	di_deleting_flag;	/* Deleting directories/files.	*/
 	hbool_t	di_force_core_dump;	/* The force core dump flag.	*/
 	hbool_t	di_eof_status_flag;	/* Map EOF to Success flag.	*/
@@ -2477,6 +2481,7 @@ extern int verify_padbytes(	struct dinfo	*dip,
 				size_t		count,
 				u_int32		pattern,
 				size_t		offset );
+extern int verify_btag_prefix(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, uint32_t *eindex);
 extern hbool_t is_retryable(dinfo_t *dip, int error_code);
 extern hbool_t retry_operation(dinfo_t *dip, error_info_t *eip);
 extern void ReportCompareError(	struct dinfo	*dip,

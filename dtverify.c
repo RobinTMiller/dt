@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -32,6 +32,15 @@
  *
  * Modification History:
  *
+ * APril 30th, 2018 by Robin T. Miller
+ *      Added extra compare flag, to control btag prefix verification.
+ * Note: The btags is usually sufficient, extra compare is for my debug.
+ * 
+ * April 26th, 2018 by Robin T. Miller
+ *      When reading only, if the btag is valid, also verify the prefix
+ * string (if any), for higher validation. While this is not fullproof,
+ * it does catch valid btags with an incorrect prefix strings.
+ * 
  * June 7th, 2015 by Robin T. Miller
  * 	Adding support for verifying block tags (btags).
  * 	Updated dumping buffers display all data if less than dump limit.
@@ -781,6 +790,12 @@ verify_data_with_btags(
 	} else if (dip->di_btag_vflags) {
 	    /* Now verify the btag. */
 	    status = verify_btags(dip, ebtag, rbtag, &error_index, raw_flag);
+	    /* Compare the prefix string (if any) for higher data validation. */
+	    /* Note: Selectively controlled since this may impact performance! */
+	    if ( (status == SUCCESS) && dip->di_fprefix_string &&
+		 dip->di_xcompare_flag && (dip->di_io_mode != MIRROR_MODE) ) {
+		status = verify_btag_prefix(dip, ebtag, rbtag, &error_index);
+	    }
 	}
 	if (status == FAILURE) {
 	    uint8_t *eptr = (uint8_t *)ebtag + error_index;
@@ -840,6 +855,28 @@ verify_data_with_btags(
 	}
     }
     dip->di_pattern_bufptr = pptr;
+    return(status);
+}
+
+int
+verify_btag_prefix(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, uint32_t *eindex)
+{
+    uint32_t btag_size = getBtagSize(ebtag);
+    uint8_t *bptr = (uint8_t *)rbtag + btag_size;
+    uint8_t *pstr = (uint8_t *)ebtag + btag_size;
+    int pindex = 0;
+    int status = SUCCESS;
+
+    /* Do byte by byte comparison for accurate error index. */
+    for ( ; (pindex < dip->di_fprefix_size); pindex++) {
+	if (*bptr++ != *pstr++) {
+	    if (eindex) {
+		*eindex = (btag_size + pindex);
+	    }
+	    status = FAILURE;
+	    break;
+	}
+    }
     return(status);
 }
 

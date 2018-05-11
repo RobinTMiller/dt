@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2018			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -496,7 +496,7 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 	    } else { /* Expected and received are the same length! */
 		raprefix_size = rindex;
 	    }
-	    Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Expected prefix string", pptr);
+	    Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Expected prefix string", (pptr + btag_size));
 	    Fprintf(dip, DT_FIELD_WIDTH, "Received prefix string");
 	    if (printable) {
 		*abp = '\0';
@@ -775,6 +775,9 @@ compare_iot_block(dinfo_t *dip, uint8_t *pptr, uint8_t *vptr, hbool_t raw_flag)
 	btag_t *ebtag = (btag_t *)pptr;
 	btag_t *rbtag = (btag_t *)vptr;
 	result = verify_btags(dip, ebtag, rbtag, NULL, raw_flag);
+	if ( (result == SUCCESS) && dip->di_xcompare_flag && dip->di_fprefix_size ) {
+	    result = verify_btag_prefix(dip, ebtag, rbtag, NULL);
+	}
     } else {
 	if (dip->di_timestamp_flag) {
 	    if (dip->di_fprefix_size) {

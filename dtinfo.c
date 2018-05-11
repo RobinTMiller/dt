@@ -784,9 +784,9 @@ os_system_device_info(struct dinfo *dip)
     return;
 }
 
-/* TODO: Move OS functions to OS file and recouple from dt. */
+/* TODO: Move OS functions to OS file and decouple from dt. */
 /* Note: This is a duplication of above, but does not set device type. */
-/*       This is being called for mounted file systems to get block size. */
+/*       This is being called for mounted file systems to get device size. */
 
 void
 os_get_block_size(dinfo_t *dip, int fd, char *device_name)
@@ -796,7 +796,16 @@ os_get_block_size(dinfo_t *dip, int fd, char *device_name)
 
     if (fd == NoFd) {
 	temp_fd = True;
-	if ( (fd = open (device_name, (O_RDONLY | O_NDELAY))) < 0) {
+	/* Note: Only works when running as root, of course! */
+	if ( (fd = open(device_name, (O_RDONLY | O_NDELAY))) < 0) {
+	    if (dip->di_debug_flag) {
+		os_error_t error = os_get_error();
+		INIT_ERROR_INFO(eip, device_name, OS_OPEN_FILE_OP, OPEN_OP,
+				NULL, 0, (Offset_t)0, (size_t)0,
+				error, logLevelWarn, PRT_NOFLAGS,
+				(RPT_NORETRYS|RPT_NODEVINFO|RPT_NOERRORNUM|RPT_NOHISTORY|RPT_NOXERRORS));
+		(void)ReportRetryableError(dip, eip, "Failed to open file %s", device_name);
+	    }
 	    return;
 	}
     }

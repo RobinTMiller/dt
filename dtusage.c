@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: April 12th, 2018"VARIANT", Version: 21.27, Author: Robin T. Miller";
+char *version_str = "Date: April 30th, 2018"VARIANT", Version: 21.28, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -358,8 +358,10 @@ dthelp(dinfo_t *dip)
     				(dip->di_btag_flag) ? enabled_str : disabled_str);
     //P (dip, "\tcerrors          Report close errors.       (Default: %s)\n",
     //				(dip->di_cerrors_flag) ? enabled_str : disabled_str);
-    P (dip, "\tcompare          Data comparison.           (Default: %s)\n",
+    P (dip, "\tcompare          Data comparison flag.      (Default: %s)\n",
 				(dip->di_compare_flag) ? enabled_str : disabled_str);
+    P (dip, "\txcompare         Extra btag prefix compare. (Default: %s)\n",
+				(dip->di_xcompare_flag) ? enabled_str : disabled_str);
     P (dip, "\tcoredump         Core dump on errors.       (Default: %s)\n",
 				(dip->di_force_core_dump) ? enabled_str : disabled_str);
     P (dip, "\tdeleteerrorlog   Delete error log file.     (Default: %s)\n",
@@ -433,7 +435,7 @@ dthelp(dinfo_t *dip)
 				(dip->di_history_timing) ? enabled_str : disabled_str);
     P (dip, "\timage            Image mode copy (disks).   (Default: %s)\n",
 			 	(dip->di_image_copy) ? enabled_str : disabled_str);
-    P (dip, "\tiolock           I/O lock control.	   (Default: %s)\n",
+    P (dip, "\tiolock           I/O lock control.          (Default: %s)\n",
 			 	(dip->di_iolock) ? enabled_str : disabled_str);
     P (dip, "\tlbdata           Logical block data.        (Default: %s)\n",
 				(dip->di_lbdata_flag) ? enabled_str : disabled_str);
