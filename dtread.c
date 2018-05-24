@@ -179,7 +179,7 @@ read_data(struct dinfo *dip)
 	}
 	lba = get_lba(dip);
 	sequential_offset = dip->di_offset = get_position(dip);
-	if (odip) {
+	if (odip && odip->di_random_access) {
 	    odip->di_offset = get_position(odip);
 	}
     } else {

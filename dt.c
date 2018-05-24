@@ -31,6 +31,11 @@
  *
  * Modification History:
  * 
+ * May 21st, 2018 by Robin T. Miller
+ *      Fix bug introduced with mounted files system check in copy mode.
+ * Only the input file has an output file dinfo pointer, so add this check.
+ * Failure to have this check results in a "Segmentation fault (core dumped)".
+ * 
  * April 12th, 2018 by Robin T. Miller
  *      For Linux file systems with direct I/O, get the disk block size.
  * This disk block size is required for later sanity checks for direct I/O.
@@ -9041,7 +9046,7 @@ do_common_device_setup(dinfo_t *dip)
 	if (dip->di_debug_flag && dip->di_mounted_from_device) {
 	    Printf(dip, "Device %s is mounted on %s\n", device, dip->di_mounted_on_dir);
 	}
-	if (dip->di_io_mode == COPY_MODE) {
+	if ( (dip->di_io_mode == COPY_MODE) && (dip->di_ftype == INPUT_FILE) ) {
 	    dinfo_t *odip = dip->di_output_dinfo;
 	    char *odevice = (odip->di_input_file) ? odip->di_input_file : odip->di_output_file;
 	    if (dip->di_mount_lookup) {
