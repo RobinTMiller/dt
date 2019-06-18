@@ -65,7 +65,8 @@ LIBS=
 #
 # Note: Math library required for sio I/O behavior for sqrt()!
 #
-EXTLIBS= -lrt -lpthread -lgcc_s -lm -luuid
+EXTLIBS= -lrt -lpthread -lgcc_s -lm
+##EXTLIBS= -lrt -lpthread -lgcc_s -lm -luuid
 
 LINTLIBS=
 
@@ -73,7 +74,8 @@ LINTLIBS=
 
 PORG      = -O3
 
-CFLAGS= $(PORG) -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI
+CFLAGS= $(PORG) -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0 
+##CFLAGS= $(PORG) -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI
 # For testing tape and serial line support.
 #CFLAGS= $(PORG) -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DTAPE
 CPP=	/lib/cpp

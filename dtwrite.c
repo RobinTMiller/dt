@@ -37,7 +37,7 @@
  * Note: By default, read-after-write is enabled to verify data written.
  * 
  * January 5th, 2018 by Robin T. Miller
- *      Added separate read/write percentage optionis and also I/O lcok
+ *      Added separate read/write percentage option is and also I/O lock
  * to control multiple threads to the same disk or file.
  *
  * January 4th, 2018 by Robin T. Miller

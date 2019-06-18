@@ -1,0 +1,40 @@
+Unix builds are performed in subdirectories for each OS, and with the OS= option defined, as shown below.
+If you wish to use Linux UUID library, please install the necessary developer and runtime packages.
+  https://stackoverflow.com/questions/1089741/how-do-i-obtain-use-libuuid (for RH use yum)
+
+$ mkdir linux-rhel7x64
+$ cd linux-rhel7x64
+[romiller@3nxdomain linux-rhel7x64]$ make -f ../Makefile.linux VPATH=.. OS=linux
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dt.o ../dt.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtaio.o ../dtaio.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtbtag.o ../dtbtag.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtfs.o ../dtfs.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtfmt.o ../dtfmt.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtgen.o ../dtgen.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dthist.o ../dthist.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtiot.o ../dtiot.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtinfo.o ../dtinfo.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtjobs.o ../dtjobs.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtmem.o ../dtmem.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtmmap.o ../dtmmap.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtmtrand64.o ../dtmtrand64.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtprint.o ../dtprint.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtprocs.o ../dtprocs.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtread.o ../dtread.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtwrite.o ../dtwrite.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtscsi.o ../dtscsi.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtstats.o ../dtstats.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dttape.o ../dttape.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtunix.o ../dtunix.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtutil.o ../dtutil.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtusage.o ../dtusage.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtverify.o ../dtverify.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o dtworkloads.o ../dtworkloads.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o libscsi.o ../libscsi.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o scsidata.o ../scsidata.c
+cc -O3 -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0   -c -o scsilib.o scsilib.c
+loading dt ...done
+[romiller@3nxdomain linux-rhel7x64]$  
+[romiller@3nxdomain linux-rhel7x64]$ ./dt version
+    --> Date: June 17th, 2019, Version: 21.37, Author: Robin T. Miller <--
+[romiller@3nxdomain linux-rhel7x64]$ 
