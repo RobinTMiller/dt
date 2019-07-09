@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -2367,15 +2367,49 @@ enum trigger_type
 check_trigger_type(dinfo_t *dip, char *str)
 {
     trigger_data_t *tdp = &dip->di_triggers[dip->di_num_triggers];
+    trigger_type_t trigger_type = TRIGGER_INVALID;
 
     if (strcmp(str, "br") == 0) {
-	return(TRIGGER_BR);
+	trigger_type = TRIGGER_BR;
     } else if (strcmp(str, "bdr") == 0) {
-	return(TRIGGER_BDR);
+	trigger_type = TRIGGER_BDR;
     } else if (strcmp(str, "lr") == 0) {
-	return(TRIGGER_LR);
+	trigger_type = TRIGGER_LR;
     } else if (strcmp(str, "seek") == 0) {
-	return(TRIGGER_SEEK);
+	trigger_type = TRIGGER_SEEK;
+    } else if (strncmp(str, "cdb:", 4) == 0) {
+	uint32_t value;
+	char *token, *saveptr;
+	char *sep = " ";
+	char *cdbp = strdup(&str[4]);
+
+	trigger_type = TRIGGER_CDB;
+	if (strchr(cdbp, ',')) {
+	    sep = ",";
+	}
+	dip->di_cdb_size = 0;
+	token = strtok_r(cdbp, sep, &saveptr);
+	while (token != NULL) {
+	    int status;
+	    value = number(dip, token, HEX_RADIX, &status, True);
+	    if (status == FAILURE) {
+		trigger_type = TRIGGER_INVALID;
+		break;
+	    }
+	    if (value > 0xFF) {
+		Eprintf(dip, "CDB byte value %#x is too large!\n", value);
+		trigger_type = TRIGGER_INVALID;
+		break;
+	    }
+	    dip->di_cdb[dip->di_cdb_size++] = (uint8_t)value;
+	    token = strtok_r(NULL, sep, &saveptr);
+	    if (dip->di_cdb_size >= MAX_CDB) {
+		Eprintf(dip, "Maximum CDB size is %d bytes!\n", MAX_CDB);
+		trigger_type = TRIGGER_INVALID;
+		break;
+	    }
+	}
+	Free(dip, cdbp);
     } else if (strncmp(str, "cmd:", 4) == 0) {
 	char *strp;
 	tdp->td_trigger_cmd = strdup(&str[4]);
@@ -2387,18 +2421,19 @@ check_trigger_type(dinfo_t *dip, char *str)
 	    *strp++ = '\0';
 	    tdp->td_trigger_args = strdup(strp);
 	}
-	return(TRIGGER_CMD);
+	trigger_type = TRIGGER_CMD;
     } else if (strcmp(str, "triage") == 0) {
 #if defined(SCSI)
-	return(TRIGGER_TRIAGE);
+	trigger_type = TRIGGER_TRIAGE;
 #else /* !defined(SCSI) */
 	Wprintf(dip, "The triage trigger is *only* supported for SCSI right now!\n");
 	return(TRIGGER_INVALID);
 #endif /* defined(SCSI) */
     } else {
-	Eprintf(dip, "Valid trigger types are: br, bdr, lr, seek, triage, cmd:string\n");
-	return(TRIGGER_INVALID);
+	Eprintf(dip, "Valid trigger types are: br, bdr, lr, seek, triage, cdb:bytes, cmd:string\n");
+	trigger_type = TRIGGER_INVALID;
     }
+    return( trigger_type );
 }
 
 int
@@ -2593,7 +2628,7 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		} else
 #endif /* defined(SCSI) */
 		{
-		    (void)sprintf(cmd, "scu -f %s br", dip->di_dname);
+		    (void)sprintf(cmd, "spt dsf=%s op=bus_rest", dip->di_dname);
 		    status = ExecuteCommand(dip, cmd, True);
 		}
 		break;
@@ -2606,7 +2641,7 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		} else
 #endif /* defined(SCSI) */
 		{
-		    (void)sprintf(cmd, "scu -f %s bdr", dip->di_dname);
+		    (void)sprintf(cmd, "spt dsf=%s op=target_rest", dip->di_dname);
 		    status = ExecuteCommand(dip, cmd, True);
 		}
 		break;
@@ -2619,7 +2654,7 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		} else
 #endif /* defined(SCSI) */
 		{
-		    (void)sprintf(cmd, "scu -f %s reset lun", dip->di_dname);
+		    (void)sprintf(cmd, "spt dsf=%s op=lun_reset", dip->di_dname);
 		    status = ExecuteCommand(dip, cmd, True);
 		}
 		break;
@@ -2635,17 +2670,29 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		} else
 #endif /* defined(SCSI) */
 		{
+		    /* Note: Need to implement seek in spt! */
 		    (void)sprintf(cmd, "scu -f %s seek lba " LUF,
 				  dip->di_dname, lba);
 		    status = ExecuteCommand(dip, cmd, True);
 		}
 		break;
 	    }
+
 	    case TRIGGER_TRIAGE:
 #if defined(SCSI)
 		status = do_scsi_triage(dip);
 #endif /* defined(SCSI) */
 		break;
+
+	    case TRIGGER_CDB: {
+#if defined(SCSI)
+		scsi_generic_t *sgp = dip->di_sgp;
+		Printf(dip, "Executing User Defined Trigger CDB...\n");
+		status = SendAnyCdb(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
+				    NULL, &sgp, sgp->timeout, dip->di_cdb, dip->di_cdb_size);
+#endif /* defined(SCSI) */
+		break;
+	    }
 
 	    case TRIGGER_CMD: {
 		va_list ap;

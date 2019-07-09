@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,20 @@
  *	Main line code for generic data test program 'dt'.
  *
  * Modification History:
+ * 
+ * June 14th, 2019 by Robin T. Miller
+ *      Fix bug in do_datatest_validate() where the pattern buffer was reset
+ * causing pattern=incr and pattern=string not work (only 1sy 4 bytes used).
+ * 
+ * June 6th, 2019 by Robin T. Miller
+ *      Add logdir= option to prepend to job/log file paths.
+ * 
+ * May 27th, 2019 by Robin T. Miller
+ *      Add support for capacity percentage for thin provisioned LUNs,
+ * to help avoid exceeding backend storage for over-provisioned volumes.
+ * 
+ * May 20th, 2019 by Robin T. Miller
+ *      Add support for appending a default file name to a directory.
  * 
  * May 21st, 2018 by Robin T. Miller
  *      Fix bug introduced with mounted files system check in copy mode.
@@ -312,7 +326,7 @@ void *doio(void *arg);
 void do_sleeps(dinfo_t *dip);
 hbool_t	is_stop_on_file(dinfo_t *dip);
 int stop_job_on_stop_file(dinfo_t *mdip, job_info_t *job);
-int do_logfile_open(dinfo_t *dip);
+int create_thread_log(dinfo_t *dip);
 int make_stderr_buffered(dinfo_t *dip);
 int create_unique_thread_log(dinfo_t *dip);
 void report_pass_statistics(dinfo_t *dip);
@@ -794,6 +808,22 @@ main(int argc, char **argv)
 	    } else {
 		dip->di_thread_func = docopy; /* Copy/Verify modes. */
 	    }
+	} else if (dip->di_iobehavior == DTAPP_IO) {
+	    status = (*dip->di_iobf->iob_validate_parameters)(dip);
+	    if (status == FAILURE) {
+		dip->di_exit_status = HandleExit(dip, status);
+		continue;
+	    }
+	    status = do_datatest_validate(dip);
+	    if (status == FAILURE) {
+		dip->di_exit_status = HandleExit(dip, status);
+		continue;
+	    }
+	    dip->di_thread_func = dip->di_iobf->iob_thread;
+	    /* The stopon file is immediate for all behaviors except dt! */
+	    if (dip->di_stop_on_file) {
+		dip->di_stop_immediate = True;
+	    }
 	} else { /* All other I/O behaviors! */
 	    status = (*dip->di_iobf->iob_validate_parameters)(dip);
 	    if (status == FAILURE) {
@@ -977,8 +1007,13 @@ initiate_job(dinfo_t *mdip, job_id_t *job_id)
 	}
 	idip->di_mode = READ_MODE;
 	idip->di_ftype = INPUT_FILE;
-	/* Setup the device type and various defaults. */
+	if (os_isdir(idip->di_input_file)) {
+            char *dirpath = idip->di_input_file;
+	    idip->di_input_file = make_dir_filename(dip, dirpath);
+	    FreeStr(dip, dirpath);
+	}
 	idip->di_dname = strdup(idip->di_input_file);
+	/* Setup the device type and various defaults. */
 	status = setup_device_info(idip, idip->di_input_file, idip->di_input_dtype);
 	if (status == FAILURE) goto cleanup_exit;
 	if (idip->di_fsfile_flag == True) {
@@ -995,8 +1030,13 @@ initiate_job(dinfo_t *mdip, job_id_t *job_id)
 	}
 	odip->di_mode = WRITE_MODE;
 	odip->di_ftype = OUTPUT_FILE;
-	/* Setup the device type and various defaults. */
+	if (os_isdir(odip->di_output_file)) {
+            char *dirpath = odip->di_output_file;
+	    odip->di_output_file = make_dir_filename(odip, dirpath);
+	    FreeStr(dip, dirpath);
+	}
 	odip->di_dname = strdup(odip->di_output_file);
+	/* Setup the device type and various defaults. */
 	status = setup_device_info(odip, odip->di_output_file, odip->di_output_dtype);
 	if (status == FAILURE) goto cleanup_exit;
 	if (odip->di_fsfile_flag == True) {
@@ -1281,7 +1321,10 @@ do_common_startup_logging(dinfo_t *dip)
     /* Report for 1st thread or all threads with a log file. */
     if ( (dip->di_thread_number == 1) || dip->di_log_file ) {
 	if (dip->di_logheader_flag) {
-	    report_os_information(dip, True);
+	    if ( (dip->di_iobehavior != DTAPP_IO) ||
+		 (dip->di_iobehavior == DTAPP_IO) && (dip->di_device_number == 0) ) {
+		report_os_information(dip, True);
+	    }
 	    report_file_system_information(dip, True);
 	}
 	if (odip) {
@@ -2332,8 +2375,21 @@ do_delete_files(dinfo_t *dip)
     return(status);
 }
 
+/*
+ * create_thread_log() - Create of append to the thread log file.
+ *  
+ * Inputs: 
+ *      dip = The device information pointer.
+ *  
+ * Description: 
+ *      If the file name contains a format control string '%', then the
+ * log file will be expanded via those control strings before open'ing.
+ * 
+ * Return: 
+ * 	SUCCESS / FAILURE - log file open'ed or open failed 
+ */
 int
-do_logfile_open(dinfo_t *dip)
+create_thread_log(dinfo_t *dip)
 {
     int status = SUCCESS;
     char *mode = (dip->di_logappend_flag) ? "a" : "w";
@@ -2620,6 +2676,23 @@ make_stderr_buffered(dinfo_t *dip)
     return(status);
 }
 
+char *
+setup_log_directory(dinfo_t *dip, char *path, char *dir, char *log)
+{
+    char *bp = path;
+    /*
+     * Allow a log file directory to redirect logs easier.
+     */
+    if (dir) {
+	if (os_file_exists(dir) == False) {
+	    (void)os_create_directory(dir, DIR_CREATE_MODE);
+	}
+	bp += sprintf(bp, "%s%c", dir, dip->di_dir_sep);
+    }
+    bp += sprintf(bp, "%s", log);
+    return(bp);
+}
+
 /*
  * This function creates a unique log file name.
  * 
@@ -2634,38 +2707,38 @@ create_unique_thread_log(dinfo_t *dip)
 {
     int status = SUCCESS;
     hbool_t make_unique_log_file = True;
+    char logfmt[STRING_BUFFER_SIZE];
+    char *logpath = dip->di_log_file;
+    char *path = logfmt;
 
+    (void)setup_log_directory(dip, path, dip->di_log_dir, dip->di_log_file);
     /*
      * For a single thread use the log file name, unless told to be unique.
      * Note: If multiple devices specified, also create unique log files!
-     */ 
+     */
     if ( (dip->di_multiple_devs == False) &&
 	 (dip->di_threads <= 1) && (dip->di_unique_log == False) ) {
 	make_unique_log_file = False;
     }
     if (make_unique_log_file) {
-	char logfmt[STRING_BUFFER_SIZE];
-	char *path;
 	/*
 	 * Create a unique log file per thread.
 	 */
-	strcpy(logfmt, dip->di_log_file);
 	/* Add default postfix, unless user specified their own via "%". */
 	if ( strstr(dip->di_log_file, "%") == (char *) 0 ) {
-	    strcat(logfmt, dip->di_file_sep);
-	    strcat(logfmt, dip->di_file_postfix);
-	}
-        path = FmtLogFile(dip, logfmt, True);
-	if (path) {
-	    FreeStr(dip, dip->di_log_file);
-	    dip->di_log_file = path;
+	    strcat(path, dip->di_file_sep);
+	    strcat(path, dip->di_file_postfix);
 	}
     }
+    /* Format special control strings or log directory + log file name. */
+    logpath = FmtLogFile(dip, path, True);
+    FreeStr(dip, dip->di_log_file);
+    dip->di_log_file = logpath;
     if (dip->di_debug_flag) {
-	Printf(NULL, "Job %u, Thread %d, log file is %s...\n",
-	       dip->di_job->ji_job_id, dip->di_thread_number, dip->di_log_file);
+	Printf(dip, "Job %u, Thread %d, thread log file is %s...\n",
+	       dip->di_job->ji_job_id, dip->di_thread_number, logpath);
     }
-    status = do_logfile_open(dip);
+    status = create_thread_log(dip);
     return(status);
 }
 
@@ -3137,6 +3210,17 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		if (status == FAILURE) {
 		    return ( HandleExit(dip, status) );
 		}
+	    }
+	    continue;
+	}
+	if (match (&string, "capacityp=")) {
+	    dip->di_capacity_percentage = number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    if (dip->di_capacity_percentage > 100) {
+		Eprintf(dip, "The capacity percentage range is 0-100!\n");
+		return ( HandleExit(dip, FAILURE) );
 	    }
 	    continue;
 	}
@@ -4720,8 +4804,20 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    continue;
 	}
+	if (match (&string, "logdir=")) {
+	    if (dip->di_log_dir) {
+		FreeStr(dip, dip->di_log_dir);
+		dip->di_log_dir = NULL;
+	    }
+	    if (*string) {
+		dip->di_log_dir = strdup(string);
+	    }
+	    continue;
+	}
 	if ( match(&string, "elog=") || match(&string, "error_log=") ) {
-	    char *path = NULL;
+	    char logfmt[STRING_BUFFER_SIZE];
+	    char *path = logfmt;
+            char *logpath = NULL;
 	    /* Handle existing error log file. */
 	    if (error_log) {
 		if (error_logfp) {
@@ -4731,10 +4827,11 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		error_log = NULL;
 	    }
 	    if (strlen(string) == 0) continue;
-	    if ( strstr(string, "%") ) {
-		path = FmtLogFile(dip, string, True);
+            (void)setup_log_directory(dip, path, dip->di_log_dir, string);
+	    if ( strstr(path, "%") ) {
+		path = FmtLogFile(dip, path, True);
 	    } else {
-		path = strdup(string);
+		path = strdup(path);
 	    }
 	    /* Ok, that's it! The error file is open'ed for append upon errors! */
 	    error_log = path;
@@ -4744,44 +4841,44 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    continue;
 	}
 	if ( match(&string, "mlog=") || match(&string, "master_log=") ) {
-	    char *path = NULL;
+	    char logfmt[STRING_BUFFER_SIZE];
+	    char *path = logfmt;
+            char *logpath = NULL;
 	    if (master_log) {
 		(void)CloseFile(dip, &master_logfp);
 		FreeStr(dip, master_log);
 		master_log = NULL;
 	    }
 	    if (strlen(string) == 0) continue;
-	    if ( strstr(string, "%") ) {
-		path = FmtLogFile(dip, string, True);
+            (void)setup_log_directory(dip, path, dip->di_log_dir, string);
+	    if ( strstr(path, "%") ) {
+		logpath = FmtLogFile(dip, path, True);
 	    } else {
-		path = strdup(string);
+		logpath = strdup(path);
 	    }
-	    status = OpenOutputFile(dip, &master_logfp, path, "w", EnableErrors);
+	    status = OpenOutputFile(dip, &master_logfp, logpath, "w", EnableErrors);
 	    if (status == SUCCESS) {
-		master_log = path;
+		master_log = logpath;
 	    } else {
-		FreeStr(dip, path);
+		FreeStr(dip, logpath);
 		return ( HandleExit(dip, FAILURE) );
 	    }
 	    continue;
 	}
-        if (match (&string, "iobehavior=")) {
-            if (match (&string, "dt")) {
-                dip->di_iobehavior = DT_IO;
-                continue;
-            //} else if (match (&string, "pio")) {
-            //    dip->di_iobehavior = PURE_IO;
-            //    pio_set_iobehavior_funcs(dip);
-            } else {
-                Eprintf(dip, "Valid I/O behaviors are: dt or pio.\n");
-                return ( HandleExit(dip, FAILURE) );
-            }
-            status = (*dip->di_iobf->iob_initialize)(dip);
-            if (status == FAILURE) {
-                return ( HandleExit(dip, status) );
-            }
-            continue;
-        }
+	if (match (&string, "iobehavior=")) {
+	    if (match (&string, "dt")) {
+		dip->di_iobehavior = DT_IO;
+		continue;
+	    } else {
+		Eprintf(dip, "Valid I/O behaviors are: dt\n");
+		return ( HandleExit(dip, FAILURE) );
+	    }
+	    status = (*dip->di_iobf->iob_initialize)(dip);
+	    if (status == FAILURE) {
+		return (HandleExit(dip, status));
+	    }
+	    continue;
+	}
 	if (match (&string, "iodir=")) {
 	    /* Note: iodir={reverse|vary} are special forms of random I/O! */
 	    if (match (&string, "for")) {
@@ -5468,6 +5565,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    continue;
 	}
 	if ( match(&string, "vflags=") || match(&string, "verifyFlags=") ) {
+	    if (*string == '\0') {
+		show_btag_verify_flags(dip);
+		return ( HandleExit(dip, WARNING) );
+	    }
 	    status = parse_btag_verify_flags(dip, string);
 	    if (status == FAILURE) {
 		return ( HandleExit(dip, status) );
@@ -5496,6 +5597,8 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_unmap_type = UNMAP_TYPE_UNMAP;
 	    } else if (match(&string, "write_same")) {
 		dip->di_unmap_type = UNMAP_TYPE_WRITE_SAME;
+	    } else if (match(&string, "zerorod")) {
+		dip->di_unmap_type = UNMAP_TYPE_ZEROROD;
 	    } else if (match(&string, "random")) {
 		dip->di_unmap_type = UNMAP_TYPE_RANDOM;
 	    } else {
@@ -8108,6 +8211,10 @@ cleanup_device(dinfo_t *dip, hbool_t master)
 	FreeStr(dip, dip->di_job_tag);
 	dip->di_job_tag = NULL;
     }
+    if (dip->di_log_dir) {
+	FreeStr(dip, dip->di_log_dir);
+	dip->di_log_dir = NULL;
+    }
     if (dip->di_log_format) {
 	FreeStr(dip, dip->di_log_format);
 	dip->di_log_format = NULL;
@@ -8378,6 +8485,9 @@ clone_device(dinfo_t *dip, hbool_t master, hbool_t new_context)
     }
     if (dip->di_job_log) {
 	cdip->di_job_log = strdup(dip->di_job_log);
+    }
+    if (dip->di_log_dir) {
+	cdip->di_log_dir = strdup(dip->di_log_dir);
     }
     if (dip->di_log_file) {
 	cdip->di_log_file = strdup(dip->di_log_file);
@@ -8658,7 +8768,10 @@ do_datatest_validate(dinfo_t *dip)
 	    dip->di_reread_flag = False;
 	}
     }
-    if (dip->di_pattern_buffer) reset_pattern(dip);
+    /* Don't reset the pattern buffer else lose pattern=incr, etc. */
+    /* TODO: Is there a valid time to reset the pattern buffer? */
+    /* do_datatest_initialize() will setup a 4 byte pattern! */
+    //if (dip->di_pattern_buffer) reset_pattern(dip);
     /*
      * Set the default display data format, if not specified by the user.
      */
@@ -9305,7 +9418,7 @@ do_common_device_setup(dinfo_t *dip)
     /*
      * Extra verify buffer required for read-after-write operations.
      */
-    if (dip->di_raw_flag) {
+    if (dip->di_raw_flag || (dip->di_iobehavior == DTAPP_IO) ) {
 	dip->di_verify_buffer = malloc_palign(dip, dip->di_verify_buffer_size, dip->di_align_offset);
     }
 

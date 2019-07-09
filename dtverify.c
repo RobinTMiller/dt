@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -32,7 +32,11 @@
  *
  * Modification History:
  *
- * APril 30th, 2018 by Robin T. Miller
+ * June 11th, 2019 by Robin T. Miller
+ *      When looping on data corruption, use the corruption dip (cdip),
+ * for stopping or terminating the thread (was using cloned dip).
+ * 
+ * April 30th, 2018 by Robin T. Miller
  *      Added extra compare flag, to control btag prefix verification.
  * Note: The btags is usually sufficient, extra compare is for my debug.
  * 
@@ -482,7 +486,7 @@ verify_data (	struct dinfo	*dip,
  * the buffer instead of the pattern specified.
  *
  * Inputs:
- *	dip = The device information pointer.
+ *	cdip = The device information pointer.
  *	buffer = Pointer to data to verify.
  *	count = The number of bytes to compare.
  *	pattern = Data pattern to compare against.
@@ -632,9 +636,9 @@ verify_reread(
 	}
 	if (dip->di_loop_on_error) {
 
-	    PAUSE_THREAD(dip);
-	    if ( THREAD_TERMINATING(dip) ) break;
-	    if (dip->di_terminating) break;
+	    PAUSE_THREAD(cdip);
+	    if ( THREAD_TERMINATING(cdip) ) break;
+	    if (cdip->di_terminating) break;
 
 	    retries++;
 	    Fprintf(dip, "Delaying %u seconds after retry %d...\n", (dip->di_retry_delay * retries), retries);
@@ -679,6 +683,9 @@ report_reread_command(dinfo_t *dip, size_t request_size, Offset_t record_offset,
      */
     Fprintf(dip, "Command line to re-read the corrupted data:\n");
     sbp += Sprintf(str, "-> %s", dtpath);
+    if (dip->di_iobehavior == DTAPP_IO) {
+	sbp += Sprintf(sbp, " iobehavior=dtapp", dip->di_fprefix_string);
+    }
     sbp += Sprintf(sbp, " if=%s bs=%u count=1 position=" FUF ,
 		   dip->di_dname, (uint32_t)request_size, record_offset);
     if (dip->di_fprefix_string) {

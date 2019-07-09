@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -32,7 +32,9 @@
 /* Note: This is *required* for AIX, but defining for all OS's! */
 #define _THREAD_SAFE 1
 
-//#define HGST	1
+/* Vendor Control Flags: */
+#define HGST	1
+#define Nimble	0
 
 #if defined(AIX_WORKAROUND)
 # include "aix_workaround.h"
@@ -121,6 +123,8 @@
 #define DEFAULT_JOBLOG_POSTFIX	"Job%job"
 #define DIR_PREFIX		"d"
 #define DEFAULT_IOTUNE_FILE	TEMP_DIR_NAME"dtiotune.txt"
+/* When directory given without a file name, use this default. */
+#define DEFAULT_DATA_FILE_NAME	"dt-%user-%uuid.data"
 
 /*
  * Default Log Prefixes:
@@ -279,7 +283,7 @@ typedef enum {
   ( isRandomIO(dip) || (dip->di_lock_files == True) || \
     (dip->di_read_percentage || dip->di_random_percentage) || \
     (dip->di_random_rpercentage || dip->di_random_wpercentage) || \
-    (dip->di_variable_limit == True) )
+    (dip->di_iobehavior == DTAPP_IO) || (dip->di_variable_limit == True) )
 
 #if defined(AIO)
 # define getFileOffset(dip) \
@@ -383,7 +387,7 @@ typedef enum dispose {DELETE_FILE, KEEP_FILE, KEEP_ON_ERROR} dispose_t;
 typedef enum file_type {INPUT_FILE, OUTPUT_FILE} file_type_t;
 typedef enum test_mode {READ_MODE, WRITE_MODE} test_mode_t;
 typedef enum onerrors {ONERR_ABORT, ONERR_CONTINUE, ONERR_PAUSE} onerrors_t;
-typedef enum iobehavior { DT_IO, PURE_IO } iobehavior_t;
+typedef enum iobehavior { DT_IO, DTAPP_IO, THUMPER_IO } iobehavior_t;
 typedef enum iodir {FORWARD, REVERSE, NUM_IODIRS = 2} iodir_t;
 typedef enum iomode {COPY_MODE, MIRROR_MODE, TEST_MODE, VERIFY_MODE} iomode_t;
 typedef enum iotype {SEQUENTIAL_IO, RANDOM_IO, NUM_IOTYPES = 2} iotype_t;
@@ -461,22 +465,28 @@ extern char *miscompare_op;
 typedef enum sleep_resolution {SLEEP_DEFAULT, SLEEP_SECS, SLEEP_MSECS, SLEEP_USECS} sleepres_t;
 typedef enum statslevel {STATS_BRIEF, STATS_FULL, STATS_NONE} statslevel_t;
 typedef enum stats_value {ST_BYTES, ST_BLOCKS, ST_FILES, ST_RECORDS, ST_OFFSET} stats_value_t;
+
 typedef enum trigger_control {
     TRIGGER_ON_ALL, TRIGGER_ON_ERRORS, TRIGGER_ON_MISCOMPARE, TRIGGER_ON_NOPROGS, TRIGGER_ON_INVALID=-1
 } trigger_control_t;
+
 typedef enum trigger_type {
-    TRIGGER_NONE, TRIGGER_BR, TRIGGER_BDR, TRIGGER_LR, TRIGGER_SEEK, TRIGGER_CMD, TRIGGER_ZAPI_PANIC,
-    TRIGGER_PANIC_NODE, TRIGGER_PANIC_ALL_NODES, TRIGGER_DUMP_RASTRACE, TRIGGER_TRIAGE, TRIGGER_INVALID=-1
+    TRIGGER_NONE, TRIGGER_BR, TRIGGER_BDR, TRIGGER_LR, TRIGGER_SEEK, TRIGGER_CMD,
+    TRIGGER_TRIAGE, TRIGGER_CDB,
+    TRIGGER_INVALID=-1
 } trigger_type_t;
+
 typedef enum trigger_action {
     TRIGACT_CONTINUE = 0, TRIGACT_TERMINATE = 1, TRIGACT_SLEEP = 2, TRIGACT_ABORT = 3
 } trigger_action_t;
+
 typedef enum unmap_type {
     UNMAP_TYPE_NONE = -1,
     UNMAP_TYPE_UNMAP = 0,
     UNMAP_TYPE_WRITE_SAME = 1,
-    UNMAP_TYPE_RANDOM = 2,
-    NUM_UNMAP_TYPES = 2
+    UNMAP_TYPE_ZEROROD = 2,
+    UNMAP_TYPE_RANDOM = 3,
+    NUM_UNMAP_TYPES = 3
 } unmap_type_t;
 
 #define NUM_TRIGGERS	5
@@ -731,6 +741,7 @@ typedef struct dinfo {
 	u_int32	di_rdsize;		/* The real device block size.	*/
         u_int   di_qdepth;              /* The device queue depth.      */
 	large_t	di_capacity;		/* The device capacity (blocks)	*/
+	int	di_capacity_percentage;	/* The capacity percentage.	*/
 	vbool_t	di_end_of_file;		/* End of file was detected.	*/
 	vbool_t	di_end_of_logical;	/* End of logical tape detected	*/
 	vbool_t	di_end_of_media;	/* End of media was detected.	*/
@@ -1175,6 +1186,7 @@ typedef struct dinfo {
 	hbool_t	di_stats_flag;		/* Display total statistics.	*/
 	char	*di_cmd_line;		/* Copy of our command line.	*/
 	char	*di_job_log;		/* The job log file name.	*/
+	char	*di_log_dir;		/* The default log directory.	*/
 	char	*di_log_file;		/* The log file name.		*/
 	char	*di_log_format;		/* The log file format string.	*/
 	char	*di_log_buffer;		/* Pointer to log file buffer.	*/
@@ -1326,6 +1338,11 @@ typedef struct dinfo {
 	 */
 	scsi_io_type_t di_scsi_read_type;  /* The default read opcode.	*/
 	scsi_io_type_t di_scsi_write_type; /* The default write opcode.	*/
+        /*
+	 * SCSI Trigger Definitions:
+	 */
+	unsigned char di_cdb[MAX_CDB];	/* Command descriptor block.	*/
+	unsigned char di_cdb_size;	/* The SCSI CDB size.		*/
 #endif /* defined(SCSI) */
 	/* Always define these SCSI flags to reduce conditionalization. */
 	hbool_t	di_scsi_flag;		/* The SCSI control flag.	*/
@@ -1616,14 +1633,6 @@ extern unsigned int kill_delay;
 extern hbool_t StdinIsAtty, StdoutIsAtty, StderrIsAtty;
 extern char *keepalive0, *keepalive1;
 
-#if defined(SOLARIS)
-/* This is for enabling Direct I/O on VxFS! */
-/* NOTE: Added very long time ago... is this still valid? */
-#  define VX_IOCTL        (('V' << 24) | ('X' << 16) | ('F' << 8))
-#  define VX_SETCACHE     (VX_IOCTL | 1)   /* set cache advice */
-#  define VX_DIRECT       0x00004          /* perform direct (un-buffered) I/O */
-#endif /* defined(SOLARIS) */
-
 /*
  * Function Prototypes:
  */
@@ -1659,6 +1668,7 @@ extern int reopen_output_file(dinfo_t *dip);
 
 extern int format_device_name(dinfo_t *dip, char *format);
 extern char *make_options_string(dinfo_t *dip, int argc, char **argv, hbool_t quoting);
+extern char *setup_log_directory(dinfo_t *dip, char *path, char *dir, char *log);
 extern int setup_thread_names(dinfo_t *dip);
 extern void handle_file_dispose(dinfo_t *dip);
 extern int handle_file_system_full(dinfo_t *dip, hbool_t delete_flag);
@@ -1716,6 +1726,7 @@ extern int verify_btag_options(dinfo_t *dip);
 
 /* dtfs.c */
 extern hbool_t isFsFullOk(struct dinfo *dip, char *op, char *path);
+extern char *make_dir_filename(struct dinfo *dip, char *dirpath);
 extern char *make_file_name(struct dinfo *dip);
 extern int end_file_processing(struct dinfo *dip);
 extern int do_post_eof_processing(dinfo_t *dip);
@@ -2028,15 +2039,17 @@ extern void free_scsi_info(dinfo_t *dip);
 extern int init_sg_info(dinfo_t *dip);
 extern int init_scsi_info(dinfo_t *dip);
 extern void report_scsi_information(dinfo_t *dip);
-extern void report_vdisk_attributes(dinfo_t *dip);
+extern void report_standard_scsi_information(dinfo_t *dip);
 extern int get_lba_status(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes);
 extern int do_unmap_blocks(dinfo_t *dip);
 extern int unmap_blocks(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes);
 extern int write_same_unmap(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes);
+extern int xcopy_zerorod(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes);
 extern int do_scsi_triage(dinfo_t *dip);
 extern ssize_t scsiReadData(dinfo_t *dip, void *buffer, size_t bytes, Offset_t offset);
 extern ssize_t scsiWriteData(dinfo_t *dip, void *buffer, size_t bytes, Offset_t offset);
 extern void dtReportScsiError(dinfo_t *dip, scsi_generic_t *sgp);
+extern int get_standard_scsi_information(dinfo_t *dip, scsi_generic_t *sgp);
 
 #else /* !defined(SCSI) */
 
@@ -2543,6 +2556,7 @@ extern int os_set_lock_flags(lock_type_t lock_type, int *lock_type_flag,
 #if defined(MacDarwin) || defined(SOLARIS)
 extern int os_DirectIO(struct dinfo *dip, char *file, hbool_t flag);
 #endif /* defined(MacDarwin) || defined(SOLARIS) */
+extern int os_VeritasDirectIO(struct dinfo *dip, char *file, hbool_t flag);
 
 /* dtunix.c and dtwin.c */
 extern void ReportOpenInformation(dinfo_t *dip, char *FileName, char *Operation,
@@ -2569,4 +2583,5 @@ extern void show_workloads(dinfo_t *dip, char *workload_name);
 /*
  * Other I/O Behaviors:
  */
-extern void pio_set_iobehavior_funcs(dinfo_t *dip);
+extern void dtapp_set_iobehavior_funcs(dinfo_t *dip);
+extern void thumper_set_iobehavior_funcs(dinfo_t *dip);

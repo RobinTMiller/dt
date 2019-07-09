@@ -50,6 +50,7 @@
 #include "dt.h"
 
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <sys/statvfs.h>
 
 /*
@@ -1164,13 +1165,14 @@ os_DirectIO(struct dinfo *dip, char *file, hbool_t flag)
      */
     status = fcntl(dip->di_fd, F_NOCACHE, (flag) ? DIRECTIO_ON : DIRECTIO_OFF);
     if (status == FAILURE) {
-	Printf(dip, "Warning: Unable to enable Direct I/O (DIO), continuing...\n");
+	Wprintf(dip, "Unable to change Direct I/O (DIO) setting, continuing...\n");
 	status = SUCCESS;
     }
     return (status);
 }
 
 #elif defined(SOLARIS)
+
 /*
  * os_DirectIO - Enable or disable Direct I/O (DIO) for Solaris FS's.
  *
@@ -1202,30 +1204,64 @@ os_DirectIO(struct dinfo *dip, char *file, hbool_t flag)
     /* Note: ZFS does *not* support Direct I/O! */
     if ( (status = directio(dip->di_fd, (flag) ? DIRECTIO_ON : DIRECTIO_OFF)) < 0) {
         if (errno == ENOTTY) {
-	    if (dip->di_debug_flag || dip->di_fDebugFlag) {
-                Printf(dip, "%s direct I/O via VX_SETCACHE/VX_DIRECT IOCTL...\n", dio_msg);
-            }
-            if ( (status = ioctl(dip->di_fd, VX_SETCACHE, (flag) ? VX_DIRECT : 0)) < 0) {
-		;
-		//(void)sprintf(fmt, "VX_DIRECT -> %s", file);
-		//report_error (dip, os_get_error(), fmt, True);
-            }
+            /* TODO: File system check! */
+	    (void)os_VeritasDirectIO(dip, file, flag);
 	}
-#if 0
-	} else {
-	    (void)sprintf(fmt, "directio -> %s", file);
-	    report_error(dip, os_get_error(), fmt, True);
-	}
-#endif /* 0 */
     }
     if (status == FAILURE) {
-	Printf(dip, "Warning: Unable to enable Direct I/O (DIO), continuing...\n");
+	Wprintf(dip, "Unable to change Direct I/O (DIO) setting, continuing...\n");
 	status = SUCCESS;
     }
     return (status);
 }
 
 #endif /* defined(MacDarwin) || defined(SOLARIS) */
+
+/*
+ * os_VeritasDirectIO - Enable or disable Veritas Direct I/O.
+ *
+ * Description:
+ *      Veritas specific API for Direct I/O.
+ *      Note: The Veritas IOCTL and command options were taken from a
+ * Solaris vx_ioctl.h file found on the web at thie URL:
+ * 	https://searchcode.com/codesearch/view/4922497/
+ *
+ * Inputs:
+ *      dip = The device information pointer.
+ *      file = The file name we're working on.
+ *	flag = Flag to control enable/disable.
+ *
+ * Return Value:
+ *      Returns SUCCESS (if enabled) or FAILURE (couldn't enable DIO).
+ */
+int
+os_VeritasDirectIO(struct dinfo *dip, char *file, hbool_t flag)
+{
+    char fmt[STRING_BUFFER_SIZE];
+    char *dio_msg = (flag) ? "Enabling" : "Disabling";
+    int status;
+
+    if (dip->di_debug_flag || dip->di_fDebugFlag) {
+	Printf(dip, "%s direct I/O via VX_SETCACHE/VX_DIRECT IOCTL...\n", dio_msg);
+    }
+    if ( (status = ioctl(dip->di_fd, VX_SETCACHE, (flag) ? VX_DIRECT : 0)) < 0) {
+	if (dip->di_debug_flag) {
+	    ReportErrorInfo(dip, dip->di_dname, os_get_error(), "os_VeritasDirectIO() VX_SETCACHE/VX_DIRECT", IOCTL_OP, False);
+	}
+    }
+    if ( (status == SUCCESS) && flag) {
+        int cache_flags = 0;
+	status = ioctl(dip->di_fd, VX_GETCACHE, &cache_flags);
+	if (cache_flags == 0) {
+	    Wprintf(dip, "VX_GETCACHE reports VX_DIRECT is NOT set, continuing...\n");
+	}
+    }
+    if (status == FAILURE) {
+	Wprintf(dip, "Unable to change Direct I/O (DIO) setting, continuing...\n");
+	status = SUCCESS;
+    }
+    return (status);
+}
 
 /*
  * os_isEof() - Determine if this is an EOF condition.

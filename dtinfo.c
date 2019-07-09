@@ -1,6 +1,6 @@
 /****************************************************************************
  *      								    *
- *      		  COPYRIGHT (c) 1988 - 2018     		    *
+ *      		  COPYRIGHT (c) 1988 - 2019     		    *
  *      		   This Software Provided       		    *
  *      			     By 				    *
  *      		  Robin's Nest Software Inc.    		    *
@@ -32,6 +32,14 @@
  * 
  * Modification History:
  *
+ * July 8th, 2019 by Robin T. Miller
+ *      Update setup_device_info() to always call os_system_device_info() so
+ * disk specific information from the OS via IOCTL gets setup properly. This
+ * is only an issue when dtype=disk is specified, but if the IOCTL information
+ * is less than the actual disk capacity, EINVAL occurs to unreachable offsets.
+ * It's not invalid to return less disk capacity, since some may be reserved.
+ * Note: Without refactoring code, the user device type may get overwritten!
+ * 
  * April 12th, 2018 by Robin T. Miller
  *      For Linux, add function to set device block size. This is required
  * for file systems when direct I/O is enabled, where I/O sizes muct be
@@ -152,7 +160,7 @@ setup_device_type(char *str)
  *      								*
  ************************************************************************/
 void
-setup_device_defaults (struct dinfo *dip)
+setup_device_defaults(struct dinfo *dip)
 {
     struct dtype *dtp = dip->di_dtype;
 
@@ -886,54 +894,6 @@ os_system_device_info(struct dinfo *dip)
 }
 
 #endif /* defined(WIN32) */
-
-/*
- * system_device_info() - Setup The Device Information.
- *
- * Description:
- *      This function is called to setup various device information
- * after the device is open'ed.
- *
- * Inputs:
- *      The device information pointer.
- *
- * Return Value:
- *      void
- */
-/* Note: This should all be done in the os_system_device_info() function! */
-#if 0
-void
-system_device_info (struct dinfo *dip)
-{
-    if (dip->di_dtype == NULL) {
-#if defined(WIN32)
-	DWORD device_type = GetFileType(dip->di_fd);
-	//Printf(dip, "Device type = %x\n", device_type);
-	if( GetFileType(dip->di_fd) == FILE_TYPE_DISK) {
-	    dip->di_random_access = True;
-	    dip->di_dtype = setup_device_type("disk");
-	    setup_device_defaults(dip);
-	} else {
-	    dip->di_dtype = setup_device_type("unknown");
-	}
-#else /* !defined(WIN32) */
-	struct stat sb;
-	/*
-	 * This handles processing of *new* output files.
-	 *
-	 * Note: Best I can tell, this is already done!
-	 */
-	if ( (fstat (dip->di_fd, &sb) == SUCCESS) &&
-	     ( S_ISREG(sb.st_mode) ) ) {
-	    SetupRegularFile (dip, (large_t)sb.st_size);
-	} else {
-	    dip->di_dtype = setup_device_type("unknown");
-	}
-#endif /* defined(WIN32) */
-    }
-    return;
-}
-#endif /* 0 */
 
 /*
  * setup_device_info() - Setup Initial Device Information.
@@ -993,7 +953,7 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
      *
      * TODO: Create stub and remove ugly conditionalization!
      */
-    if (dtp == NULL) {
+    if (True /*dtp == NULL*/) {
 	os_system_device_info(dip);
 	dtp = dip->di_dtype;
     }
@@ -1012,7 +972,7 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
 	     (EQL (dname, ADEV_PREFIX, ADEV_LEN)) ) {
 	    char *dentry;
 	    dentry = (dname + DEV_LEN);
-	    /* Note: We no longer to this mapping, it's unnecessary! */
+	    /* Note: We no longer do this mapping, it's unnecessary! */
 	    /* FWIW: Windows has supported forward slashs for years! */
 # if 0
 	    if (EQL (dname, ADEV_PREFIX, ADEV_LEN)) {
@@ -1124,7 +1084,7 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
 	large_t filesize = 0;
 	WIN32_FILE_ATTRIBUTE_DATA fad, *fadp = &fad;
 	/*
-	 * See if the file exists, and what it's size is.
+	 * See if the file exists, and what its' size is.
 	 */
 	if ( GetFileAttributesEx(dname, GetFileExInfoStandard, fadp) ) {
 	    if (fadp->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
@@ -1225,7 +1185,7 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
 large_t
 GetMaxUserCapacity(dinfo_t *dip, hbool_t use_records)
 {
-    /* Note: This capacity is form the user or the OS! */
+    /* Note: This capacity is from the user or the OS! */
     large_t user_data_capacity = dip->di_user_capacity;
     
     if (user_data_capacity == (large_t) 0) {

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2017			    *
+ *			  COPYRIGHT (c) 2006 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -35,6 +35,15 @@
 /*	 Nor does Solaris 8! (sigh) Time to retire these old OS's! */
 /*	 But that said, required typedef's are in sys/types.h      */
 #include <sys/types.h>
+
+//#if defined(SOLARIS)
+/* This is for enabling Direct I/O on VxFS! */
+/* https://searchcode.com/codesearch/view/4922497/ */
+#  define VX_IOCTL        (('V' << 24) | ('X' << 16) | ('F' << 8))
+#  define VX_SETCACHE     (VX_IOCTL | 1)   /* set cache advice */
+#  define VX_GETCACHE     (VX_IOCTL | 2)   /* get cache advice */
+#  define VX_DIRECT       0x00004          /* perform direct (un-buffered) I/O */
+//#endif /* defined(SOLARIS) */
 
 #if defined(__linux__) || defined(MacDarwin)
 #  include <stdint.h>

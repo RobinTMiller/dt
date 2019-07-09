@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,14 @@
  *
  * Modification History:
  *
+ * May 28th, 2019 by Robin T. Miller
+ *      Don't adjust offset when read error occurs (count is -1), since this
+ * causes the wrong offset when we've specified an error limit.
+ * 
+ * May 27th, 2019 by Robin T. Miller
+ *      Add support for capacity percentage. This is to help exceeding backend
+ * storage when volumes are over-provisioned (thin provisioned LUNs).
+ * 
  * December 28th, 2017 by Robin T. Miller
  *      Added support for multiple threads via I/O lock and shared data.
  * 
@@ -95,6 +103,7 @@
  * Forward References:
  */
 int read_data_iolock(struct dinfo *dip);
+large_t SetupCapacityPercentage(dinfo_t *dip, large_t bytes);
 
 /* ---------------------------------------------------------------------- */
 
@@ -405,7 +414,7 @@ read_data(struct dinfo *dip)
 	 * If we had a partial transfer, perhaps due to an error, adjust
 	 * the logical block address in preparation for the next request.
 	 */
-	if (dip->di_iot_pattern && ((size_t)count < bsize)) {
+	if ( (status != FAILURE) && dip->di_iot_pattern && ((size_t)count < bsize)) {
 	    size_t resid = (bsize - count);
 	    lba -= (lbdata_t)howmany((lbdata_t)resid, dip->di_lbdata_size);
 	}
@@ -426,8 +435,10 @@ read_data(struct dinfo *dip)
 	dip->di_volume_records++;
 
 	if (dip->di_io_dir == FORWARD) {
-	    dip->di_offset += count;	/* Maintain our own position too! */
-	    if (odip) odip->di_offset += count;
+	    if (count > 0) {
+		dip->di_offset += count;	/* Maintain our own position too! */
+		if (odip) odip->di_offset += count;
+	    }
 	} else if ( (iotype == SEQUENTIAL_IO) &&
 		    (dip->di_offset == (Offset_t)dip->di_file_position) ) {
 	    set_Eof(dip);
@@ -1221,6 +1232,7 @@ FindCapacity(struct dinfo *dip)
     long	adjust = ((250 * MBYTE_SIZE) / dsize);
     int		attempts = 0;
     ssize_t	count, last = 0;
+    large_t	capacity_bytes = 0;
     u_char	*buffer;
     int		mode = O_RDONLY;
     HANDLE	fd, saved_fd = NoFd;
@@ -1234,7 +1246,15 @@ FindCapacity(struct dinfo *dip)
     Printf(dip, "FindCapacity: rdata_limit = " LUF "\n", dip->di_rdata_limit);
     Printf(dip, "FindCapacity: user_capacity = " LUF "\n", dip->di_user_capacity);
     Printf(dip, "FindCapacity: slices = %u, slice_number = %d\n", dip->di_slices, dip->di_slice_number);
-#endif    
+#endif /* defined(DEBUG) */
+    /*
+     * The user capacity is setup for disk devices, so this appears to be the best common 
+     * location to calculate capacity percentage. 
+     */
+    if (dip->di_capacity_percentage && dip->di_user_capacity) {
+	dip->di_user_capacity = SetupCapacityPercentage(dip, dip->di_user_capacity);
+    }
+
     /* Note; For SCSI I/O, the user capacity should already be setup! */
     /*
      * Use the user specified capacity (if specified).
@@ -1366,7 +1386,11 @@ FindCapacity(struct dinfo *dip)
     Printf (dip, "read attempts was %d, the max lba is " LUF "\n", attempts, lba);
 #endif /* defined(DEBUG) */
 
-    SetupTransferLimits(dip, (large_t)(lba * dsize));
+    capacity_bytes = (large_t)(lba * dsize);
+    if (dip->di_capacity_percentage && capacity_bytes) {
+	dip->di_user_capacity = SetupCapacityPercentage(dip, capacity_bytes);
+    }
+    SetupTransferLimits(dip, capacity_bytes);
 
 set_random_limit:
     /*
@@ -1398,6 +1422,12 @@ set_random_limit:
 	}
     }
     return (SUCCESS);
+}
+
+large_t
+SetupCapacityPercentage(dinfo_t *dip, large_t bytes)
+{
+    return ( (large_t)( (double)bytes * ((double)dip->di_capacity_percentage / 100.0)) );
 }
 
 void

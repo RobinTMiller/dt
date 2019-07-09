@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,10 @@
  *	Write routines for generic data test program.
  * 
  * Modification History:
+ * 
+ * May 28th, 2019 by Robin T. Miller
+ *      Don't adjust offset when write error occurs (count is -1), since this
+ * causes the wrong offset when we've specified an error limit.
  * 
  * January 5th, 2018 by Robin T. Miller
  *      When doing percentages and verifying the write data, then exclude
@@ -569,8 +573,10 @@ write_data(struct dinfo *dip)
 	}
 
 	if (dip->di_io_dir == FORWARD) {
-	    dip->di_offset += count;	/* Maintain our own position too! */
-	    if (idip) idip->di_offset += count;
+	    if (count > 0) {
+		dip->di_offset += count;	/* Maintain our own position too! */
+		if (idip) idip->di_offset += count;
+	    }
 	} else if ( (iotype == SEQUENTIAL_IO) &&
 		    (dip->di_offset == (Offset_t)dip->di_file_position) ) {
 	    set_Eof(dip);

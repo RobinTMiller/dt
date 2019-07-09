@@ -1297,6 +1297,16 @@ os_getosinfo(void)
 
     osversion[0] = '\0';
 
+    /* 
+     * See this link for deprecated GetVersionEx() API: 
+     *   warning C4996: 'GetVersionExA': was declared deprecated
+     *   https://docs.microsoft.com/en-us/windows/desktop/w8cookbook/operating-system-version-changes-in-windows-8-1
+     *      OR
+     * Switch to this API for Windows 10:
+     *   https://docs.microsoft.com/en-us/windows/desktop/DevNotes/rtlgetversion
+     * Note: Required Ntddk.h include file and additional libraries.
+     */
+
     /* URL: http://msdn.microsoft.com/en-us/library/windows/desktop/ms724451(v=vs.85).aspx */
 
     if (GetVersionEx((OSVERSIONINFO *)&osv) == FALSE) {
@@ -2932,8 +2942,12 @@ os_symlink_file(char *oldpath, char *newpath)
 
 #endif /* !deifned(WINDOWS_XP) */
 
-//#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
+/* Note: This is dated, and no longer required for latest Windows builds! */
 #if 0
+/* 
+ * Note: Defined in winioctl.h with Visual Studio 2017 and SDK 10+.
+ */
+#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
 
 //#include <ntifs.h>
 
@@ -2984,6 +2998,8 @@ typedef struct _FILE_LEVEL_TRIM_OUTPUT {
     //
     ULONG NumRangesProcessed;
 } FILE_LEVEL_TRIM_OUTPUT, *PFILE_LEVEL_TRIM_OUTPUT;
+
+#endif /* 0 */
 
 #if 0
 
