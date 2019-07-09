@@ -117,6 +117,30 @@ isFsFullOk(struct dinfo *dip, char *op, char *path)
 }
 
 /*
+ * make_dir_filename() - Generate a Directory with File Name.
+ *
+ * Description:
+ *      This function is called when a directory is specified without a file
+ * name, and since some folks like tools that generate their own file names,
+ * we will append out default file name to suite their desires. ;)
+ *
+ * Inputs:
+ *      dip = The device information pointer.
+ *      dirpath = The directory name. (caller must check!)
+ *
+ * Return Value:
+ *	Returns a pointer to the new directory with filename.
+ */
+char *
+make_dir_filename(struct dinfo *dip, char *dirpath)
+{
+    char path[PATH_BUFFER_SIZE];
+
+    (void)sprintf(path, "%s%c%s", dirpath, dip->di_dir_sep, DEFAULT_DATA_FILE_NAME);
+    return( strdup(path) );
+}
+
+/*
  * make_file_name() - Generate a New File Name.
  *
  * Description:

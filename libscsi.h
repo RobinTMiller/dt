@@ -1,7 +1,7 @@
 #ifndef LIBSCSI_H
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2018			    *
+ *			  COPYRIGHT (c) 2006 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -53,6 +53,7 @@ typedef unsigned char bitfield_t;
 #endif /* defined(__IBMC__) */
 
 //#include "common.h"
+#include "inquiry.h"
 
 /*
  * Local Defines:
@@ -370,6 +371,10 @@ typedef struct scsi_sense_desc {
 #define SENSE_KEY_SPECIFIC_DESC_TYPE		0x02
 #define FIELD_REPLACEABLE_UNIT_DESC_TYPE	0x03
 #define BLOCK_COMMAND_DESC_TYPE			0x05
+#if defined(HGST)
+#define HGST_UNIT_ERROR_CODE_DESC_TYPE	 	0x80
+#define HGST_PHYSICAL_ERROR_RECORD_DESC_TYPE	0x81
+#endif /* defined(HGST) */
 
 typedef struct sense_data_desc_header {
     unsigned char descriptor_type;
@@ -435,6 +440,26 @@ typedef struct block_command_desc_type {
 	    reserved_b0_b4  : 5;	/* Reserved.		        [3] */
 #endif /* defined(_BITFIELDS_LOW_TO_HIGH_) */
 } block_command_desc_type_t;
+
+#if defined(HGST)
+
+typedef struct hgst_unit_error_desc_type {
+    sense_data_desc_header_t header;	/* Descriptor header.	      [0-1] */
+    unsigned char unit_error_code[2];	/* Unit error code.	      [2-3] */
+} hgst_unit_error_desc_type_t;
+
+typedef struct hgst_physical_error_record_desc_type {
+    sense_data_desc_header_t header;	/* Descriptor header.	      [0-1] */
+    unsigned char physical_error_record[6];/* Physical error record.  [2-7] */
+} hgst_physical_error_record_desc_type_t;
+
+typedef struct hgst_physical_error_record {
+    unsigned char cylinder_number[3];	/* The cylinder number.		*/
+    unsigned char head_number;		/* The head number.		*/
+    unsigned char sector_number[2];	/* The sector number.		*/
+} hgst_physical_error_record_t;
+
+#endif /* defined(HGST) */
 
 /* --------------------------------------------------------------------------- */
 /*
@@ -552,6 +577,7 @@ extern int Inquiry(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
                    scsi_addr_t *sap, scsi_generic_t **sgpp,
                    void *data, unsigned int len, unsigned char page,
 		   unsigned int sflags, unsigned int timeout);
+extern int verify_inquiry_header(inquiry_t *inquiry, inquiry_header_t *inqh, unsigned char page);
 extern char *GetDeviceIdentifier(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
                                  scsi_addr_t *sap, scsi_generic_t **sgpp,
 				 void *inqp, unsigned int timeout);
@@ -594,6 +620,9 @@ extern int TestUnitReady(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
 extern int Seek10(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
 		  scsi_addr_t *sap, scsi_generic_t **sgpp,
 		  unsigned int lba, unsigned int timeout);
+extern int SendAnyCdb(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
+	   scsi_addr_t *sap, scsi_generic_t **sgpp, unsigned int timeout, 
+	   uint8_t *cdb, uint8_t cdb_size);
 
 /* scsidata.c */
 
@@ -611,6 +640,10 @@ extern void DumpIllegalRequestSense(scsi_generic_t *sgp, scsi_sense_illegal_requ
 extern void DumpMediaErrorSense(scsi_generic_t *sgp, scsi_media_error_sense_t *mep);
 extern void DumpFieldReplaceableUnitSense(scsi_generic_t *sgp, fru_desc_type_t *frup);
 extern void DumpBlockCommandSense(scsi_generic_t *sgp, block_command_desc_type_t *bcp);
+#if defined(HGST)
+extern void DumpUnitErrorSense(scsi_generic_t *sgp, hgst_unit_error_desc_type_t *uep);
+extern void DumpPhysicalRecordErrorSense(scsi_generic_t *sgp, hgst_physical_error_record_desc_type_t *pep);
+#endif /* defined(HGST) */
 
 extern void print_scsi_status(scsi_generic_t *sgp, unsigned char scsi_status, unsigned char sense_key, unsigned char asc, unsigned char ascq);
 extern char *ScsiAscqMsg(unsigned char asc, unsigned char asq);

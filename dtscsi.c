@@ -1,7 +1,7 @@
 #if defined(SCSI)
 /****************************************************************************
  *      								    *
- *      		  COPYRIGHT (c) 1988 - 2018     		    *
+ *      		  COPYRIGHT (c) 1988 - 2019     		    *
  *      		   This Software Provided       		    *
  *      			     By 				    *
  *      		  Robin's Nest Software Inc.    		    *
@@ -32,6 +32,12 @@
  *      dt's SCSI functions.
  * 
  * Modification History:
+ * 
+ * January 25th, 2019 by Robin T. Miller
+ *      Add support for unmapping blocks via token based xcopy zero ROD method.
+ * 
+ * January 23rd, 2019 by Robin T. Miller
+ *      Change default path for spt to be /usr/local/bin, also drop ".last".
  * 
  * April 26th, 2018 by Robin T. Miller
  *      If the serial number contains spaces, copy serial number without spaces.
@@ -246,7 +252,6 @@ int
 init_scsi_info(dinfo_t *dip)
 {
     scsi_generic_t *sgp;
-    inquiry_t *inquiry;
     int error;
     
     if ( (sgp = dip->di_sgp) == NULL) {
@@ -254,11 +259,34 @@ init_scsi_info(dinfo_t *dip)
 	if (error == FAILURE) return(error);
 	sgp = dip->di_sgp;
     }
+    error = get_standard_scsi_information(dip, sgp);
+
+    /* Note: We leave the SCSI device open on purpose, for faster triggers, etc. */
+    //(void)os_close_device(sgp);
+    /*
+     * If we're doing SCSI I/O, we want to report errors.
+     */
+    if (dip->di_scsi_io_flag == True) {
+	/* Note: SCSI I/O uses sgpio now!*/
+	//sgp->errlog = True;
+	//sgp->warn_on_error = False;
+	dip->di_scsi_errors = True;
+    }
+    return(error);
+}
+
+int
+get_standard_scsi_information(dinfo_t *dip, scsi_generic_t *sgp)
+{
+    inquiry_t *inquiry;
+    int error;
+
     if ( (inquiry = dip->di_inquiry) == NULL) {
 	dip->di_inquiry = inquiry = Malloc(dip, sizeof(*inquiry));
 	if (dip->di_inquiry == NULL) {
 	    (void)os_close_device(sgp);
 	    dip->di_scsi_flag = False;
+	    return(FAILURE);
 	}
     }
 
@@ -267,7 +295,7 @@ init_scsi_info(dinfo_t *dip)
     if (error) {
 	(void)os_close_device(sgp);
 	dip->di_scsi_flag = False;	/* Assume *not* a SCSI device! */
-	return (error);
+	return(error);
     }
     dip->di_vendor_id = Malloc(dip, INQ_VID_LEN + 1);
     dip->di_product_id = Malloc(dip, INQ_PID_LEN + 1);
@@ -297,6 +325,7 @@ init_scsi_info(dinfo_t *dip)
 						 NULL, &sgp, inquiry, dip->di_scsi_timeout);
 	dip->di_serial_number = GetSerialNumber(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
 						NULL, &sgp, inquiry, dip->di_scsi_timeout);
+    /* TODO: Move this to HGST specific function! */
 #if defined(HGST)
 	/*
 	 * Some vendors like HGST and Sandisk right justify their serial number and pad with spaces. 
@@ -325,17 +354,6 @@ init_scsi_info(dinfo_t *dip)
 	dip->di_mgmt_address = GetMgmtNetworkAddress(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
 						     NULL, &sgp, inquiry, dip->di_scsi_timeout);
     }
-    /* Note: We leave the SCSI device open on purpose, for faster triggers, etc. */
-    //(void)os_close_device(sgp);
-    /*
-     * If we're doing SCSI I/O, we want to report errors.
-     */
-    if (dip->di_scsi_io_flag == True) {
-	/* Note: SCSI I/O uses sgpio now!*/
-	//sgp->errlog = True;
-	//sgp->warn_on_error = False;
-	dip->di_scsi_errors = True;
-    }
     return(error);
 }
 
@@ -344,6 +362,13 @@ report_scsi_information(dinfo_t *dip)
 {
     if (dip->di_scsi_info_flag == False) return;
 
+    report_standard_scsi_information(dip);
+    return;
+}
+
+void
+report_standard_scsi_information(dinfo_t *dip)
+{
     Lprintf(dip, "\nSCSI Information:\n");
 
     Lprintf (dip, DT_FIELD_WIDTH "%s\n",
@@ -357,7 +382,7 @@ report_scsi_information(dinfo_t *dip)
     if (dip->di_revision_level) {
 	Lprintf (dip, DT_FIELD_WIDTH "%s\n", "Firmware Revision Level", dip->di_revision_level);
     }
-    /* Also report the ALUA state, iimperative for proper MPIO operation! */
+    /* Also report the ALUA state, imperative for proper MPIO operation! */
     if (dip->di_inquiry) {
 	char *alua_str;
 	switch (dip->di_inquiry->inq_tpgs) {
@@ -405,17 +430,16 @@ report_scsi_information(dinfo_t *dip)
     return;
 }
 
-
 /*
  * NOTE: This is temporary, until we merge spt functions into dt!
  */ 
 #if defined(WIN32)
 
-static char *spt_path = "X:\\bin\\spt.last.exe";
+static char *spt_path = "X:\\bin\\spt.last";
 
 #else /* !defined(WIN32) */
 
-static char *spt_path = "/usr/software/test/bin/spt.last";
+static char *spt_path = "/usr/local/bin/spt";
 
 #endif /* defined(WIN32) */
 
@@ -487,13 +511,41 @@ do_unmap_blocks(dinfo_t *dip)
 	case UNMAP_TYPE_WRITE_SAME:
 	    status = write_same_unmap(dip, offset, data_bytes);
 	    break;
+	case UNMAP_TYPE_ZEROROD:
+	    status = xcopy_zerorod(dip, offset, data_bytes);
+	    break;
     }
     if ( (dip->di_get_lba_status_flag == True) && (status == SUCCESS) ) {
 	status = get_lba_status(dip, offset, data_bytes);
     }
-    /* SCSI commands are via spt are present, so map failure! */
+    /* SCSI commands are via spt so it must be, map failure accordingly. */
     if (status == 255) status = FAILURE;
     return(status);
+}
+
+int
+unmap_blocks(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
+{
+    char cmd[STRING_BUFFER_SIZE];
+    uint32_t block_length = dip->di_block_length;
+    int status;
+    
+    if (block_length == 0) block_length = BLOCK_SIZE;
+    /* Note: The starting block and limit is converted to SCSI sized blocks! */
+    (void)sprintf(cmd, "%s dsf=%s cdb=0x42 starting="FUF" limit="FUF"b enable=sense,recovery",
+		  (dip->di_spt_path) ? dip->di_spt_path : spt_path,
+		  dip->di_sgp->dsf,
+		  (starting_offset / block_length),
+		  (data_bytes / block_length) );
+
+    add_common_spt_options(dip, cmd);
+
+    status = ExecuteCommand(dip, cmd, True);
+
+    if (status || dip->di_debug_flag) {
+	Printf(dip, "spt exited with status %d...\n", status);
+    }
+    return (status);
 }
 
 #define WRITE_SAME_MAX_BYTES	(4 * MBYTE_SIZE)
@@ -525,7 +577,7 @@ write_same_unmap(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
 }
 
 int
-unmap_blocks(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
+xcopy_zerorod(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
 {
     char cmd[STRING_BUFFER_SIZE];
     uint32_t block_length = dip->di_block_length;
@@ -533,7 +585,7 @@ unmap_blocks(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
     
     if (block_length == 0) block_length = BLOCK_SIZE;
     /* Note: The starting block and limit is converted to SCSI sized blocks! */
-    (void)sprintf(cmd, "%s dsf=%s cdb=0x42 starting="FUF" limit="FUF"b enable=sense,recovery",
+    (void)sprintf(cmd, "%s dsf=%s cdb=\"83 11\" starting="FUF" limit="FUF"b enable=sense,recovery,zerorod",
 		  (dip->di_spt_path) ? dip->di_spt_path : spt_path,
 		  dip->di_sgp->dsf,
 		  (starting_offset / block_length),

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2017			    *
+ *			  COPYRIGHT (c) 2006 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -468,7 +468,7 @@ Inquiry(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
 int
 verify_inquiry_header(inquiry_t *inquiry, inquiry_header_t *inqh, unsigned char page)
 {
-    if ( (inqh->inq_page_length == 0) ||
+    if ( (StoH(inqh->inq_page_length) == 0) ||
 	 (inqh->inq_page_code != page) ||
 	 (inqh->inq_dtype != inquiry->inq_dtype) ) {
 	return(FAILURE);
@@ -524,7 +524,7 @@ GetDeviceIdentifier(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
 
     if (verify_inquiry_header(inquiry, inqh, page) == FAILURE) return(NULL);
 
-    page_length = (size_t) inquiry_page->inquiry_hdr.inq_page_length;
+    page_length = (size_t)StoH(inquiry_page->inquiry_hdr.inq_page_length);
     iid = (inquiry_ident_descriptor_t *)inquiry_page->inquiry_page_data;
 
     /*
@@ -703,7 +703,7 @@ GetSerialNumber(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
 
     if (verify_inquiry_header(inquiry, inqh, page) == FAILURE) return(NULL);
 
-    page_length = (size_t) inquiry_page->inquiry_hdr.inq_page_length;
+    page_length = (size_t)StoH(inquiry_page->inquiry_hdr.inq_page_length);
     bp = (char *)Malloc(NULL, (page_length + 1) );
     if (bp == NULL) return(NULL);
     strncpy (bp, (char *)inquiry_page->inquiry_page_data, page_length);
@@ -1531,6 +1531,86 @@ Seek10(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
     if (sgpp) {
 	if (*sgpp == NULL) {
 	    *sgpp = sgp;	/* Return the generic data pointer. */
+	}
+    } else {
+	free_palign(sgp->opaque, sgp->sense_data);
+	free(sgp);
+    }
+    return(error);
+}
+
+/* ======================================================================== */
+
+/*
+ * SendAnyCdb() - Send a User Defined CDB (no data for now).
+ * 
+ * Description:
+ * 	Simple function to send a user defined trigger CDB.
+ *
+ * Inputs:
+ *  fd     = The file descriptor to issue bus reset to.
+ *  dsf    = The device special file (raw or "sg" for Linux).
+ *  debug  = Flag to control debug output.
+ *  errlog = Flag to control error logging. (True logs error)
+ *                                          (False suppesses)
+ *  sap    = Pointer to SCSI address (optional).
+ *  sgpp   = Pointer to scsi generic pointer (optional).
+ *  timeout = The timeout value (in ms).
+ *
+ * Return Value:
+ *  Returns the status from the IOCTL request which is:
+ *    0 = Success, -1 = Failure
+ *
+ * Note:  If the caller supplies a SCSI generic pointer, then
+ * it's the callers responsibility to free this structure, along
+ * with the data buffer and sense buffer.  This capability is
+ * provided so the caller can examine SCSI status, sense data,
+ * and data transfers, to make (more) intelligent decisions.
+ */
+int
+SendAnyCdb(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
+	   scsi_addr_t *sap, scsi_generic_t **sgpp, unsigned int timeout, 
+	   uint8_t *cdb, uint8_t cdb_size)
+{
+    scsi_generic_t scsi_generic;
+    scsi_generic_t *sgp = &scsi_generic;
+    int error;
+
+    /*
+     * Setup and/or allocate a SCSI generic data structure.
+     */
+    if (sgpp && *sgpp) {
+	sgp = *sgpp;
+    } else {
+	sgp = init_scsi_generic();
+    }
+    memset(sgp->cdb, 0, sizeof(sgp->cdb));
+    sgp->fd         = fd;
+    sgp->dsf        = dsf;
+    memcpy(sgp->cdb, cdb, cdb_size);
+    sgp->cdb_size   = cdb_size;
+    sgp->cdb_name   = "Any SCSI";
+    sgp->data_dir   = scsi_data_none;
+    sgp->debug      = debug;
+    sgp->errlog     = errlog;
+    sgp->timeout    = (timeout) ? timeout : ScsiDefaultTimeout;
+
+    /*
+     * If a SCSI address was specified, do a structure copy.
+     */
+    if (sap) {
+	sgp->scsi_addr = *sap;	/* Copy the SCSI address info. */
+    }
+
+    error = libExecuteCdb(sgp);
+
+    /*
+     * If the user supplied a pointer, send the SCSI generic data
+     * back to them for further analysis.
+     */
+    if (sgpp) {
+	if (*sgpp == NULL) {
+	    *sgpp = sgp;        /* Return the generic data pointer. */
 	}
     } else {
 	free_palign(sgp->opaque, sgp->sense_data);
