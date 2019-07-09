@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,13 @@
  *	Support for dt workloads.
  *
  * Modification History:
+ * 
+ * June 6th, 2019 by Robin T. Miller
+ *      Add log_files workload template to create job/thread log files.
+ * 
+ * May 20th, 2019 by Robin T. Miller
+ *      Add direct disk read-after-write w/reread workload.
+ *      Add log prefix with timestamp workload (for options).
  * 
  * December 11th, 2015 by Robin T. Miller
  *	Adding new workloads with newly added percentages. (yay!)
@@ -193,16 +200,55 @@ workload_entry_t predefined_workloads[] =
 	"iodir=vary iotype=vary keepalivet=5m "
 	"onerr=abort disable=pstats "
 	"noprogt=15s noprogtt=130s alarm=3s "
-	"history=5 hdsize=128 "
-	"enable=syslog runtime=12h stopon="TEMP_DIR"stopit.dt"
+	"history=5 hdsize=128 enable=htiming "
+	"enable=syslog runtime=12h "
+	"enable=stopimmed stopon="TEMP_DIR"stopit.dt"
+    },
+    {	"disk_read_after_write",
+	"Direct Disk Read-After-Write w/Rereads",
+	"workload=san_disk "
+	"enable=read_immed,reread slices=8"
+    },
+    {	"disk_aligned_io",
+	"Direct Disk Aligned I/O (assumes 4k blocks)",
+	"workload=san_disk dsize=4k"
+    },
+    {	"disk_unaligned_io",
+	"Direct Disk Aligned I/O (assumes 4k blocks)",
+	"workload=san_disk dsize=4k offset=4k-3b"
+    },
+    {	"disk_unmaps",
+	"Direct Disk with Unmaps",
+	"workload=san_disk unmap=unmap"
+    },
+    {	"disk_write_only",
+	"Direct Disk Write Only",
+	"workload=san_disk disable=verify"
     },
     {	"high_validation",
-	"Define Highest Data Validation Options (not a workload)",
+	"Define Highest Data Validation Options (template)",
 	"enable=btags pattern=iot prefix='%d@%h'"
     },
     {	"job_stats_only",
-	"Define options to display job statistics only (not a workload)",
+	"Define options to display job statistics only (template)",
 	"disable=stats enable=job_stats"
+    },
+    /* Note: Use logdir= option to direct logs to specific directory! */
+    {	"all_logs",
+	"Define options for creating all logs (template)",
+	"job_log='dt_job%job-%dsf.log' log='dt_thread-j%jobt%thread-%dsf.log' error_log=dt-ERROR.log"
+    },
+    {	"job_logs",
+	"Define options for creating job logs (template)",
+	"job_log='dt_job%job-%dsf.log' error_log=dt-ERROR.log"
+    },
+    {	"thread_logs",
+	"Define options for creating thread logs (template)",
+	"log='dt_thread-j%jobt%thread-%dsf.log' error_log=dt-ERROR.log"
+    },
+    {	"log_timestamps",
+	"Define options for adding log file timestamps (template)",
+	"logprefix='%seq %date %et %prog (j:%job t:%thread): '"
     }
 };
 int workload_entries = sizeof(predefined_workloads) / sizeof(workload_entry_t);
