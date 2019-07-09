@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: May 21st, 2018"VARIANT", Version: 21.29, Author: Robin T. Miller";
+char *version_str = "Date: July 8th, 2019"VARIANT", Version: 21.38, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -94,6 +94,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\tibs=value             The read block size. (overrides bs=)\n");
     P (dip, "\tobs=value             The write block size. (overrides bs=)\n");
     P (dip, "\tjob_log=filename      The job log file name.\n");
+    P (dip, "\tlogdir=filename       The log directory name.\n");
     P (dip, "\tlog[atu]=filename     The log file name to write.\n");
     P (dip, "\t                      a=append, t=truncate, u=unique (w/tid)\n");
     P (dip, "\tlogprefix=string      The per line logging prefix.\n");
@@ -113,6 +114,7 @@ dthelp(dinfo_t *dip)
 #endif /* !defined(_QNX_SOURCE) */
     P (dip, "\tcapacity=value        Set the device capacity in bytes.\n");
     P (dip, "    or\tcapacity=max          Set maximum capacity from disk driver.\n");
+    P (dip, "\tcapacityp=value       Set capacity by percentage (range: 0-100).\n");
     P (dip, "\tbufmodes={buffered,unbuffered,cachereads,cachewrites}\n");
     P (dip, "\t                      Set one or more buffering modes (Default: none)\n");
     P (dip, "\tboff=string           Set the buffer offsets to: dec or hex (Default: %s)\n",
@@ -210,7 +212,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\tusleep=value          The usleep time (in microseconds).\n");
     P (dip, "\tshowtime=value        Show time value in ctime() format.\n");
     P (dip, "\tthreads=value         The number of threads to execute.\n");
-    P (dip, "\ttrigger={br, bdr, lr, seek, cmd:str, or triage}\n");
+    P (dip, "\ttrigger={br, bdr, lr, seek, cdb:bytes, cmd:str, and/or triage}\n");
     P (dip, "\t                      The triggers to execute on errors.\n");
     P (dip, "\ttrigger_action=value  The trigger action (for noprogs).\n");
     P (dip, "\ttrigger_on={all, errors, miscompare, or noprogs} (Default: all)\n");
@@ -231,7 +233,8 @@ dthelp(dinfo_t *dip)
     P (dip, "\tiobehavior=type       Specify the I/O behavior to use.\n");
     P (dip, "\t  Where type is:\n");
     P (dip, "\t    dt                The dt I/O behavior (default).\n");
-    //P (dip, "\t    pio               The pure I/O behavior.\n");
+    P (dip, "\t    dtapp             The dtapp I/O behavior.\n");
+    P (dip, "\t    thumper           The thumper I/O behavior.\n");
     P (dip, "\n    For help on each I/O behavior use: \"iobehavior=type help\"\n");
 
     P (dip, "\n    Block Tag Verify Flags: (prefix with ~ to clear flag)\n");
@@ -346,7 +349,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\tunmap_freq=value      The SCSI unmap frequency.     (Def: %u)\n",
        dip->di_unmap_frequency);
     P (dip, "\tunmap=type            The SCSI unmap type.\n");
-    P (dip, "\t Valid types are: random, unmap, and write_same.\n");
+    P (dip, "\t Valid types are: random, unmap, write_same, zerorod.\n");
 #endif /* defined(SCSI) */
 
     P (dip, "\n    Flags to enable/disable:\n");
