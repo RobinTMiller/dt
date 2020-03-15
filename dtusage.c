@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: October 7th, 2019"VARIANT", Version: 21.39, Author: Robin T. Miller";
+char *version_str = "Date: December 21st, 2019"VARIANT", Version: 21.47, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -309,6 +309,10 @@ dthelp(dinfo_t *dip)
 						dip->di_retry_delay);
     P (dip, "\tretry_limit=value     The retry limit.              (Def: %u)\n",
 						dip->di_retry_limit);
+    P (dip, "\tretryDC_delay=value   The retry corruptions delay.  (Def: %u)\n",
+						dip->di_retryDC_delay);
+    P (dip, "\tretryDC_limit=value   The retry corruptions limit.  (Def: %u)\n",
+						dip->di_retryDC_limit);
     P (dip, "\n    Error Strings Accepted:\n");
     /* Note: Disk full errors cannot be retried at this time! */
 #if defined(WIN32)
@@ -419,6 +423,8 @@ dthelp(dinfo_t *dip)
 				(dip->di_fill_once == True) ? enabled_str : disabled_str);
     P (dip, "\tfsalign          File system align.         (Default: %s)\n",
 				(dip->di_fsalign_flag) ? enabled_str : disabled_str);
+    P (dip, "\tfsmap            File system map.    i      (Default: %s)\n",
+				(dip->di_fsmap_flag) ? enabled_str : disabled_str);
     P (dip, "\tfstrim           File system trim.          (Default: %s)\n",
 				(dip->di_fstrim_flag) ? enabled_str : disabled_str);
     P (dip, "\tfunique          Unique output file.        (Default: %s)\n",
@@ -491,6 +497,8 @@ dthelp(dinfo_t *dip)
 				(dip->di_retry_disconnects) ? enabled_str : disabled_str);
     P (dip, "\tretrywarn        Retry logged as warning.   (Default: %s)\n",
 				(dip->di_retry_warning) ? enabled_str : disabled_str);
+    P (dip, "\tsavecorrupted    Save corrupted data.       (Default: %s)\n",
+				(dip->di_save_corrupted) ? enabled_str : disabled_str);
     P (dip, "\tscriptverify     Script verify display.     (Default: %s)\n",
 				(dip->di_script_verify) ? enabled_str : disabled_str);   
     P (dip, "\tsighup           Hangup signal control.     (Default: %s)\n",
@@ -539,6 +547,8 @@ dthelp(dinfo_t *dip)
 #endif /* defined(TIMESTAMP) */
     P (dip, "\ttrigargs         Trigger cmd arguments.     (Default: %s)\n",
 				(dip->di_trigargs_flag) ? enabled_str : disabled_str);
+    P (dip, "\ttrigdelay        Delay mismatch triggers.   (Default: %s)\n",
+				(dip->di_trigdelay_flag) ? enabled_str : disabled_str);
     P (dip, "\tunique           Unique pattern.            (Default: %s)\n",
 				(dip->di_unique_pattern) ? enabled_str : disabled_str);
     P (dip, "\tuuid_dashes      Dashes in UUID strings.    (Default: %s)\n",

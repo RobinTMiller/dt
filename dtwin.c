@@ -1368,6 +1368,8 @@ os_getosinfo(void)
 		strcpy(osversion, "Windows Server 2012 R2");
 	    }
 	}
+    } else if (osv.dwMajorVersion == 10) {
+	strcpy(osversion, "Windows 10");
     }
 
     if (osversion[0] == '\0') {

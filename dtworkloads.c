@@ -32,6 +32,9 @@
  *
  * Modification History:
  * 
+ * August 8th, 2019 (happy birthday brother Randy!)
+ *      Added keepalive workload to define a better keepalive message.
+ * 
  * June 6th, 2019 by Robin T. Miller
  *      Add log_files workload template to create job/thread log files.
  * 
@@ -80,11 +83,10 @@ workload_entry_t predefined_workloads[] =
     },
     {	"dt_dedup",
 	"Deduplication Pattern",
-	"min=8k max=256k incr=4k limit=250m maxdatap=75 "
+	"min=8k max=256k incr=4k limit=1g maxdatap=75 "
 	"pf="PATTERN_FILE_DIR"pattern_dedup "
 	"enable=syslog history=5 enable=htiming "
 	"bufmodes=cachereads,buffered,unbuffered,cachewrites "
-	"logprefix=\"%et %prog (j:%job t:%thread): \" "
 	"disable=pstats keepalivet=5m threads=4"
     },
     {	"dt_hammer",
@@ -184,12 +186,12 @@ workload_entry_t predefined_workloads[] =
     {	"san_file_system",
 	"SAN File System Workload",
 	"bs=random limit=2g dispose=keeponerror "
-	"iodir=vary iotype=vary keepalivet=5m "
+	"iodir=vary iotype=vary keepalivet=5m workload=keepalive "
 	"pattern=iot prefix='%d@%h' enable=btags "
 	"onerr=abort disable=pstats "
 	"notime=close,fsync oflags=trunc threads=4 "
 	"enable=noprog noprogt=15s noprogtt=130s alarm=3s "
-	"history=5 hdsize=128 "
+	"history=5 hdsize=128 enable=htiming "
 	"enable=syslog runtime=12h stopon="TEMP_DIR"stopit.dt "
 	"bufmodes=buffered,cachereads,cachewrites,unbuffered"
     },
@@ -197,12 +199,17 @@ workload_entry_t predefined_workloads[] =
 	"SAN Direct Disk Workload",
 	"bs=random slices=4 "
 	"pattern=iot prefix='%d@%h' enable=btags "
-	"iodir=vary iotype=vary keepalivet=5m "
+	"iodir=vary iotype=vary keepalivet=5m workload=keepalive "
 	"onerr=abort disable=pstats "
 	"noprogt=15s noprogtt=130s alarm=3s "
 	"history=5 hdsize=128 enable=htiming "
 	"enable=syslog runtime=12h "
 	"enable=stopimmed stopon="TEMP_DIR"stopit.dt"
+    },
+    {	"keepalive",
+	"Keepalive Message (template)",
+	"keepalive='%d stats: Mode: %i, Blocks: %l, %m Mbytes, "
+	"MB/sec: %mbps, IO/sec: %iops, Pass %p, Elapsed: %T'"
     },
     {	"disk_read_after_write",
 	"Direct Disk Read-After-Write w/Rereads",
@@ -216,6 +223,13 @@ workload_entry_t predefined_workloads[] =
     {	"disk_unaligned_io",
 	"Direct Disk Aligned I/O (assumes 4k blocks)",
 	"workload=san_disk dsize=4k offset=4k-3b"
+    },
+    {	"disk_dedup",
+	"Direct Disk Deduplication",
+	"min=8k max=256k incr=4k "
+	"pf="PATTERN_FILE_DIR"pattern_dedup "
+	"enable=syslog history=5 enable=htiming "
+	"disable=pstats keepalivet=5m threads=4"
     },
     {	"disk_unmaps",
 	"Direct Disk with Unmaps",
@@ -236,19 +250,19 @@ workload_entry_t predefined_workloads[] =
     /* Note: Use logdir= option to direct logs to specific directory! */
     {	"all_logs",
 	"Define options for creating all logs (template)",
-	"job_log='dt_job%job-%dsf.log' log='dt_thread-j%jobt%thread-%dsf.log' error_log=dt-ERROR.log"
+	"job_log='dt_job%job.log' log='dt_thread-j%jobt%thread-%dsf.log'"
     },
     {	"job_logs",
 	"Define options for creating job logs (template)",
-	"job_log='dt_job%job-%dsf.log' error_log=dt-ERROR.log"
+	"job_log='dt_job%job.log'"
     },
     {	"thread_logs",
 	"Define options for creating thread logs (template)",
-	"log='dt_thread-j%jobt%thread-%dsf.log' error_log=dt-ERROR.log"
+	"log='dt_thread-j%jobt%thread-%dsf.log'"
     },
     {	"log_timestamps",
 	"Define options for adding log file timestamps (template)",
-	"logprefix='%seq %date %et %prog (j:%job t:%thread): '"
+	"logprefix='%date %et %prog (j:%job t:%thread): '"
     }
 };
 int workload_entries = sizeof(predefined_workloads) / sizeof(workload_entry_t);

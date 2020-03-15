@@ -31,9 +31,35 @@
  *
  * Modification History:
  * 
+ * Decamber 6th, 2019 by Robin T. Miller
+ *      When re-enabling stats via "enable=stats", ensure all the stat flags
+ * reset when disabled, get enabled once again, esp. since these are sticky.
+ * FYI: Found script issue where stats were disabled, but not easily re-enabled!
+ * 
+ * November 21st, 2019 by Robin T. Miller
+ *      Add a retry data corruption limit option (retryDC_limit=value).
+ *      The normal retry limit is used for retrying errors (60 by default).
+ *      Added separate retry data corruption delay option (retryDC_delay).
+ *      Fix "dir=/var/tmp of=dt-%user-%uuid.data" expansion by updating the
+ * base name properly in format_device_name() function. (see comments there).
+ * 
+ * November 20th, 2019 by Robin T. Miller
+ *      In setup_thread_names(), with multiple threads create a unique directory
+ * for each thread under the top level directory. Previously, when the top level
+ * directory was a mount point, a new top level directory was created with "-jNtN"
+ * so subsequent files and subdirectories were not created under the mount point.
+ * So, now instead of say /var/tmp/dtdir-j1t1, it's now /var/tmp/dtdir/j1t1.
+ * 
+ * October 6th, 2019 by Robin T. Miller
+ *      Change the default dispose mode setting to keep on error.
+ * 
+ * July 27th, 2019 by Robin T. Miller
+ *	Change the delete error log file default to be true.
+ *	For those running multiple processes, beware of this change!
+ *
  * June 14th, 2019 by Robin T. Miller
  *      Fix bug in do_datatest_validate() where the pattern buffer was reset
- * causing pattern=incr and pattern=string not work (only 1sy 4 bytes used).
+ * causing pattern=incr and pattern=string not work (only 1st 4 bytes used).
  * 
  * June 6th, 2019 by Robin T. Miller
  *      Add logdir= option to prepend to job/log file paths.
@@ -417,25 +443,26 @@ FILE	*master_logfp;			/* The master log file pointer.	*/
 dinfo_t	*master_dinfo;			/* The parents' information.	*/
 dinfo_t *iotune_dinfo;			/* The I/O device information.	*/
 
-hbool_t DeleteErrorLogFlag = False;	/* Controls error log deleting.	*/
+hbool_t DeleteErrorLogFlag = True;	/* Controls error log deleting.	*/
 hbool_t	ExitFlag = False;		/* In pipe mode, exit flag.	*/
 hbool_t	InteractiveFlag = False;	/* Stay in interactive mode.	*/
 hbool_t	StdinIsAtty;			/* Standard input isatty flag.  */
 hbool_t	StdoutIsAtty;			/* Standard output isatty flag. */
 hbool_t	StderrIsAtty;			/* Standard error isatty flag.  */
 hbool_t	PipeModeFlag = False;		/* The pipe mode control flag.	*/
-uint32_t PipeDelay = 250;		/* Pipe mopde delay value.	*/
+uint32_t PipeDelay = 250;		/* Pipe mode delay value.	*/
 
 int max_open_files = 0;			/* The maximum open files.	*/
 
 /*
- * Default alarm message is per pass statistics, user can override.
+ * Default alarm message is per pass statistics, user can override. 
  */
 char    *keepalive0 = "%d Stats: mode %i, blocks %l, %m Mbytes, pass %p/%P,"
                       " elapsed %t";
 char    *keepalive1 = "%d Stats: mode %i, blocks %L, %M Mbytes, pass %p/%P,"
                       " elapsed %T";
                                         /* Default keepalive messages.  */
+
 /*
  * When stats is set to brief, these message strings get used:
  * Remember: The stats type is automatically prepended: "End of TYPE"
@@ -1009,8 +1036,8 @@ initiate_job(dinfo_t *mdip, job_id_t *job_id)
 	idip->di_ftype = INPUT_FILE;
 	if (os_isdir(idip->di_input_file)) {
             char *dirpath = idip->di_input_file;
-	    idip->di_input_file = make_dir_filename(dip, dirpath);
-	    FreeStr(dip, dirpath);
+	    idip->di_input_file = make_dir_filename(idip, dirpath);
+	    FreeStr(idip, dirpath);
 	}
 	idip->di_dname = strdup(idip->di_input_file);
 	/* Setup the device type and various defaults. */
@@ -1033,7 +1060,7 @@ initiate_job(dinfo_t *mdip, job_id_t *job_id)
 	if (os_isdir(odip->di_output_file)) {
             char *dirpath = odip->di_output_file;
 	    odip->di_output_file = make_dir_filename(odip, dirpath);
-	    FreeStr(dip, dirpath);
+	    FreeStr(odip, dirpath);
 	}
 	odip->di_dname = strdup(odip->di_output_file);
 	/* Setup the device type and various defaults. */
@@ -2770,9 +2797,13 @@ format_device_name(dinfo_t *dip, char *format)
 	dip->di_dname = path;
 	/* Update the base name too! */
 	if (dip->di_bname) {
-	    if (dip->di_dir) {
+	    /* If newly created path has a directory, update the base name w/directory. */
+	    /* Note: If the directory is not added yet, we need to update the base name. */
+	    /* This allows dir=/var/tmp of=dt-%user-%uuid.data expansion to work properly! */
+	    if (dip->di_dir && strrchr(path, dip->di_dir_sep)) {
 		status = setup_base_name(dip, path);
 	    } else {
+		/* make_file_name() uses the base name, so ensure it's updated! */
 		FreeStr(dip, dip->di_bname);
 		dip->di_bname = strdup(path);
 	    }
@@ -2839,12 +2870,18 @@ setup_thread_names(dinfo_t *dip)
 	if (dip->di_dir) {
 	    /* Note: The top level directory was already added, usually "d0". */
 	    /* This naming matches the current dt, other than older dt appends PID. */
+#if 1
+	    /* Create a unique subdirectory for each thread. */
+	    /* Note: Especially important when top level directory is a moount point! */
+	    (void)sprintf(filefmt, "%s%c%s", dip->di_dir, dip->di_dir_sep, dip->di_file_postfix);
+#else
 	    if (dip->di_multiple_dirs) {
 		(void)sprintf(filefmt, "%s%s%s", dip->di_dir, dip->di_file_sep, dip->di_file_postfix);
 	    } else {
 		/* Create a unique subdirectory for each thread. */
 		(void)sprintf(filefmt, "%s%c%s", dip->di_dir, dip->di_dir_sep, dip->di_file_postfix);
 	    }
+#endif /* 1 */
 	} else {
 	    strcpy(filefmt, dip->di_file_postfix);
 	}
@@ -3567,6 +3604,20 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    continue;
 	}
+	if (match (&string, "retryDC_delay=")) {
+	    dip->di_retryDC_delay = (u_int)number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    continue;
+	}
+	if (match (&string, "retryDC_limit=")) {
+	    dip->di_retryDC_limit = (u_int)number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    continue;
+	}
 	/* Note: Not currently used, historic! */
 	if (match (&string, "term_retries=")) {
 	    term_wait_retries = (u_int)number(dip, string, ANY_RADIX, &status, True);
@@ -3890,6 +3941,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_fsalign_flag = True;
 		goto eloop;
 	    }
+	    if (match(&string, "fsmap")) {
+		dip->di_fsmap_flag = True;
+		goto eloop;
+	    }
 	    if (match(&string, "fstrim")) {
 		dip->di_fstrim_flag = True;
 		goto eloop;
@@ -4008,6 +4063,9 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if (match(&string, "stats")) {
 		dip->di_stats_flag = True;
+		dip->di_pstats_flag = True;
+		dip->di_job_stats_flag = True;
+		dip->di_total_stats_flag = True;
 		if (dip->di_stats_level == STATS_NONE) {
 		    dip->di_stats_level = STATS_FULL;
 		}
@@ -4090,6 +4148,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		goto eloop;
 	    }
 #endif /* defined(SCSI) */
+	    if (match(&string, "savecorrupted")) {
+		dip->di_save_corrupted = True;
+		goto eloop;
+	    }
 	    if (match(&string, "scriptverify")) {
 		dip->di_script_verify = True;
 		goto eloop;
@@ -4131,6 +4193,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 #endif /* !defined(TIMESTAMP) */
 	    if (match(&string, "trigargs")) {
 		dip->di_trigargs_flag = True;
+		goto eloop;
+	    }
+	    if (match(&string, "trigdelay")) {
+		dip->di_trigdelay_flag = True;
 		goto eloop;
 	    }
 	    if (match(&string, "unique")) {
@@ -4188,6 +4254,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if (match(&string, "xcompare")) {
 		dip->di_xcompare_flag = False;
+		goto dloop;
+	    }
+	    if (match(&string, "coredump")) {
+		dip->di_force_core_dump = False;
 		goto dloop;
 	    }
 	    if (match(&string, "deleteerrorlog")) {
@@ -4306,6 +4376,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if (match(&string, "fsalign")) {
 		dip->di_fsalign_flag = False;
+		goto dloop;
+	    }
+	    if (match(&string, "fsmap")) {
+		dip->di_fsmap_flag = False;
 		goto dloop;
 	    }
 	    if (match(&string, "fstrim")) {
@@ -4506,6 +4580,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		goto dloop;
 	    }
 #endif /* defined(SCSI) */
+	    if (match(&string, "savecorrupted")) {
+		dip->di_save_corrupted = False;
+		goto dloop;
+	    }
 	    if (match(&string, "scriptverify")) {
 		dip->di_script_verify = False;
 		goto dloop;
@@ -4543,6 +4621,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if (match(&string, "trigargs")) {
 		dip->di_trigargs_flag = False;
+		goto dloop;
+	    }
+	    if (match(&string, "trigdelay")) {
+		dip->di_trigdelay_flag = False;
 		goto dloop;
 	    }
 	    if (match(&string, "unique")) {
@@ -4593,6 +4675,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	if (match (&string, "dir=")) {
 	    int dir_len = (int)strlen(string);
 	    if (dir_len) {
+		if (dip->di_dir) free(dip->di_dir);
 		dip->di_dir = strdup(string);
 		/* We do NOT want the trailing directory separator. */
 		if (dip->di_dir[dir_len-1] == dip->di_dir_sep) {
@@ -4869,7 +4952,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    if (match (&string, "dt")) {
 		dip->di_iobehavior = DT_IO;
 		continue;
-	    } else {
+	   } else {
 		Eprintf(dip, "Valid I/O behaviors are: dt\n");
 		return ( HandleExit(dip, FAILURE) );
 	    }
@@ -5536,6 +5619,9 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	}
 #endif /* defined(SCSI) */
 	if (match (&string, "stopon=")) {
+	    if (dip->di_stop_on_file) {
+		FreeStr(dip, dip->di_stop_on_file);
+	    }
 	    dip->di_stop_on_file = strdup(string);
 	    continue;
 	}
@@ -7828,7 +7914,8 @@ init_device_information(void)
     dip->di_script_verify = DEFAULT_SCRIPT_VERIFY;
     dip->di_sleep_res = SLEEP_DEFAULT;
     dip->di_uuid_dashes = True;
-    dip->di_btag_vflags = BTAGV_QV;
+    dip->di_initial_vflags = BTAGV_QV;
+    dip->di_btag_vflags = dip->di_initial_vflags;
 
     /* Initialize debug flags. */
 #if 0
@@ -8074,9 +8161,18 @@ init_device_defaults(dinfo_t *dip)
     dip->di_term_delay = DEFAULT_TERM_DELAY;
     dip->di_term_wait_time = THREAD_MAX_TERM_TIME;
     dip->di_retryDC_flag = True;
+    dip->di_retryDC_delay = RETRYDC_DELAY;
+    dip->di_retryDC_limit = RETRYDC_LIMIT;
+    dip->di_save_corrupted = SAVE_CORRUPTED;
     dip->di_max_capacity = False;
     dip->di_user_capacity = (large_t)0;
     
+    /* File System Parameters */
+    dip->di_fsmap_flag = True;
+    dip->di_fs_block_size = 0;
+    dip->di_fs_space_free = 0;
+    dip->di_fs_total_space = 0;
+
     dip->di_multi_flag = False;
     dip->di_multi_volume = 1;
     dip->di_volumes_flag = False;
@@ -8090,7 +8186,7 @@ init_device_defaults(dinfo_t *dip)
     dip->di_vary_iotype = False;
     dip->di_io_mode = TEST_MODE;
     dip->di_io_type = SEQUENTIAL_IO;
-    dip->di_dispose_mode = DELETE_FILE;
+    dip->di_dispose_mode = KEEP_ON_ERROR;
     dip->di_oncerr_action = ONERR_CONTINUE;
     dip->di_stats_level = STATS_FULL;
 
@@ -8110,7 +8206,8 @@ init_device_defaults(dinfo_t *dip)
     dip->di_variable_flag = False;
     dip->di_variable_limit = False;
     
-    dip->di_trigargs_flag = True;	/* Note: This should go away! */
+    dip->di_trigargs_flag = True;
+    dip->di_trigdelay_flag = True;
     dip->di_trigger_control = TRIGGER_ON_ALL;
     dip->di_num_triggers = 0;
     for (i = 0; (i < NUM_TRIGGERS); i++) {
@@ -8290,6 +8387,10 @@ cleanup_device(dinfo_t *dip, hbool_t master)
     if (dip->di_filesystem_options) {
 	FreeStr(dip, dip->di_filesystem_options);
 	dip->di_filesystem_options = NULL;
+    }
+    if (dip->di_fsmap) {
+	Free(dip, dip->di_fsmap);
+	dip->di_fsmap = NULL;
     }
     if (dip->di_protocol_version) {
 	FreeStr(dip, dip->di_protocol_version);

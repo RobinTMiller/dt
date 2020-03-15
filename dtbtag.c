@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,18 @@
  *
  * Modification History:
  *
+ * October 6th, 2019 by Robin T. Miller
+ *      With variable I/O modes, when switching from random to sequential mode,
+ * use the initial btag verify flags, to prevent setting flags not intended.
+ * Previously the random disable btag flags were set, enabling several flags
+ * which lead to a false corruption. We now honor user set verify flags.
+ * Note: This prevents false miscompare on ENOSPC or short record writes.
+ * 
+ * May 28th, 2019 by Robin T. Miller
+ *      With and I/O lock and random percentages, disable btag flags that
+ * are not safe to verify since they may get overwritten, which leads to
+ * false data corruptions.
+ * 
  * December 29th, 2017 by Robin T. Miller
  *      When the I/O lock flag is enabled, don't compare the thread number.
  *	The I/O lock indicates multiple threads are accessing the same file.
@@ -132,6 +144,11 @@ initialize_btag(dinfo_t *dip, uint8_t opaque_type)
     if (dip->di_iolock) {
 	/* Multiple threads to the same file/device. */
 	dip->di_btag_vflags &= ~BTAGV_THREAD_NUMBER;
+        /* With random percentages, clear random flags. */
+	if (dip->di_read_percentage || dip->di_random_percentage ||
+	    dip->di_random_rpercentage || dip->di_random_wpercentage) {
+	    dip->di_btag_vflags &= ~BTAGV_RANDOM_DISABLE;
+	}
     }
     return (btag);
 }
@@ -771,7 +788,8 @@ update_btag(dinfo_t *dip, btag_t *btag, Offset_t offset,
 	    } else { /* Sequential I/O */
 		btag_flags &= ~BTAG_RANDOM;
 		if (dip->di_ftype == OUTPUT_FILE) {
-		    dip->di_btag_vflags |= BTAGV_RANDOM_DISABLE;
+		    /* Switching to sequential, set initial verify flags. */
+		    dip->di_btag_vflags = dip->di_initial_vflags;
 		}
 	    }
 	}
@@ -1463,6 +1481,9 @@ parse_btag_verify_flags(dinfo_t *dip, char *string)
 	    status = FAILURE;
 	    break;
 	}
+    }
+    if (status == SUCCESS) {
+	dip->di_initial_vflags = dip->di_btag_vflags;
     }
     return(status);
 }

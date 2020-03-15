@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,9 @@
  *	This file contains functions to handle dt's jobs.
  *
  * Modification History:
+ * 
+ * June 7th, 2019 by Robin T. Miller
+ *      Add support for log directory (logdir=).
  * 
  * November 4th, 2016 by Robin T. Miller
  *      Add support for dt job statistics.
@@ -2143,24 +2146,29 @@ int
 create_job_log(dinfo_t *dip, job_info_t *job)
 {
     if (dip->di_job_log) {
+	char logfmt[STRING_BUFFER_SIZE];
+	char *path = logfmt;
+
+	(void)setup_log_directory(dip, path, dip->di_log_dir, dip->di_job_log);
 	if (dip->di_num_devs > 1) {
-	    char logfmt[STRING_BUFFER_SIZE];
 	    /*
 	     * Create a unique log file with multiple devices.
 	     * Note: Failure to do this leads to corrupted logs!
 	     */
-	    strcpy(logfmt, dip->di_job_log);
 	    /* Add default postfix, unless user specified their own via "%". */
 	    if ( strstr(dip->di_job_log, "%") == (char *) 0 ) {
-		strcat(logfmt, dip->di_file_sep);
-		strcat(logfmt, DEFAULT_JOBLOG_POSTFIX);
+		strcat(path, dip->di_file_sep);
+		strcat(path, DEFAULT_JOBLOG_POSTFIX);
 	    }
-	    job->ji_job_logfile = FmtLogFile(dip, logfmt, True);
-	} else {
-	    job->ji_job_logfile = FmtLogFile(dip, dip->di_job_log, True);
 	}
+	/* Format special control strings or log directory + log file name. */
+	job->ji_job_logfile = FmtLogFile(dip, path, True);
 	FreeStr(dip, dip->di_job_log);	/* Avoid unnecessary cloning! */
-	dip->di_job_log = NULL;
+	dip->di_job_log = NULL;		/* The thread job log is gone! */
+	if (dip->di_debug_flag) {
+	    Printf(dip, "Job %u, job log file is %s...\n",
+		   dip->di_job->ji_job_id, job->ji_job_logfile);
+	}
 	job->ji_job_logfp = fopen(job->ji_job_logfile, "w");
 	if (job->ji_job_logfp == NULL) {
 	    Perror(dip, "fopen() of %s failed", job->ji_job_logfile);
@@ -2215,6 +2223,7 @@ execute_threads(dinfo_t *mdip, dinfo_t **initial_dip, job_id_t *job_id)
 	}
     } else if ( (dip->di_iobehavior == DT_IO) && dip->di_iolock && (dip->di_slices == 0) ) {
 #if defined(DT_IOLOCK)
+	pthread_mutexattr_t *attrp = &jobs_lock_attr;
 	/* Note: This moves to job init once I/O behavior implemented for dt. */
 	io_global_data_t *iogp = Malloc(dip, sizeof(*iogp));
 	if (iogp == NULL) {
@@ -2222,14 +2231,14 @@ execute_threads(dinfo_t *mdip, dinfo_t **initial_dip, job_id_t *job_id)
 	    (void)cleanup_job(dip, job, True);
 	    return(FAILURE);
 	}
-	if ( (status = pthread_mutex_init(&iogp->io_lock, NULL)) != SUCCESS) {
+	if ( (status = pthread_mutex_init(&iogp->io_lock, attrp)) != SUCCESS) {
 	    tPerror(dip, status, "pthread_mutex_init() of global I/O lock failed!");
 	    release_job_lock(dip, job);
 	    (void)cleanup_job(dip, job, True);
 	    return(FAILURE);
 	}
 	job->ji_opaque = iogp;
-	if ( (status = pthread_mutex_init(&job->ji_thread_lock, NULL)) != SUCCESS) {
+	if ( (status = pthread_mutex_init(&job->ji_thread_lock, attrp)) != SUCCESS) {
 	    tPerror(dip, status, "pthread_mutex_init() of thread wait lock failed!");
 	    release_job_lock(dip, job);
 	    (void)cleanup_job(dip, job, True);
@@ -2251,7 +2260,13 @@ execute_threads(dinfo_t *mdip, dinfo_t **initial_dip, job_id_t *job_id)
 	/*
 	 * Copy original information for each thread instance.
 	 */
-	tdip = clone_device(dip, False, True);
+	/* Note: This is *only* for dtapp, until more cleanup! */
+	if ( (dip->di_iobehavior == DTAPP_IO) && (thread == 0) ) {
+	    tdip = dip;			/* Use the initial device. */
+	    *initial_dip = NULL;	/* Let caller know we now own this! */
+	} else {
+	    tdip = clone_device(dip, False, True);
+	}
 	dts[thread] = tdip;
 	tdip->di_thread_number = (thread + 1);
 	tdip->di_thread_state = TS_STARTING;
@@ -2325,7 +2340,11 @@ execute_threads(dinfo_t *mdip, dinfo_t **initial_dip, job_id_t *job_id)
 	(void)sync_threads_starting(mdip, job);
     } else { /* (dip->di_async_job == False) */
 	(void)sync_threads_starting(mdip, job);
-	status = wait_for_job(dip, job);
+	if (dip->di_iobehavior == DTAPP_IO) {
+	    status = wait_for_job(mdip, job);
+	} else {
+	    status = wait_for_job(dip, job);
+	}
     }
     /*
      * Ensure the job pointers are cleared, since this is used by logging!
@@ -2457,7 +2476,7 @@ wait_for_threads(dinfo_t *mdip, threads_info_t *tip)
     }
     /* Do common test processing, dump history, syslog, etc.*/
     /* Note: We may wish to control this, but for non-dt I/O, we need! */
-    if ( (dip->di_iobehavior != DT_IO) ) {
+    if ( (dip->di_iobehavior != DT_IO) && (dip->di_iobehavior != DTAPP_IO) ) {
 	for (thread = 0; (thread < tip->ti_threads); thread++) {
 	    dip = tip->ti_dts[thread];
 	    finish_test_common(dip, dip->di_exit_status);

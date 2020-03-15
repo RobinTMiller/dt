@@ -58,22 +58,23 @@ int TOOL_validate_parameters(dinfo_t *dip);
  * Declare the I/O behavior functions:
  */
 iobehavior_funcs_t TOOL_iobehavior_funcs = {
-    "TOOL",			/* iob_name */
-    &TOOL_initialize,		/* iob_initialize */
-    &TOOL_parser,		/* iob_parser */
-    &TOOL_cleanup_information,	/* iob_cleanup */
-    &TOOL_clone_information,	/* iob_clone */
-    &TOOL_thread,		/* iob_thread */
-    NULL,			/* iob_thread1 */
-    NULL,			/* iob_job_init */
-    NULL,			/* iob_job_cleanup */
-    &TOOL_job_finish,		/* iob_job_finish */
-    NULL,			/* iob_job_modify */
-    &TOOL_job_finish,		/* iob_job_query */
-    NULL,			/* iob_job_keepalive */
-    NULL,			/* iob_thread_keepalive */
-    &TOOL_show_parameters,	/* iob_show_parameters */
-    &TOOL_validate_parameters	/* iob_validate_parameters */
+    "TOOL",				/* iob_name */
+    &TOOL_initialize,			/* iob_initialize */
+    NULL,				/* iob_initialize_job */
+    &TOOL_parser,			/* iob_parser */
+    &TOOL_cleanup_information,		/* iob_cleanup */
+    &TOOL_clone_information,		/* iob_clone */
+    &TOOL_thread,			/* iob_thread */
+    NULL,				/* iob_thread1 */
+    NULL,				/* iob_job_init */
+    NULL,				/* iob_job_cleanup */
+    &TOOL_job_finish,			/* iob_job_finish */
+    NULL,				/* iob_job_modify */
+    &TOOL_job_finish,			/* iob_job_query */
+    NULL,				/* iob_job_keepalive */
+    NULL,				/* iob_thread_keepalive */
+    &TOOL_show_parameters,		/* iob_show_parameters */
+    &TOOL_validate_parameters		/* iob_validate_parameters */
 };     
  
 void     

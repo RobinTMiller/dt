@@ -383,7 +383,7 @@ struct tms {
 #define TEMP_DIR_NAME		TEMP_DIR
 #define TEMP_DIR_LEN		(sizeof(TEMP_DIR_NAME) - 1)
 
-#define TRIGGER_SCRIPT	"X:\\SAN\\bin\\common\\dt_noprog_script.bat"
+#define TRIGGER_SCRIPT		"c:\\tools\\scripts\\dt_noprog_script.bat"
 
 #define OS_READONLY_MODE	GENERIC_READ
 #define OS_WRITEONLY_MODE	GENERIC_WRITE

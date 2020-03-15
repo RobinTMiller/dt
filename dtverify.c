@@ -31,7 +31,15 @@
  *	Data Verification functions.
  *
  * Modification History:
- *
+ * 
+ * December 3rd, 2019 by Robin T. Miller
+ *      Add writing corrupted and reread data to a file for latter analysis.
+ *      This especially helps with "transient" (temporary) verification errors.
+ * 
+ * November 21st, 2019 by Robin T. Miller
+ *	Added separate retry data corruption delay (was sharing retry delay).
+ *      Added retry data corruption limit, rather than just loop on error.
+ * 
  * June 11th, 2019 by Robin T. Miller
  *      When looping on data corruption, use the corruption dip (cdip),
  * for stopping or terminating the thread (was using cloned dip).
@@ -77,6 +85,7 @@
 int verify_prefix(struct dinfo *dip, u_char *buffer, size_t bcount, int bindex, size_t *pcount);
 
 static void report_reread_command(dinfo_t *dip, size_t request_size, Offset_t record_offset, uint32_t pattern);
+static int save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, hbool_t corrupt_flag);
 static int verify_data_with_btags(	struct dinfo	*dip,
 					uint8_t		*buffer,
 					size_t		bytes,
@@ -515,11 +524,14 @@ verify_reread(
     hbool_t	saved_rDebugFlag;
     int		status;
 
+    Fprintf(cdip, "\n");
+    if (cdip->di_save_corrupted) {
+	(void)save_corrupted_data(cdip, cdip->di_dname, buffer, bcount, True);
+    }
     /*
      * Please Note: For SAN disks, using a SCSI Read may be desirable?
      * Also Note: Dated code, overdue for a cleanup/rewrite (IMHO).
      */
-    Fprintf(cdip, "\n");
     if ( (cdip->di_dtype->dt_dtype == DT_REGULAR) ||
 	 (cdip->di_dtype->dt_dtype == DT_BLOCK) ) {
 	Fprintf(cdip, "Rereading and verifying record data using Direct I/O...\n");
@@ -538,8 +550,6 @@ verify_reread(
     *dip = *cdip;	 /* Copy current device information. */
     dip->di_fd = NoFd;
     record_offset = cdip->di_offset;
-    /* Note: We've switched to pread()/pwrite() so... */
-    //record_offset = get_current_offset(cdip, (ssize_t)bcount);
     oflags = OS_READONLY_MODE;
 
     /*
@@ -589,7 +599,6 @@ verify_reread(
     /*
      * Steps/Logic:
      * - open the device/file (again)
-     * - seek to the failing offset
      * - reread the record data
      * - verify against previous read data (verify == write error)
      * - verify against expected data (verify == read error)
@@ -600,16 +609,6 @@ verify_reread(
     dip->di_rDebugFlag = True;		/* Report our seek info. */
 
     do {
-#if 0
-	/* Note: Should NOT need since we switched to pread()/pwrite() API's! */
-	if (dip->di_scsi_io_flag == False) {
-	    if ( (dip->di_offset = set_position(dip, record_offset, False)) != record_offset) {
-		Fprintf(dip, "Seek failed, exiting...\n");
-		status = FAILURE;
-		goto cleanup_exit;
-	    }
-	}
-#endif /* 0 */
 	report_record(dip, (dip->di_files_read + 1), (dip->di_records_read + 1),
 			   (record_offset / dip->di_dsize), record_offset,
 			   READ_MODE, reread_buffer, bcount);
@@ -634,17 +633,19 @@ verify_reread(
 		Fprintf(dip, "Reread data does NOT match previous data or expected data!\n");
 	    }
 	}
-	if (dip->di_loop_on_error) {
+	if (cdip->di_save_corrupted) {
+	    (void)save_corrupted_data(cdip, cdip->di_dname, reread_buffer, count, False);
+	}
+	if ( (++retries < dip->di_retryDC_limit) || dip->di_loop_on_error) {
 
 	    PAUSE_THREAD(cdip);
 	    if ( THREAD_TERMINATING(cdip) ) break;
 	    if (cdip->di_terminating) break;
 
-	    retries++;
-	    Fprintf(dip, "Delaying %u seconds after retry %d...\n", (dip->di_retry_delay * retries), retries);
-	    SleepSecs(dip, (dip->di_retry_delay * retries) );
+	    Fprintf(dip, "Delaying %u seconds after retry %d...\n", (dip->di_retryDC_delay * retries), retries);
+	    SleepSecs(dip, (dip->di_retryDC_delay * retries) );
 	}
-    } while ( dip->di_loop_on_error );
+    } while ( (retries < dip->di_retryDC_limit) || dip->di_loop_on_error );
 
     /*
      * Ok, we're done... cleanup!
@@ -667,7 +668,7 @@ cleanup_exit:
 	free_palign(dip, reread_buffer);
     }
     if (dip) {
-	Free(dip, dip); dip = NULL;
+	Free(cdip, dip); dip = NULL;
     }
     return(status);
 }
@@ -742,6 +743,67 @@ report_reread_command(dinfo_t *dip, size_t request_size, Offset_t record_offset,
     Fprintf(dip, "%s\n", str);
     Fprintf(dip, "\n");
     return;
+}
+
+static int
+save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, hbool_t corrupt_flag)
+{
+    HANDLE	fd = NoFd;
+    char	corrupt_file[STRING_BUFFER_SIZE];
+    char	*cbp, *dir = NULL, *file, *path, *p;
+    char	*postfix = (corrupt_flag) ? "CORRUPT" : "REREAD";
+    unsigned int corrupt_count = 0;
+    ssize_t	count = 0;
+    int		oflags = (O_CREAT|O_WRONLY);
+    int		status = SUCCESS;
+
+    if (dip->di_log_dir) {
+        dir = dip->di_log_dir;
+    } else if ( (path = error_log) ||
+		(path = dip->di_job_log) ||
+		(path = dip->di_log_file) ) {
+	if (p = strrchr(path, dip->di_dir_sep)) {
+	    dir = ++p;
+	}
+    }
+    /* Find the basename of the file. */
+    if (p = strrchr(filepath, dip->di_dir_sep)) {
+        file = ++p;
+    } else {
+        file = filepath;
+    }
+    /* Loop until we find a non-existent file, to avoid overwrites. */
+    while (True) {
+	cbp = corrupt_file;
+	if (dir) {
+	    cbp += sprintf(cbp, "%s%c", dir, dip->di_dir_sep);
+	}
+	cbp += sprintf(cbp, "%s-%s%u", file, postfix, corrupt_count);
+	if (os_file_exists(corrupt_file) == False) {
+	    break;
+	}
+	corrupt_count++;
+    }
+    fd = dt_open_file(dip, corrupt_file, oflags, FILE_CREATE_MODE, NULL, NULL, False, False);
+    if (fd == NoFd) {
+	status = FAILURE;
+    } else {
+	if (dip->di_verbose_flag) {
+	    char *filetype = (corrupt_flag) ? "corrupted" : "reread";
+	    Fprintf(dip, "Writing %s data to file %s...\n", filetype, corrupt_file);
+	}
+	if ( (count = os_write_file(fd, buffer, bufsize)) != bufsize) {
+	    if ((ssize_t)count == FAILURE) {
+		ReportErrorInfo(dip, corrupt_file, os_get_error(), OS_WRITE_FILE_OP, WRITE_OP, False);
+		status = FAILURE;
+	    } else {
+		Eprintf(dip, "Attempted to write %d bytes, wrote only %d bytes.", bufsize, count);
+		status = FAILURE;
+	    }
+	}
+	(void)os_close_file(fd);
+    }
+    return(status);
 }
 
 static int

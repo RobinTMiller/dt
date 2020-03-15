@@ -36,6 +36,9 @@
 /*	 But that said, required typedef's are in sys/types.h      */
 #include <sys/types.h>
 
+#if defined(__hpux)
+#  include <sys/fs/vx_ioctl.h>
+#else /* !defined(__hpux) */
 //#if defined(SOLARIS)
 /* This is for enabling Direct I/O on VxFS! */
 /* https://searchcode.com/codesearch/view/4922497/ */
@@ -44,6 +47,7 @@
 #  define VX_GETCACHE     (VX_IOCTL | 2)   /* get cache advice */
 #  define VX_DIRECT       0x00004          /* perform direct (un-buffered) I/O */
 //#endif /* defined(SOLARIS) */
+#endif /* defined(__hpux) */
 
 #if defined(__linux__) || defined(MacDarwin)
 #  include <stdint.h>
@@ -114,9 +118,7 @@
 #define TEMP_DIR_NAME		TEMP_DIR
 #define TEMP_DIR_LEN		(sizeof(TEMP_DIR_NAME) - 1)
 
-#define TRIGGER_SCRIPT	"/x/eng/localtest/noarch/bin/dt_noprog_script.ksh"
-/* Note: This is the new location we *should* eventually move to! */
-//#define TRIGGER_SCRIPT	"/usr/software/test/noarch/bin/dt_noprog_script.ksh"
+#define TRIGGER_SCRIPT		"/auto/share/IOGenerationTools/Dt/Scripts/dt_noprog_script.ksh"
 
 /*
  * Define POSIX Mode for Creating Files & Directories:

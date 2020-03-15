@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,11 @@
  *	Generic test functions for the 'dt' program.
  *
  * Modification History:
+ * 
+ * June 10th, 2019 by Robin T. Miller
+ *      Fix the substring search for 'xfs' to be an exact string match, so
+ * 'vxfs' is *not* mistaken for XFS file system (sigh, too much cut/paste).
+ * Also, only set the min/max block size for XFS if they were specified.
  * 
  * August 19th, 2015 by Robin T. Miller
  * 	If testing to the Linux memory file system (tmpfs), disable DIO,
@@ -277,6 +282,15 @@ retry:
 	    status = os_DirectIO(dip, file, True); /* enable DIO! */
 	} else if ( (dip->di_buffer_mode == BUFFERED_IO) && (dio_flag == True) ) {
 	    status = os_DirectIO(dip, file, False); /* For NFS, DIO is sticky, so disable! */
+	}
+    }
+#elif !defined(WIN32)
+    if (status == SUCCESS) {
+	hbool_t dio_flag = isDirectIO(dip);
+	if (dip->di_filesystem_type && EQ(dip->di_filesystem_type, "vxfs")) {
+	    if (dio_flag == True) {
+		(void)os_VeritasDirectIO(dip, file, True); /* enable DIO! */
+	    }
 	}
     }
 #endif /* defined(MacDarwin) || defined(SOLARIS) */
@@ -1325,20 +1339,20 @@ validate_opts(struct dinfo *dip)
 	 * Note: We're adjusting a few things we can do safely, but we can't do all!
 	 * Also Note: Many other sanity checks are missed by Mickey Mousing this here!
 	 */ 
-	if (dip->di_filesystem_type && EQS(dip->di_filesystem_type, "xfs")) {
+	if (dip->di_filesystem_type && EQ(dip->di_filesystem_type, "xfs")) {
 	    if (dip->di_device_size < XFS_DIO_BLOCK_SIZE) {
 		if (dip->di_verbose_flag) {
 		    Wprintf(dip, "Setting the device size to %u for XFS filesystem.\n",  XFS_DIO_BLOCK_SIZE);
 		}
 		dip->di_device_size = dip->di_dsize = XFS_DIO_BLOCK_SIZE;
 	    }
-	    if (dip->di_min_size < dip->di_dsize) {
+	    if ( dip->di_min_size && (dip->di_min_size < dip->di_dsize) ) {
 		if (dip->di_verbose_flag) {
 		    Wprintf(dip, "Setting the minimum block size to %u for XFS filesystem.\n", dip->di_dsize);
 		}
 		dip->di_min_size = dip->di_dsize;
 	    }
-	    if (dip->di_max_size < dip->di_dsize) {
+	    if ( dip->di_max_size && (dip->di_max_size < dip->di_dsize) ) {
 		if (dip->di_verbose_flag) {
 		    Wprintf(dip, "Setting the maximum block size to %u for XFS filesystem.\n", dip->di_dsize);
 		}

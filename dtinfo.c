@@ -31,7 +31,14 @@
  *      Setup device and/or system information for 'dt' program.
  * 
  * Modification History:
- *
+ * 
+ * July 19th, 2019 by Robin T. Miller
+ *      When user specifies an alternate device size (dsize=4k), ensure all
+ * device size and I/O parameters are updated accordingly.
+ * Note: This mismatch caused a false corruption due to I/O sizes NOT being
+ * modulo the user device size, and did not enforce aligned I/O on the same.
+ * When using block tags, the CRC generated on short reads was incorrect!
+ * 
  * July 8th, 2019 by Robin T. Miller
  *      Update setup_device_info() to always call os_system_device_info() so
  * disk specific information from the OS via IOCTL gets setup properly. This
@@ -174,9 +181,11 @@ setup_device_defaults(struct dinfo *dip)
 	 * But that said, changing this now may break other sanity checks!
 	 * Why bother? We can't do modulo dsize/bs sanity checks as it is!
 	 */
-	/*
-	 * Real device size should already been obtained.
-	 */
+	if (dip->di_debug_flag) {
+	    Printf(dip, "Device size: %u, Real Device Size: %u, User Device Size: %u\n",
+		   dip->di_dsize, dip->di_rdsize, dip->di_device_size);
+	}
+	if (dip->di_device_size) dip->di_dsize = dip->di_device_size; /* Override! */
 	if (!dip->di_device_size && dip->di_rdsize) dip->di_device_size = dip->di_rdsize;
 	if (!dip->di_device_size) dip->di_device_size = BLOCK_SIZE;
 	if (!dip->di_lbdata_size) dip->di_lbdata_size = dip->di_device_size;
@@ -185,6 +194,12 @@ setup_device_defaults(struct dinfo *dip)
 	/* Ensure min and incr values are non-zero! */
 	if (dip->di_max_size && !dip->di_min_size) dip->di_min_size = dip->di_device_size;
 	if (dip->di_min_size && !dip->di_incr_count) dip->di_incr_count = dip->di_device_size;
+	/* Ensure variable sizes are in line with the device size (user or OS block size). */
+	if (dip->di_block_size < dip->di_device_size) dip->di_block_size = dip->di_device_size;
+	if (dip->di_min_size && (dip->di_min_size < dip->di_device_size)) dip->di_min_size = dip->di_device_size;
+	if (dip->di_max_size && (dip->di_max_size < dip->di_device_size)) dip->di_max_size = dip->di_device_size;
+	if (dip->di_incr_count && (dip->di_incr_count < dip->di_device_size)) dip->di_incr_count = dip->di_device_size;
+	/* End of device size sanity checks! */
 	if (dip->di_fsalign_flag && dip->di_random_io) {
 	    if (!dip->di_random_align) dip->di_random_align = dip->di_device_size;
 	}
@@ -765,7 +780,7 @@ os_system_device_info(struct dinfo *dip)
 	dip->di_rdsize = sect_size;
 	if (!dip->di_dsize) dip->di_dsize = dip->di_rdsize;
 	if (dip->di_debug_flag) {
-	    Printf(dip, "BLKSSZGET Sector Size: %u bytes\n", dip->di_dsize);
+	    Printf(dip, "BLKSSZGET Sector Size: %u bytes\n", dip->di_rdsize);
 	}
 	dip->di_dtype = setup_device_type("disk");
     }
@@ -819,13 +834,15 @@ os_get_block_size(dinfo_t *dip, int fd, char *device_name)
     }
 
     /*
-     * Try to obtain the sector size.
+     * Try to obtain the sector size. (actually works with some file systems)
      */
     if (ioctl (fd, BLKSSZGET, &sect_size) == SUCCESS) {
 	dip->di_rdsize = sect_size;
-	dip->di_dsize = dip->di_rdsize; /* override previous dsize! */
+	/* Note: The device size may have been set by user device size! */
+	if (!dip->di_dsize) dip->di_dsize = dip->di_rdsize;
+	//dip->di_dsize = dip->di_rdsize; /* override previous dsize! */
 	if (dip->di_debug_flag) {
-	    Printf(dip, "BLKSSZGET Sector Size: %u bytes\n", dip->di_dsize);
+	    Printf(dip, "BLKSSZGET Sector Size: %u bytes\n", dip->di_rdsize);
 	}
     }
     if (temp_fd) (void)close(fd);
@@ -941,7 +958,8 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
     }
 
     /*
-     * Setup the user specified device size (if any).
+     * Setup the user specified device size (if any). 
+     * By setting here, OS device setup leaves alone!
      */
     if (dip->di_device_size) {
 	dip->di_dsize = dip->di_device_size;
@@ -1064,6 +1082,7 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
     }
     /*
      * If the device size isn't set, then set it to our default.
+     * With normal disks, this is setup by os_system_device_info()
      *
      * Note: This size is used for finding disk capacity, random I/O,
      *	     variable requests, and reporting failing relative block.

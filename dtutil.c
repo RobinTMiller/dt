@@ -31,6 +31,11 @@
  * 
  * Modification History:
  * 
+ * August 17th, 2019 by Robin T. Miller
+ *      Update OS block tick conversion to avoid negative values, seen after
+ * ~597 hours on Windows, calculated values went negative for "%et" format.
+ * The new format is dayshoursminutessecondsfraction or ddhhmmss.ff
+ * 
  * September 1st, 2017 by Robin T. Miller
  *      Update get_data_size() to handle separate read/write block sizes.
  * 
@@ -87,6 +92,8 @@
 /*
  * Forward References:
  */
+void convert_clock_ticks(clock_t ticks, clock_t *days, clock_t *hours,
+			 clock_t *minutes, clock_t *seconds, clock_t *frac);
 int ExecuteBuffered(dinfo_t *dip, char *cmd, char *buffer, int bufsize);
 int vSprintf(char *bufptr, const char *msg, va_list ap);
 static int get_max_cpu_busy(dinfo_t *dip, char *cmd);
@@ -797,23 +804,68 @@ copy_pattern (u_int32 pattern, u_char *buffer)
 }
 
 /*
+ * convert_clock_ticks() - Convert OS clock ticks to time values. 
+ *  
+ * Note: clock_ticks is defined as long on Linux and Windows, but this 
+ * value is in system click ticks from sysconf(_SC_CLK_TCK), which on 
+ * Linux is 100 while on Windows is 1000, so wrapping occurs sooner on 
+ * Windows causing tme values to become negative. Therefore, the signed 
+ * clock_t os cast to an unsigned long to avoid negative time values. 
+ * In fact, the times() API used will return -1 when it fails. 
+ *  
+ * Clearly using times() needs replaced with a better method (see below):
+ *  
+ * On Linux, the "arbitrary point in the past" from which the return value of times()
+ * is measured has varied across kernel versions. On Linux 2.4 and earlier this point
+ * is the moment the system was booted. Since Linux 2.6, this point is (2^32/HZ) - 300
+ * (i.e., about 429 million) seconds before system boot time. This variability across
+ * kernel versions (and across UNIX implementations), combined with the fact that the
+ * returned value may overflow the range of clock_t, means that a portable application
+ * would be wise to avoid using this value.
+ * To measure changes in elapsed time, use clock_gettime(2) instead. 
+ *  
+ * TODO:
+ *     int clock_getres(clockid_t clk_id, struct timespec *res);
+ *     int clock_gettime(clockid_t clk_id, struct timespec *tp);
+ *  
+ * The above API's do not exist on Windows, see this URL for guideance: 
+ *     https://stackoverflow.com/questions/5404277/porting-clock-gettime-to-windows 
+ */
+void
+convert_clock_ticks(clock_t ticks, clock_t *days, clock_t *hours,
+		    clock_t *minutes, clock_t *seconds, clock_t *frac)
+{
+    unsigned long clock_ticks = (unsigned long)ticks; /* Bandaide, may help! */
+    *frac = (clock_ticks % hertz);
+    *frac = (*frac * 100) / hertz;
+    clock_ticks /= hertz;
+    *seconds = (clock_ticks % SECS_PER_MIN);
+    clock_ticks /= SECS_PER_MIN;
+    *minutes = (clock_ticks % MINS_PER_HOUR);
+    clock_ticks /= MINS_PER_HOUR;
+    *hours = (clock_ticks % HOURS_PER_DAY);
+    clock_ticks /= HOURS_PER_DAY;
+    *days = clock_ticks;
+    return;
+}
+
+/*
  * Function to display ASCII time.
  */
 char *
 bformat_time(char *bp, clock_t ticks)
 {
-    u_int hr, min, sec, frac;
+    clock_t days, hours, minutes, seconds, frac;
 
-    frac = ticks % hertz;
-    frac = (frac * 100) / hertz;
-    ticks /= hertz;
-    sec = ticks % 60; ticks /= 60;
-    min = ticks % 60;
-    if ( (hr = ticks / 60) ) {
-	bp += Sprintf(bp, "%dh", hr);
+    convert_clock_ticks(ticks, &days, &hours, &minutes, &seconds, &frac);
+    if (days) {
+	bp += Sprintf(bp, "%dd", days);
+	bp += Sprintf(bp, "%02dh", hours);
+    } else if (hours) {
+	bp += Sprintf(bp, "%dh", hours);
     }
-    bp += Sprintf(bp, "%02dm", min);
-    bp += Sprintf(bp, "%02d.", sec);
+    bp += Sprintf(bp, "%02dm", minutes);
+    bp += Sprintf(bp, "%02d.", seconds);
     bp += Sprintf(bp, "%02ds", frac);
     return(bp);
 }
@@ -821,19 +873,18 @@ bformat_time(char *bp, clock_t ticks)
 void
 print_time(dinfo_t *dip, FILE *fp, clock_t ticks)
 {
-    u_int hr, min, sec, frac;
+    clock_t days, hours, minutes, seconds, frac;
     int flags = (PRT_NOFLUSH|PRT_NOLEVEL|PRT_NOIDENT);
 
-    frac = ticks % hertz;
-    frac = (frac * 100) / hertz;
-    ticks /= hertz;
-    sec = ticks % 60; ticks /= 60;
-    min = ticks % 60;
-    if ( (hr = ticks / 60) ) {
-	LogMsg(dip, fp, logLevelError, flags, "%dh", hr);
+    convert_clock_ticks(ticks, &days, &hours, &minutes, &seconds, &frac);
+    if (days) {
+	LogMsg(dip, fp, logLevelError, flags, "%dd", days);
+	LogMsg(dip, fp, logLevelError, flags, "%02dh", hours);
+    } else {
+	LogMsg(dip, fp, logLevelError, flags, "%dh", hours);
     }
-    LogMsg(dip, fp, logLevelError, flags, "%02dm", min);
-    LogMsg(dip, fp, logLevelError, flags, "%02d.", sec);
+    LogMsg(dip, fp, logLevelError, flags, "%02dm", minutes);
+    LogMsg(dip, fp, logLevelError, flags, "%02d.", seconds);
     LogMsg(dip, fp, logLevelError, flags, "%02ds\n", frac);
     return;
 }
@@ -841,39 +892,46 @@ print_time(dinfo_t *dip, FILE *fp, clock_t ticks)
 void
 format_time(dinfo_t *dip, clock_t ticks)
 {
-    clock_t hr, min, sec, frac;
-    frac = (ticks % hertz);
-    frac = (frac * 100) / hertz;
-    ticks /= hertz;
-    sec = ticks % 60; ticks /= 60;
-    min = ticks % 60;
-    if ( (hr = ticks / 60) ) {
-	Lprintf (dip, "%dh", hr);
+    clock_t days, hours, minutes, seconds, frac;
+
+    convert_clock_ticks(ticks, &days, &hours, &minutes, &seconds, &frac);
+    if (days) {
+	Lprintf(dip, "%dd", days);
+	Lprintf(dip, "%02dh", hours);
+    } else if (hours) {
+	Lprintf(dip, "%dh", hours);
     }
-    Lprintf(dip, "%02dm", min);
-    Lprintf(dip, "%02d.", sec);
+    Lprintf(dip, "%02dm", minutes);
+    Lprintf(dip, "%02d.", seconds);
     Lprintf(dip, "%02ds\n", frac);
+    return;
 }
 
 /*
- * Format the elapsed time.
+ * Format the elapsed time. 
+ *  
+ * Inputs: 
+ *      buffer = Buffer for time string.
+ *      ticks = The elapsed time in ticks.
+ *  
+ * Return Value: 
+ * 	Length of time string. 
  */
 int
 FormatElapstedTime(char *buffer, clock_t ticks)
 {
     char *bp = buffer;
-    unsigned int hr, min, sec, frac;
+    clock_t days, hours, minutes, seconds, frac;
 
-    frac = (ticks % hertz);
-    frac = (frac * 100) / hertz;
-    ticks /= hertz;
-    sec = ticks % 60; ticks /= 60;
-    min = ticks % 60;
-    if (hr = ticks / 60) {
-	bp += Sprintf(bp, "%dh", hr);
+    convert_clock_ticks(ticks, &days, &hours, &minutes, &seconds, &frac);
+    if (days) {
+	bp += Sprintf(bp, "%dd", days);
+	bp += Sprintf(bp, "%02dh", hours);
+    } else if (hours) {
+	bp += Sprintf(bp, "%dh", hours);
     }
-    bp += Sprintf(bp, "%02dm", min);
-    bp += Sprintf(bp, "%02d.", sec);
+    bp += Sprintf(bp, "%02dm", minutes);
+    bp += Sprintf(bp, "%02d.", seconds);
     bp += Sprintf(bp, "%02ds", frac);
     return( (int)(bp - buffer) );
 }
@@ -2353,7 +2411,7 @@ check_trigger_control(dinfo_t *dip, char *str)
 	return(TRIGGER_ON_ALL);
     } else if (strcmp(str, "errors") == 0) {
 	return(TRIGGER_ON_ERRORS);
-    } else if (strcmp(str, "miscompare") == 0) {
+    } else if ( (strcmp(str, "miscompare") == 0) || strcmp(str, "corruption") == 0) {
 	return(TRIGGER_ON_MISCOMPARE);
     } else if (strcmp(str, "noprogs") == 0) {
 	return(TRIGGER_ON_NOPROGS);

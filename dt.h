@@ -33,7 +33,7 @@
 #define _THREAD_SAFE 1
 
 /* Vendor Control Flags: */
-#define HGST	1
+#define HGST	0
 #define Nimble	0
 
 #if defined(AIX_WORKAROUND)
@@ -220,6 +220,9 @@
 #define RETRY_ENTRIES	25			/* The number of retry errors.	*/
 /* Note: (5 * 60) = 300 seconds or 5 minutes! */
 #define RETRY_LIMIT	60			/* Default retry limit.		*/
+#define RETRYDC_DELAY	5			/* Default retry DC delay (secs).*/
+#define RETRYDC_LIMIT	1			/* Retry data corruption limit.	*/
+#define SAVE_CORRUPTED	True			/* Default save corrupted data.	*/
 
 /*
  * Default random block sizes (match up with sio).
@@ -387,7 +390,7 @@ typedef enum dispose {DELETE_FILE, KEEP_FILE, KEEP_ON_ERROR} dispose_t;
 typedef enum file_type {INPUT_FILE, OUTPUT_FILE} file_type_t;
 typedef enum test_mode {READ_MODE, WRITE_MODE} test_mode_t;
 typedef enum onerrors {ONERR_ABORT, ONERR_CONTINUE, ONERR_PAUSE} onerrors_t;
-typedef enum iobehavior { DT_IO, DTAPP_IO, THUMPER_IO } iobehavior_t;
+typedef enum iobehavior { DT_IO, DTAPP_IO } iobehavior_t;
 typedef enum iodir {FORWARD, REVERSE, NUM_IODIRS = 2} iodir_t;
 typedef enum iomode {COPY_MODE, MIRROR_MODE, TEST_MODE, VERIFY_MODE} iomode_t;
 typedef enum iotype {SEQUENTIAL_IO, RANDOM_IO, NUM_IOTYPES = 2} iotype_t;
@@ -892,6 +895,8 @@ typedef struct dinfo {
 	vbool_t	di_retrying;		/* The recovery retrying flag.	*/
 	u_char	*di_saved_pattern_ptr;	/* Saved pattern buf pointer.	*/
 	hbool_t	di_retryDC_flag;	/* Retry data corruptions.	*/
+	u_int	di_retryDC_delay;	/* The default retry delay.	*/
+	u_int	di_retryDC_limit;	/* Retry data corruption limit.	*/
 	u_int	di_retry_delay;		/* The default retry delay.	*/
 	int	di_retry_errors[RETRY_ENTRIES]; /* Errors to retry.	*/
 	int	di_retry_entries;	/* The number of error codes.	*/
@@ -900,6 +905,7 @@ typedef struct dinfo {
 	hbool_t	di_retry_disconnects;	/* Retry session disconnects.	*/
 	hbool_t di_retry_warning;	/* Retries logged as warning,	*/
 					/* until retry limit reached.	*/
+	hbool_t	di_save_corrupted;	/* Save corrupted file data.	*/
 	/*
 	 * History Information:
 	 */
@@ -970,6 +976,7 @@ typedef struct dinfo {
         size_t  di_verify_buffer_size;  /* The verify buffer size.      */
 	btag_t	*di_btag;		/* The block tag (btag) buffer.	*/
 	uint32_t di_btag_vflags;	/* The btag verify flags.	*/
+	uint32_t di_initial_vflags;	/* The initial verify flags.	*/
 	u_char	*di_base_buffer;	/* Base address of data buffer.	*/
 	u_char	*di_data_buffer;	/* Pointer to data buffer.	*/
 	u_char	*di_mmap_buffer;	/* Pointer to mmapped buffer.	*/
@@ -1103,8 +1110,6 @@ typedef struct dinfo {
 	hbool_t	di_fsincr_flag;		/* File size increment flag.	*/
 	hbool_t	di_fsync_flag;		/* fsync() after writes flag.	*/
 	u_int	di_fsync_frequency;	/* The file flush frequency.	*/
-	hbool_t	di_fsalign_flag;	/* Align FS offsets and sizes.  */
-	hbool_t	di_fsfile_flag;		/* The file system file flag.	*/
 	hbool_t	di_mount_lookup;	/* The mount point lookup flag.	*/
 	hbool_t	di_multiple_devs;	/* Multiple devices flag.	*/
 	hbool_t	di_multiple_dirs;	/* Multiple directories flag.	*/
@@ -1238,6 +1243,7 @@ typedef struct dinfo {
 	 * Trigger Definitions: 
 	 */
 	hbool_t	di_trigargs_flag;	/* Trigger arguments flag.	*/
+	hbool_t	di_trigdelay_flag;	/* Delay mismatch triggers.	*/
 	vbool_t	di_trigger_active;	/* The trigger active flag.	*/
 	int	di_num_triggers;	/* The number of triggers.	*/
 	int	di_trigger_action;	/* The trigger action (user).	*/
@@ -1348,12 +1354,6 @@ typedef struct dinfo {
 	hbool_t	di_scsi_flag;		/* The SCSI control flag.	*/
 	hbool_t	di_scsi_io_flag;	/* Flag to control SCSI I/O.	*/
 	/*
-	 * File System Information:
-	 */
-	uint32_t di_fs_block_size;	/* The file system block size.	*/
-	large_t	di_fs_space_free;	/* The file system free space.	*/
-	large_t di_fs_total_space;	/* The total file system space.	*/
-	/*
 	 * Mounted File System Information:
 	 */
 	char	*di_mounted_from_device;/* The mount from device name.	*/
@@ -1367,6 +1367,16 @@ typedef struct dinfo {
 	char	*di_volume_name;	/* The volume name.		*/
 	char	*di_volume_path_name;	/* The volume path name.	*/
 	uint32_t di_volume_serial_number; /* The volume serial number.	*/
+	/*
+	 * File System Information:
+	 */
+	hbool_t	di_fsalign_flag;	/* Align FS offsets and sizes.  */
+	hbool_t	di_fsfile_flag;		/* The file system file flag.	*/
+	hbool_t	di_fsmap_flag;		/* Flag to control FS file map.	*/
+	uint32_t di_fs_block_size;	/* The file system block size.	*/
+	large_t	di_fs_space_free;	/* The file system free space.	*/
+	large_t di_fs_total_space;	/* The total file system space.	*/
+	void	*di_fsmap;		/* The file system map info.	*/
 	/*
 	 * File system trim Parameters:
 	 */
@@ -2465,10 +2475,29 @@ extern int fifo_open(struct dinfo *dip, int mode);
 extern void dump_buffer(	dinfo_t		*dip,
 				char		*name,
 				u_char		*base,
-				u_char		*ptr,
+				u_char		*cptr,
 				size_t		dump_size,
 				size_t		bufr_size,
 				hbool_t		expected);
+extern void dump_buffer_legacy(	dinfo_t		*dip,
+				char		*name,
+				u_char		*base,
+				u_char		*cptr,
+				size_t		dump_size,
+				size_t		bufr_size,
+				hbool_t		expected);
+extern void dump_expected_buffer(dinfo_t	*dip,
+				char		*name,
+				u_char		*base,
+				u_char		*ptr,
+				size_t		dump_size,
+				size_t		bufr_size );
+extern void dump_received_buffer(dinfo_t	*dip,
+				char		*name,
+				u_char		*base,
+				u_char		*ptr,
+				size_t		dump_size,
+				size_t		bufr_size );
 extern int verify_buffers(	struct dinfo	*dip,
 				u_char		*dbuffer,
 				u_char		*vbuffer,
@@ -2558,6 +2587,11 @@ extern int os_DirectIO(struct dinfo *dip, char *file, hbool_t flag);
 #endif /* defined(MacDarwin) || defined(SOLARIS) */
 extern int os_VeritasDirectIO(struct dinfo *dip, char *file, hbool_t flag);
 
+/* File Map API's */
+extern void *os_get_file_map(dinfo_t *dip, HANDLE fd);
+extern int os_report_file_map(dinfo_t *dip, HANDLE fd);
+extern uint64_t os_map_offset_to_lba(dinfo_t *dip, HANDLE fd, Offset_t offset);
+
 /* dtunix.c and dtwin.c */
 extern void ReportOpenInformation(dinfo_t *dip, char *FileName, char *Operation,
 				  uint32_t DesiredAccess,
@@ -2583,5 +2617,3 @@ extern void show_workloads(dinfo_t *dip, char *workload_name);
 /*
  * Other I/O Behaviors:
  */
-extern void dtapp_set_iobehavior_funcs(dinfo_t *dip);
-extern void thumper_set_iobehavior_funcs(dinfo_t *dip);

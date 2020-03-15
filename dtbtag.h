@@ -1,6 +1,6 @@
 /****************************************************************************
  *                                                                          *
- *                      COPYRIGHT (c) 1988 - 2017                           *
+ *                      COPYRIGHT (c) 1988 - 2019                           *
  *                       This Software Provided                             *
  *                               By                                         *
  *                      Robin's Nest Software Inc.                          *
@@ -44,9 +44,13 @@
 #define HOST_SIZE       24
 
 /* 
- * Note: NetApp serial numbers are only 12 characters, but we round up!
+ * Note: Please configure this serial number size for your storage devices. 
+ * TODO: Plese consider defining the serial number size at compile time! 
  */
-#define SERIAL_SIZE     16              /* SAN LUN serial number size. */
+#if !defined(SERIAL_SIZE) 
+#  define SERIAL_SIZE	16		/* SAN LUN serial number size.	*/
+#endif /* !defined(SERIAL_SIZE) */
+
 /* 
  * FYI: The device identifier may be more appropriate. than the serial #.
  */
