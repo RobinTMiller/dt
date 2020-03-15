@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: July 8th, 2019"VARIANT", Version: 21.38, Author: Robin T. Miller";
+char *version_str = "Date: October 7th, 2019"VARIANT", Version: 21.39, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)

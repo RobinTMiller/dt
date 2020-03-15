@@ -286,6 +286,9 @@ typedef struct scsi_generic {
 #define ASC_POWER_ON_RESET	0x29  /* A power on reset condition.      */
 #define ASC_PARAMETERS_CHANGED	0x2A  /* Parameters changed condition.    */
 
+/* (0x4, 0xb) - Logical unit not accessible, target port in standby state */
+#define ASQ_STANDBY_STATE	0x0B  /* Target port in standby state.    */
+
 /*
  * Generic Request Sense Data:
  */

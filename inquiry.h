@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2017			    *
+ *			  COPYRIGHT (c) 2006 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -307,9 +307,8 @@ typedef struct inquiry_header {
 #else
 #	error "bitfield ordering is NOT defined!"
 #endif /* defined(_BITFIELDS_LOW_TO_HIGH_) */
-	unsigned char inq_page_code;	/* The inquiry page code.	[1] */
-	unsigned char inq_reserved;	/* Reserved.			[2] */
-	unsigned char inq_page_length;	/* The page code length.	[3] */
+	uint8_t inq_page_code;		/* The inquiry page code.	[1] */
+	uint8_t inq_page_length[2];	/* The page code length.     [2-3] */
 					/* Variable length data follows.    */
 } inquiry_header_t;
 
@@ -317,7 +316,7 @@ typedef struct inquiry_header {
 
 typedef struct inquiry_page {
 	inquiry_header_t inquiry_hdr;
-	unsigned char inquiry_page_data[MAX_INQ_PAGE_LENGTH];
+	uint8_t inquiry_page_data[MAX_INQ_PAGE_LENGTH];
 } inquiry_page_t;
 
 /*

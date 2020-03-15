@@ -34,6 +34,10 @@
  * 
  * Modification History:
  * 
+ * July 18th, 2019 by Robin T. Miller
+ *      Do not retry "target port in standby state" sense code/qualifier,
+ * otherwise we loop forever, since we do not have retry limit on this error.
+ * 
  * January 23rd, 2013 by Robin T. Miller
  * 	Update libExecuteCdb() to allow a user defined execute CDB function.
  * 	Added command retries, including OS specific error recovery.
@@ -152,8 +156,12 @@ libIsRetriable(scsi_generic_t *sgp)
 		     * "Logical unit is in process of becoming ready"
 		     * "Logical unit not ready, space allocation in progress"
 		     * Note: We'll be more selective, if this becomes an issue!
-		     */ 
-		    retriable = True;
+		     */
+		    /* Note: We do not retry this error, or we'll loop forever! */
+		    /* (0x4, 0xb) - Logical unit not accessible, target port in standby state */
+		    if (asq != ASQ_STANDBY_STATE) {
+			retriable = True;
+		    }
 		}
 	    }
 	}
