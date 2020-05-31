@@ -1,6 +1,6 @@
 /****************************************************************************
  *                                                                          *
- *                      COPYRIGHT (c) 1988 - 2019                           *
+ *                      COPYRIGHT (c) 1988 - 2020                           *
  *                       This Software Provided                             *
  *                               By                                         *
  *                      Robin's Nest Software Inc.                          *
@@ -48,7 +48,7 @@
  * TODO: Plese consider defining the serial number size at compile time! 
  */
 #if !defined(SERIAL_SIZE) 
-#  define SERIAL_SIZE	16		/* SAN LUN serial number size.	*/
+#define SERIAL_SIZE	16		/* SAN LUN serial number size.	*/
 #endif /* !defined(SERIAL_SIZE) */
 
 /* 
@@ -109,7 +109,19 @@
  *  
  * Note: These are the fields checked *after* the CRC is verified! 
  * These additonal checks are required since the CRC may be correct, 
- * but the btag may be stale or from a defferent device.
+ * but the btag may be stale or from a different device. 
+ *  
+ * FYI: I am omitting the "Record Size" check, to avoid *false* failures
+ * when file system full conditions occur, and to avoid messey handling.
+ * During the write, the btag has the full record size attempted, but
+ * during the read the expected size is shorter due to bytes written.
+ * Therefore, the expected btag has a different, but correct record size.
+ *
+ * The footprint for these failures looks like this during write/read pass:
+ * 
+ *    Record Size (124): incorrect
+ *             Expected: 196096 (0x0002fe00)
+ *             Received: 196608 (0x00030000)
  */
 #define BTAGV_ALL \
   ( BTAGV_LBA | \
@@ -132,7 +144,6 @@
     BTAGV_THREAD_NUMBER | \
     BTAGV_DEVICE_SIZE | \
     BTAGV_RECORD_INDEX | \
-    BTAGV_RECORD_SIZE | \
     BTAGV_RECORD_NUMBER | \
     BTAGV_STEP_OFFSET | \
     BTAGV_OPAQUE_DATA_TYPE | \
@@ -143,7 +154,7 @@
 /* 
  * Flags for a Quick Verify. 
  *  
- * Note: QV provides faster verification, but may miss some corruptions. 
+ * Note: QV provides faster verification, but will miss some corruptions!
  */
 #define BTAGV_QV \
   ( BTAGV_LBA | \
@@ -197,7 +208,7 @@
 
 /*
  * Block Tag (btag) Definition:
- * Note: Pack carefully to avoid wasted space due to alignment!
+ * Note: Pack carefully to avoid wasted space due to alignment. 
  */
 typedef struct btag {                                             /* Offset */
     union {                         /*                                  0 */
@@ -208,7 +219,6 @@ typedef struct btag {                                             /* Offset */
         uint32_t devid;             /* OS device major/minor.             */
         int64_t inode;              /* FS file i-node number.             */
     } btag_u1;
-    /* Note: This belongs in SAN btag extension, but want here for traces! */
     char     btag_serial[SERIAL_SIZE]; /* The SAN LUN serial number.   16 */
     char     btag_hostname[HOST_SIZE]; /* The host name (ASCII).       32 */
     uint32_t btag_signature;        /* Our unique binary signature.    56 */

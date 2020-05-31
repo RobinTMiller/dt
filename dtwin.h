@@ -332,6 +332,7 @@ struct timezone {
     int	tz_dsttime;	/* type of dst correction */
 };
 extern int gettimeofday(struct timeval *tv, struct timezone *tz);
+extern int highresolutiontime(struct timeval *tv, struct timezone *tz);
 
 #if !defined(INVALID_SET_FILE_POINTER)
 #   define INVALID_SET_FILE_POINTER -1

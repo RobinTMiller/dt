@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,7 +30,26 @@
  *	This file contains functions required for block tags (btag).
  *
  * Modification History:
- *
+ * 
+ * March 31st, 2020 by Robin T. Miller
+ *      Add function to display block tag verify flags that are set.
+ * 
+ * January 8th, 2020 by Robin T. Miller
+ *      When verifying the received CRC, also verify against the expected CRC
+ * when using read-after-write, since we may read stale (yet valid) btag data,
+ * but the expected btag CRC will be incorrect! Yikes, how did I miss this?
+ *      When reporting or verifying btags with read-after-write, do *not*
+ * overwrite the expected btag CRC, which should be correct from write.
+ * 
+ * January 6th, 2020 by Robin T. Miller
+ *      For file systems, if a serial number exists, verify the serial number.
+ *      Previously this was cleared for files, so we did not verify serial #
+ * and mark as incorrect if wrong. The side-by-side compare showed corruption.
+ *      Note: We still detected the corruption by other fields or CRC-32.
+ * 
+ * December 24th, 2019 by Robin T. Miller
+ *      Display file system physical LBA's when this is supported.
+ * 
  * October 6th, 2019 by Robin T. Miller
  *      With variable I/O modes, when switching from random to sequential mode,
  * use the initial btag verify flags, to prevent setting flags not intended.
@@ -39,9 +58,8 @@
  * Note: This prevents false miscompare on ENOSPC or short record writes.
  * 
  * May 28th, 2019 by Robin T. Miller
- *      With and I/O lock and random percentages, disable btag flags that
- * are not safe to verify since they may get overwritten, which leads to
- * false data corruptions.
+ *      With I/O lock and random percentages, disable btag flags that are not
+ * safe to verify since they may get overwritten, which leads to false corruptions.
  * 
  * December 29th, 2017 by Robin T. Miller
  *      When the I/O lock flag is enabled, don't compare the thread number.
@@ -94,7 +112,9 @@ initialize_btag(dinfo_t *dip, uint8_t opaque_type)
 	btag->btag_devid = HtoL32(devid);
     } else {
 	btag_flags |= BTAG_FILE;
-	dip->di_btag_vflags &= ~BTAGV_SERIAL;
+	if (dip->di_serial_number == NULL) {
+	    dip->di_btag_vflags &= ~BTAGV_SERIAL;
+	}
     }
     hostname = os_gethostname();
     if (hostname) {
@@ -237,6 +257,8 @@ static char *empty_str = "";
 static char *incorrect_str = "incorrect";
 static char *expected_str = "Expected";
 static char *received_str = "Received";
+static char *physical_str = "Physical LBA";
+static char *notmapped_str = "<not mapped or not a valid offset>";
 
 /*
  * Report (display) a Block Tag (btag).
@@ -304,21 +326,49 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 	}
 
     } else { /* Files */
-
+	uint64_t lba;
+	Offset_t offset;
 	btag_index = offsetof(btag_t, btag_offset);
 	if ( (ebtag && rbtag) &&
 	     (dip->di_btag_vflags & BTAGV_OFFSET) &&
 	     (ebtag->btag_offset != rbtag->btag_offset) ) {
-	    Fprintf(dip, DT_BTAG_FIELD "%s\n",
-		    "File Offset", btag_index, incorrect_str);
-	    Fprintf(dip, DT_FIELD_WIDTH FUF" ("LXF")\n",
-		    expected_str, LtoH64(ebtag->btag_offset), LtoH64(ebtag->btag_offset) );
-	    Fprintf(dip, DT_FIELD_WIDTH FUF" ("LXF")\n",
-		    received_str, LtoH64(rbtag->btag_offset), LtoH64(rbtag->btag_offset) );
+	    Fprintf(dip, DT_BTAG_FIELD "%s\n", "File Offset", btag_index, incorrect_str);
+	    /* Expected */
+	    offset = LtoH64(ebtag->btag_offset);
+	    Fprintf(dip, DT_FIELD_WIDTH FUF" ("LXF")\n", expected_str, offset, offset);
+	    lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_dsize, offset, MismatchedData);
+	    /* Note: Only display the physical LBA, if a file map was allocated. */
+	    if (dip->di_fsmap) {
+		if (lba == NO_LBA) {
+		    Fprintf(dip, DT_FIELD_WIDTH "%s\n", physical_str, notmapped_str);
+		} else {
+		    Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", physical_str, lba, lba);
+		}
+	    }
+	    /* Received */
+	    offset = LtoH64(rbtag->btag_offset);
+	    Fprintf(dip, DT_FIELD_WIDTH FUF" ("LXF")\n", received_str, offset, offset);
+	    lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_dsize, offset, MismatchedData);
+	    if (dip->di_fsmap) {
+		if (lba == NO_LBA) {
+		    Fprintf(dip, DT_FIELD_WIDTH "%s\n", physical_str, notmapped_str);
+		} else {
+		    Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", physical_str, lba, lba);
+		}
+	    }
+	    btag_errors++;
 	} else {
+	    offset = LtoH64(rbtag->btag_offset);
 	    Fprintf(dip, DT_BTAG_FIELD FUF" ("LXF")\n",
-		    "File Offset", btag_index,
-		    LtoH64(rbtag->btag_offset), LtoH64(rbtag->btag_offset) );
+		    "File Offset", btag_index, offset, offset);
+	    lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_dsize, offset, MismatchedData);
+	    if (dip->di_fsmap) {
+		if (lba == NO_LBA) {
+		    Fprintf(dip, DT_FIELD_WIDTH "%s\n", physical_str, notmapped_str);
+		} else {
+		    Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", physical_str, lba, lba);
+		}
+	    }
 	}
 
 	btag_index = offsetof(btag_t, btag_inode);
@@ -331,6 +381,7 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 		    expected_str, LtoH64(ebtag->btag_inode), LtoH64(ebtag->btag_inode) );
 	    Fprintf(dip, DT_FIELD_WIDTH FUF" ("LXF")\n",
 		    received_str, LtoH64(rbtag->btag_inode), LtoH64(rbtag->btag_inode) );
+	    btag_errors++;
 	} else {
 	    Fprintf(dip, DT_BTAG_FIELD FUF" ("LXF")\n",
 		    "File "OS_FILE_ID, btag_index,
@@ -455,7 +506,7 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 	time_t ewrite_start = (time_t)LtoH32(ebtag->btag_write_start);
 	time_t rwrite_start = (time_t)LtoH32(rbtag->btag_write_start);
 	Fprintf(dip, DT_BTAG_FIELD "%s\n",
-		"Write Start", btag_index, incorrect_str);
+		"Write Pass Start (secs)", btag_index, incorrect_str);
 	Fprintf(dip, DT_FIELD_WIDTH "0x%08x => %s\n",
 		expected_str, ewrite_start,
 		os_ctime(&ewrite_start, dip->di_time_buffer, sizeof(dip->di_time_buffer)) );
@@ -467,7 +518,7 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
     } else {
 	time_t rwrite_start = (time_t)LtoH32(rbtag->btag_write_start);
 	Fprintf(dip, DT_BTAG_FIELD "0x%08x => %s\n",
-		"Write Start (secs)", btag_index, rwrite_start,
+		"Write Pass Start (secs)", btag_index, rwrite_start,
 		(rwrite_start == (time_t)0) ? "<invalid time value>"
 		: os_ctime(&rwrite_start, dip->di_time_buffer, sizeof(dip->di_time_buffer)) );
     }
@@ -485,13 +536,13 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 	time_t rwrite_secs = (time_t)LtoH32(rbtag->btag_write_secs);
 	/* Note: For Windows, this is not seconds since the Epoch! */
 	Fprintf(dip, DT_BTAG_FIELD "%s\n",
-		"Write Time (secs)", btag_index, incorrect_str);
-#if defined(WIN32)
+		"Write Timestamp (secs)", btag_index, incorrect_str);
+#if defined(HighResolutionClock)
 	Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
 		expected_str, ewrite_secs);
 	Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
 		received_str, rwrite_secs);
-#else /* !defined(WIN32) */
+#else /* defined(HighResolutionClock) */
 	Fprintf(dip, DT_FIELD_WIDTH "0x%08x => %s\n",
 		expected_str, ewrite_secs,
 		os_ctime(&ewrite_secs, dip->di_time_buffer, sizeof(dip->di_time_buffer)) );
@@ -499,20 +550,20 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 		received_str, rwrite_secs,
 		(rwrite_secs == (time_t)0) ? "<invalid time value>"
 		: os_ctime(&rwrite_secs, dip->di_time_buffer, sizeof(dip->di_time_buffer)) );
-#endif /* defined(WIN32) */
+#endif /* defined(HighResolutionClock) */
 	btag_errors++;
     } else {
 	time_t rwrite_secs = (time_t)LtoH32(rbtag->btag_write_secs);
 	/* Note: For Windows, this is not seconds since the Epoch! */
-#if defined(WIN32)
+#if defined(HighResolutionClock)
 	Fprintf(dip, DT_BTAG_FIELD "0x%08x\n",
-		    "Write Time (secs)", btag_index, rwrite_secs);
-#else /* !defined(WIN32) */
+		    "Write Timestamp (secs)", btag_index, rwrite_secs);
+#else /* defined(HighResolutionClock) */
 	Fprintf(dip, DT_BTAG_FIELD "0x%08x => %s\n",
-		"Write Time (secs)", btag_index, rwrite_secs,
+		"Write Timestamp (secs)", btag_index, rwrite_secs,
 		(rwrite_secs == (time_t)0) ? "<invalid time value>"
 		: os_ctime(&rwrite_secs, dip->di_time_buffer, sizeof(dip->di_time_buffer)) );
-#endif /* defined(WIN32) */
+#endif /* defined(HighResolutionClock) */
     }
     btag_index = offsetof(btag_t, btag_write_usecs);
     if ( raw_flag && (ebtag && rbtag) &&
@@ -521,7 +572,7 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 	time_t ewrite_usecs = (time_t)LtoH32(ebtag->btag_write_usecs);
 	time_t rwrite_usecs = (time_t)LtoH32(rbtag->btag_write_usecs);
 	Fprintf(dip, DT_BTAG_FIELD "%s\n",
-		"Write Time (usecs)", btag_index, incorrect_str);
+		"Write Timestamp (usecs)", btag_index, incorrect_str);
 	Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
 		expected_str, ewrite_usecs);
 	Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
@@ -529,7 +580,7 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 	btag_errors++;
     } else {
 	Fprintf(dip, DT_BTAG_FIELD "0x%08x\n",
-		    "Write Time (usecs)", btag_index, LtoH32(rbtag->btag_write_usecs) );
+		    "Write Timestamp (usecs)", btag_index, LtoH32(rbtag->btag_write_usecs) );
     }
 
     btag_index = offsetof(btag_t, btag_pattern);
@@ -537,7 +588,7 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 	 (dip->di_btag_vflags & BTAGV_PATTERN) &&
 	 (ebtag->btag_pattern != rbtag->btag_pattern) ) {
 	Fprintf(dip, DT_BTAG_FIELD "%s\n",
-		(ebtag->btag_pattern_type) ? "IOT Seed" : "Pattern",
+		(ebtag->btag_pattern_type == PTYPE_IOT) ? "IOT Seed" : "Pattern",
 		btag_index, incorrect_str);
 	Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
 		expected_str, LtoH32(ebtag->btag_pattern) );
@@ -546,7 +597,7 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 	btag_errors++;
     } else {
 	Fprintf(dip, DT_BTAG_FIELD "0x%08x\n",
-		(rbtag->btag_pattern_type) ? "IOT Seed" : "Pattern",
+		(rbtag->btag_pattern_type == PTYPE_IOT) ? "IOT Seed" : "Pattern",
 		btag_index, LtoH32(rbtag->btag_pattern) );
     }
 
@@ -732,16 +783,29 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
     btag_index = offsetof(btag_t, btag_crc32);
     rcrc32 = calculate_btag_crc(dip, rbtag);
     if ( (ebtag && rbtag) &&
-	 (dip->di_btag_vflags & BTAGV_CRC32) &&
-	 (rcrc32 != rbtag->btag_crc32) ) {
-	Fprintf(dip, DT_BTAG_FIELD "%s\n",
-		"CRC-32", btag_index, incorrect_str);
-	Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
-		expected_str, rcrc32 );
-	Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
-		received_str, LtoH32(rbtag->btag_crc32) );
-	btag_errors++;
-	ebtag->btag_crc32 = HtoL32(rcrc32);
+	 (dip->di_btag_vflags & BTAGV_CRC32) ) {
+	uint32_t ecrc32 = LtoH32(ebtag->btag_crc32);
+	if (rcrc32 != rbtag->btag_crc32) {
+	    Fprintf(dip, DT_BTAG_FIELD "%s\n",
+		    "CRC-32", btag_index, incorrect_str);
+	    Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
+		    expected_str, rcrc32 );
+	    Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
+		    received_str, LtoH32(rbtag->btag_crc32) );
+	    btag_errors++;
+	} else if ( (raw_flag == True) && (ecrc32 != rcrc32) ) {
+	    Fprintf(dip, DT_BTAG_FIELD "%s\n",
+		    "CRC-32", btag_index, incorrect_str);
+	    Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
+		    expected_str, ecrc32 );
+	    Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
+		    received_str, LtoH32(rbtag->btag_crc32) );
+	    btag_errors++;
+	}
+	if (raw_flag == False) {
+	    /* Copy received CRC to expected since we don't have a valid one! */
+	    ebtag->btag_crc32 = HtoL32(rcrc32);
+	}
     } else {
 	Fprintf(dip, DT_BTAG_FIELD "0x%08x\n",
 		"CRC-32", btag_index, LtoH32(rbtag->btag_crc32) );
@@ -1200,6 +1264,7 @@ verify_btags(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, uint32_t *eindex, hbool
     }
 
     if (dip->di_btag_vflags & BTAGV_CRC32) {
+	uint32_t ecrc32 = LtoH32(ebtag->btag_crc32);
 	uint32_t rcrc32 = calculate_btag_crc(dip, rbtag);
 	if ( rcrc32 != LtoH32(rbtag->btag_crc32) ) {
 	    if (dip->di_btag_debugFlag) {
@@ -1209,8 +1274,19 @@ verify_btags(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, uint32_t *eindex, hbool
 	    btag_index = offsetof(btag_t, btag_crc32);
 	    if (eindex && (btag_index < *eindex)) *eindex = btag_index;
 	    btag_errors++;
+	} else if ( (raw_flag == True) && (ecrc32 != rcrc32) ) {
+	    if (dip->di_btag_debugFlag) {
+		Fprintf(dip, "BTAG: CRC-32 incorrect, expected 0x%08x, received 0x%08x\n",
+			ecrc32, rcrc32);
+	    }
+	    btag_index = offsetof(btag_t, btag_crc32);
+	    if (eindex && (btag_index < *eindex)) *eindex = btag_index;
+	    btag_errors++;
 	}
-	ebtag->btag_crc32 = HtoL32(rcrc32);
+	if (raw_flag == False) {
+	    /* REVISIT: Why am I doing this? */
+	    ebtag->btag_crc32 = HtoL32(rcrc32);
+	}
     }
 
     /*
@@ -1525,6 +1601,96 @@ show_btag_verify_flags(dinfo_t *dip)
     P(dip, "\topaque_data_size = 0x%08x\n", BTAGV_OPAQUE_DATA_SIZE);
     P(dip, "\t     opaque_data = 0x%08x\n", BTAGV_OPAQUE_DATA);
     P(dip, "\t           crc32 = 0x%08x\n", BTAGV_CRC32);
+    return;
+}
+
+void
+show_btag_verify_flags_set(dinfo_t *dip, uint32_t verify_flags)
+{
+    P(dip, "\n");
+    P(dip, "    Block Tag Verify Flags Set: 0x%08x\n", verify_flags);
+    P(dip, "\n");
+    if (verify_flags & BTAGV_LBA) {
+	P(dip, "\t             lba = 0x%08x\n", BTAGV_LBA);
+    }
+    if (verify_flags & BTAGV_OFFSET) {
+	P(dip, "\t          offset = 0x%08x\n", BTAGV_OFFSET);
+    }
+    if (verify_flags & BTAGV_DEVID) {
+	P(dip, "\t           devid = 0x%08x\n", BTAGV_DEVID);
+    }
+    if (verify_flags & BTAGV_INODE) {
+	P(dip, "\t           inode = 0x%08x\n", BTAGV_INODE);
+    }
+    if (verify_flags & BTAGV_SERIAL) {
+	P(dip, "\t          serial = 0x%08x\n", BTAGV_SERIAL);
+    }
+    if (verify_flags & BTAGV_HOSTNAME) {
+	P(dip, "\t        hostname = 0x%08x\n", BTAGV_HOSTNAME);
+    }
+    if (verify_flags & BTAGV_SIGNATURE) {
+	P(dip, "\t       signature = 0x%08x\n", BTAGV_SIGNATURE);
+    }
+    if (verify_flags & BTAGV_VERSION) {
+	P(dip, "\t         version = 0x%08x\n", BTAGV_VERSION);
+    }
+    if (verify_flags & BTAGV_PATTERN_TYPE) {
+	P(dip, "\t    pattern_type = 0x%08x\n", BTAGV_PATTERN_TYPE);
+    }
+    if (verify_flags & BTAGV_FLAGS) {
+	P(dip, "\t           flags = 0x%08x\n", BTAGV_FLAGS);
+    }
+    if (verify_flags & BTAGV_WRITE_START) {
+	P(dip, "\t     write_start = 0x%08x\n", BTAGV_WRITE_START);
+    }
+    if (verify_flags & BTAGV_WRITE_SECS) {
+	P(dip, "\t      write_secs = 0x%08x\n", BTAGV_WRITE_SECS);
+    }
+    if (verify_flags & BTAGV_WRITE_USECS) {
+	P(dip, "\t     write_usecs = 0x%08x\n", BTAGV_WRITE_USECS);
+    }
+    if (verify_flags & BTAGV_PATTERN) {
+	P(dip, "\t         pattern = 0x%08x\n", BTAGV_PATTERN);
+    }
+    if (verify_flags & BTAGV_GENERATION) {
+	P(dip, "\t      generation = 0x%08x\n", BTAGV_GENERATION);
+    }
+    if (verify_flags & BTAGV_PROCESS_ID) {
+	P(dip, "\t      process_id = 0x%08x\n", BTAGV_PROCESS_ID);
+    }
+    if (verify_flags & BTAGV_JOB_ID) {
+	P(dip, "\t          job_id = 0x%08x\n", BTAGV_JOB_ID);
+    }
+    if (verify_flags & BTAGV_THREAD_NUMBER) {
+	P(dip, "\t   thread_number = 0x%08x\n", BTAGV_THREAD_NUMBER);
+    }
+    if (verify_flags & BTAGV_DEVICE_SIZE) {
+	P(dip, "\t     device_size = 0x%08x\n", BTAGV_DEVICE_SIZE);
+    }
+    if (verify_flags & BTAGV_RECORD_INDEX) {
+	P(dip, "\t    record_index = 0x%08x\n", BTAGV_RECORD_INDEX);
+    }
+    if (verify_flags & BTAGV_RECORD_SIZE) {
+	P(dip, "\t     record_size = 0x%08x\n", BTAGV_RECORD_SIZE);
+    }
+    if (verify_flags & BTAGV_RECORD_NUMBER) {
+	P(dip, "\t   record_number = 0x%08x\n", BTAGV_RECORD_NUMBER);
+    }
+    if (verify_flags & BTAGV_STEP_OFFSET) {
+	P(dip, "\t     step_offset = 0x%08x\n", BTAGV_STEP_OFFSET);
+    }
+    if (verify_flags & BTAGV_OPAQUE_DATA_TYPE) {
+	P(dip, "\topaque_data_type = 0x%08x\n", BTAGV_OPAQUE_DATA_TYPE);
+    }
+    if (verify_flags & BTAGV_OPAQUE_DATA_SIZE) {
+	P(dip, "\topaque_data_size = 0x%08x\n", BTAGV_OPAQUE_DATA_SIZE);
+    }
+    if (verify_flags & BTAGV_OPAQUE_DATA) {
+	P(dip, "\t     opaque_data = 0x%08x\n", BTAGV_OPAQUE_DATA);
+    }
+    if (verify_flags & BTAGV_CRC32) {
+	P(dip, "\t           crc32 = 0x%08x\n", BTAGV_CRC32);
+    }
     return;
 }
 

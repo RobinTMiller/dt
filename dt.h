@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -24,6 +24,11 @@
  ****************************************************************************/
 /*
  * Modification History:
+ * 
+ * April 9th, 2020 by Robin T. Miller (Happy birthday to my son Tom!)
+ *      Increase the data corruption retries from 1 to 2, so we can gather
+ * yet another data point. If our first (immediate) re-read is still bad,
+ * delay (5 second deault), and retry again to see if it's a permanent DC.
  *
  * June 20th, 2013 by Robin T Miller
  * 	Mostly a rewrite for multithreaded IO, so starting with new history!
@@ -33,8 +38,8 @@
 #define _THREAD_SAFE 1
 
 /* Vendor Control Flags: */
-#define HGST	0
-#define Nimble	0
+#define HGST	1
+//#define Nimble	1
 
 #if defined(AIX_WORKAROUND)
 # include "aix_workaround.h"
@@ -44,7 +49,6 @@
 #define INLINE		static __inline
 #define INLINE_FUNCS	1
 
-/* Really? What a crock of shit! */
 #if defined(WIN32)
 # include <winsock2.h>
 # include <ws2tcpip.h>
@@ -114,6 +118,7 @@
 
 #define STARTUP_SCRIPT		".datatestrc"	/* The startup script name. */
 #define STARTUP_ENVNAME		"DT_SCRIPT"	/* The startup script var.  */
+#define MAXFILES_ENVNAME	"DT_MAXFILES"	/* Set the max file limit.  */
 #define DEFAULT_SCRIPT_VERIFY	False		/* Script verify echo flag. */
 
 /* Separator between file name and file postfix. */
@@ -136,21 +141,30 @@
 
 #define DEFAULT_GTOD_LOG_PREFIX		"%tod (%etod) %prog (j:%job t:%thread): " 
 
-#    //define DATA_CORRUPTION_URL	"";
-#    //define NO_PROGRESS_URL		"";
+//#define DATA_CORRUPTION_URL	"";
+//#define DATA_CORRUPTION_URL1	"";
+//#define NO_PROGRESS_URL		"";
 
 #if !defined(MAXHOSTNAMELEN)
 #    define MAXHOSTNAMELEN	256
 #endif
 #if !defined(MAXBADBLOCKS)
-#    define MAXBADBLOCKS	10
+#    define MAXBADBLOCKS	25
 #endif
+
+#define LogPrefixEnable 	True
+#define LogPrefixDisable	False
+
+#define MismatchedData		True
+#define NotMismatchedData	False
 
 #define DEFAULT_COMPARE_FLAG	True
 #define DEFAULT_XCOMPARE_FLAG	False
 #define DEFAULT_COREDUMP_FLAG	False
 #define DEFAULT_FILEPERTHREAD   True
 #define DEFAULT_LBDATA_FLAG	False
+#define DEFAULT_POISON_FLAG	False
+#define DEFAULT_PREFILL_FLAG	UNINITIALIZED
 #define DEFAULT_MOUNT_LOOKUP	True
 #define DEFAULT_NATE_FLAG	False
 #define DEFAULT_TIMESTAMP_FLAG	False
@@ -195,6 +209,7 @@
 #define DEFAULT_END_DELAY	0		/* Delay between multiple passes*/
 #define DEFAULT_READ_DELAY	0		/* Delay before reading record.	*/
 #define DEFAULT_START_DELAY	0		/* Delay before starting test.	*/
+#define DEFAULT_VERIFY_DELAY	0		/* Delay before verifying data. */
 #define DEFAULT_WRITE_DELAY	0		/* Delay before writing record.	*/
 
 #define DEFAULT_FSFREE_DELAY	3		/* File system free delay.	*/
@@ -206,6 +221,7 @@
 #define DEFAULT_IOTUNE_DIVISOR	3		/* The I/O tuning scale divisor.*/
 #define DEFAULT_IOTUNE_MIN_CPU	40		/* The mimimum CPU busy value.	*/
 #define DEFAULT_IOTUNE_MAX_CPU	60		/* The maximum CPU busy value.	*/
+#define DEFAULT_MAX_OPEN_FILES  32768           /* Linux default is only 1024! */
 
 #define JOB_WAIT_DELAY		1		/* The job wait delay (in secs)	*/
 #define THREAD_MAX_TERM_TIME	180		/* Thread termination wait time.*/
@@ -221,8 +237,14 @@
 /* Note: (5 * 60) = 300 seconds or 5 minutes! */
 #define RETRY_LIMIT	60			/* Default retry limit.		*/
 #define RETRYDC_DELAY	5			/* Default retry DC delay (secs).*/
-#define RETRYDC_LIMIT	1			/* Retry data corruption limit.	*/
+#define RETRYDC_LIMIT	2			/* Retry data corruption limit.	*/
 #define SAVE_CORRUPTED	True			/* Default save corrupted data.	*/
+
+typedef enum corruption_type {
+    CTYPE_EXPECTED = 0,
+    CTYPE_CORRUPTED = 1,
+    CTYPE_REREAD = 2
+} corruption_type_t;
 
 /*
  * Default random block sizes (match up with sio).
@@ -245,6 +267,14 @@ typedef enum {
 #define DEFAULT_LOCK_MODE_NAME	"mixed"
 #define DEFAULT_LOCK_TEST	False
 #define DEFAULT_UNLOCK_CHANCE	100
+
+/*
+ * Definitions Shared by Block Display Functions:
+ */
+#define BITS_PER_BYTE		8
+#define BYTES_PER_LINE		16
+#define BYTE_EXPECTED_WIDTH	55
+#define WORD_EXPECTED_WIDTH	43
 
 typedef enum {
     LOCK_RANGE_FULL = 0,
@@ -412,6 +442,13 @@ typedef enum bufmodes {
     CACHE_WRITES = 4,		/* Cache writes (reads cache disabled).	*/
     NUM_BUFMODES = 4
 } bufmodes_t;
+
+/* File System Map Types: */
+typedef enum fsmap_type {
+    FSMAP_TYPE_NONE = 0,
+    FSMAP_TYPE_LBA_RANGE = 1,
+    FSMAP_TYPE_MAP_EXTENTS
+} fsmap_type_t;
 
 /*
  * History Information:
@@ -617,14 +654,17 @@ typedef uint32_t job_id_t;	/* In case we wish to change later. */
 /*
  * Define Device Types:
  */
-typedef enum devtype {DT_BLOCK, DT_CHARACTER, DT_COMM, DT_DISK,
-	      DT_GRAPHICS, DT_MEMORY, DT_MMAP, DT_NETWORK,
-	      DT_PIPE, DT_PROCESSOR, DT_REGULAR,
-	      DT_SOCKET, DT_SPECIAL, DT_STREAMS, DT_TAPE,
-	      DT_DIRECTORY, DT_UNKNOWN } devtype_t;
+typedef enum devtype {
+    DT_BLOCK, DT_CHARACTER, DT_COMM, DT_DISK,
+    DT_GRAPHICS, DT_MEMORY, DT_MMAP, DT_NETWORK,
+    DT_PIPE, DT_PROCESSOR, DT_REGULAR,
+    DT_SOCKET, DT_SPECIAL, DT_STREAMS, DT_TAPE,
+    DT_DIRECTORY, DT_UNKNOWN
+} devtype_t;
+
 typedef struct dtype {
-	char	*dt_type;
-	enum	devtype dt_dtype;
+    char *dt_type;
+    enum devtype dt_dtype;
 } dtype_t;
 
 #define PROC_ALLOC (sizeof(pid_t) * 3)	/* Extra allocation for PID.	*/
@@ -876,6 +916,8 @@ typedef struct dinfo {
 	char	di_time_buffer[TIME_BUFFER_SIZE]; /* For ASCII time.	*/
 	hbool_t	di_TimerActive;		/* Set after timer activated.	*/
 	hbool_t	di_TimerExpired;	/* Set after timer has expired.	*/
+        char    *di_date_sep;           /* The date field separator.    */
+        char    *di_time_sep;           /* The time field separator.    */
         /*
 	 * Information for Error Reporting / Triggers:
 	 * Note: These are set when reporting device information.
@@ -995,6 +1037,7 @@ typedef struct dinfo {
 	vu_int	di_forced_delay;	/* Force random I/O delay.	*/
 	vu_int	di_read_delay;		/* Delay before reading record.	*/
 	vu_int	di_start_delay;		/* Delay before starting test.	*/
+        vu_int  di_verify_delay;        /* Delay before verifying data. */
 	vu_int	di_write_delay;		/* Delay before writing record.	*/
 	vu_int	di_term_delay;		/* Child terminate delay count.	*/
 	/*
@@ -1121,7 +1164,8 @@ typedef struct dinfo {
 	Offset_t di_step_offset;	/* Step offset for disk seeks.	*/
 	hbool_t	di_keep_existing;	/* Don't delete existing files.	*/
 	hbool_t	di_noprog_flag;		/* Check for no I/O progress.	*/
-	hbool_t	di_prefill_buffer;	/* Prefill buffers on reads.	*/
+	hbool_t	di_poison_buffer;	/* Poison read buffers. 	*/
+	hbool_t	di_prefill_buffer;	/* Prefill read buffers.	*/
 	hbool_t	di_unique_log;		/* Make the log file unique.	*/
 	hbool_t	di_unique_file;		/* Make output file unqiue.	*/
 	hbool_t	di_user_incr;		/* User specified incr count.	*/
@@ -1133,6 +1177,7 @@ typedef struct dinfo {
 	hbool_t	di_user_lbsize;		/* User specified lbdata size.	*/
 	hbool_t	di_user_pattern;	/* Flags user specified pattern	*/
 	hbool_t	di_user_position;	/* User specified file position.*/
+        hbool_t di_user_oposition;      /* The output offset specified. */
 	hbool_t	di_incr_pattern;	/* Incrementing data pattern.	*/
 	hbool_t	di_logheader_flag;	/* The log file header flag.	*/
 	hbool_t	di_logtrailer_flag;	/* The log file trailer flag.	*/
@@ -1158,7 +1203,7 @@ typedef struct dinfo {
 	DWORD	di_FlagsAndAttributes;
 	DWORD	di_ShareMode;
 #endif /* defined(WIN32) */
-	int	di_log_level;		/* The logging level.		*/
+	int 	di_log_level;		/* The logging level.		*/
 	int     di_sequence;		/* The sequence number.		*/
 	hbool_t	di_pad_check;		/* Check data buffer pad bytes.	*/
 	hbool_t	di_spad_check;		/* Check short record pad bytes.*/
@@ -1231,7 +1276,8 @@ typedef struct dinfo {
 	hbool_t di_fill_always;		/* Always fill the files.	*/
 	hbool_t di_fill_once;		/* Fill the file once flag.	*/
 	hbool_t	di_user_fpattern;	/* User speciifed fill pattern.	*/
-	uint32_t di_fill_pattern;	/* The fill data pattern.	*/
+	uint32_t di_fill_pattern;	/* Write fill data pattern.	*/
+	uint32_t di_prefill_pattern;	/* Read prefill data pattern.	*/
 	/*
 	 * I/O Percentages:
 	 */
@@ -1376,7 +1422,8 @@ typedef struct dinfo {
 	uint32_t di_fs_block_size;	/* The file system block size.	*/
 	large_t	di_fs_space_free;	/* The file system free space.	*/
 	large_t di_fs_total_space;	/* The total file system space.	*/
-	void	*di_fsmap;		/* The file system map info.	*/
+	void	*di_fsmap;	    	/* The file system map info.	*/
+        fsmap_type_t di_fsmap_type;     /* Show file system map type.   */
 	/*
 	 * File system trim Parameters:
 	 */
@@ -1563,6 +1610,10 @@ typedef struct dtfuncs {
 
 typedef struct iobehavior_funcs {
     char *iob_name;
+    iobehavior_t iob_iobehavior;
+    int (*iob_map_options)(struct dinfo *dip, int argc, char **argv);
+    char *iob_maptodt_name;
+    int (*iob_dtmap_options)(struct dinfo *dip, int argc, char **argv);
     int (*iob_initialize)(struct dinfo *dip);
     int (*iob_initiate_job)(struct dinfo *dip);
     int (*iob_parser)(struct dinfo *dip, char *option);
@@ -1648,6 +1699,7 @@ extern char *keepalive0, *keepalive1;
  */
 
 /* dt.c */
+extern int SetupCommandBuffers(dinfo_t *dip);
 extern int dtGetCommandLine(dinfo_t *dip);
 extern int ExpandEnvironmentVariables(dinfo_t *dip, char *bufptr, size_t bufsiz);
 extern int MakeArgList(char **argv, char *s);
@@ -1732,6 +1784,7 @@ extern void btag_internal_test(dinfo_t *dip);
 extern uint32_t	crc32(uint32_t crc, void *buffer, unsigned int length);
 extern int parse_btag_verify_flags(dinfo_t *dip, char *string);
 extern void show_btag_verify_flags(dinfo_t *dip);
+extern void show_btag_verify_flags_set(dinfo_t *dip, uint32_t verify_flags);
 extern int verify_btag_options(dinfo_t *dip);
 
 /* dtfs.c */
@@ -2120,6 +2173,10 @@ extern void init_buffer(	dinfo_t		*dip,
 				void		*buffer,
 				size_t		count,
 				u_int32		pattern );
+extern void poison_buffer(      dinfo_t     *dip,
+                                void        *buffer,
+                                size_t      count,
+                                u_int32     pattern );
 #if _BIG_ENDIAN_
 extern void init_swapped (	dinfo_t		*dip,
 				void		*buffer,
@@ -2286,7 +2343,7 @@ extern enum trigger_control check_trigger_control(dinfo_t *dip, char *str);
 extern enum trigger_type check_trigger_type(dinfo_t *dip, char *str);
 extern int DoSystemCommand(dinfo_t *dip, char *cmdline);
 extern int StartupShell(dinfo_t *dip, char *shell);
-extern int ExecuteCommand(dinfo_t *dip, char *cmd, hbool_t verbose);
+extern int ExecuteCommand(dinfo_t *dip, char *cmd, hbool_t prefix, hbool_t verbose);
 extern int ExecuteBuffered(dinfo_t *dip, char *cmd, char *buffer, int bufsize);
 extern int ExecutePassCmd(dinfo_t *dip);
 extern int ExecuteTrigger(struct dinfo *dip, ...);
@@ -2535,17 +2592,21 @@ extern void report_device_information(dinfo_t *dip);
 extern void ReportDeviceInfo(	struct dinfo	*dip,
 				size_t		byte_count,
 				u_int		byte_position,
-				hbool_t		eio_error );
+				hbool_t		eio_error,
+				hbool_t		mismatch_flag );
 extern void report_device_informationX(dinfo_t *dip);
 extern void ReportDeviceInfoX(struct dinfo *dip, error_info_t *eip);
-extern void set_device_info(dinfo_t *dip, size_t iosize,
-			    uint32_t buffer_index, hbool_t eio_error);
+extern uint64_t MapOffsetToLBA(dinfo_t *dip, HANDLE fd, uint32_t dsize,
+			       Offset_t offset, hbool_t mismatch_flag);
+extern void set_device_info(dinfo_t *dip, size_t iosize, uint32_t buffer_index,
+			    hbool_t eio_error, hbool_t mismatch_flag);
 extern void ReportLbdataError(	struct dinfo	*dip,
 			        u_int32		lba,
 				u_int32		byte_count,
 				u_int32		byte_position,
 				u_int32		expected_data,
 				u_int32		data_found );
+extern int save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, corruption_type_t ctype);
 
 /*
  * OS Specific Functions: (dtunix.c and dtwin.c)
@@ -2589,8 +2650,9 @@ extern int os_VeritasDirectIO(struct dinfo *dip, char *file, hbool_t flag);
 
 /* File Map API's */
 extern void *os_get_file_map(dinfo_t *dip, HANDLE fd);
-extern int os_report_file_map(dinfo_t *dip, HANDLE fd);
-extern uint64_t os_map_offset_to_lba(dinfo_t *dip, HANDLE fd, Offset_t offset);
+extern void os_free_file_map(dinfo_t *dip);
+extern int os_report_file_map(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset, int64_t length);
+extern uint64_t os_map_offset_to_lba(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset);
 
 /* dtunix.c and dtwin.c */
 extern void ReportOpenInformation(dinfo_t *dip, char *FileName, char *Operation,

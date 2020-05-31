@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: December 21st, 2019"VARIANT", Version: 21.47, Author: Robin T. Miller";
+char *version_str = "Date: May 28th, 2020"VARIANT", Version: 23.10, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -116,10 +116,10 @@ dthelp(dinfo_t *dip)
     P (dip, "    or\tcapacity=max          Set maximum capacity from disk driver.\n");
     P (dip, "\tcapacityp=value       Set capacity by percentage (range: 0-100).\n");
     P (dip, "\tbufmodes={buffered,unbuffered,cachereads,cachewrites}\n");
-    P (dip, "\t                      Set one or more buffering modes (Default: none)\n");
-    P (dip, "\tboff=string           Set the buffer offsets to: dec or hex (Default: %s)\n",
+    P (dip, "\t                      Set one or more buffering modes. (Default: none)\n");
+    P (dip, "\tboff=string           Set the buffer offsets to: dec or hex. (Default: %s)\n",
 					    (dip->di_boff_format == DEC_FMT) ? "dec" : "hex");
-    P (dip, "\tdfmt=string           Set the data format to: byte or word (Default: %s)\n",
+    P (dip, "\tdfmt=string           Set the data format to: byte or word. (Default: %s)\n",
     					    (dip->di_data_format == BYTE_FMT) ? "byte" : "word");
     P (dip, "\tdispose=mode          Set file dispose to: {delete, keep, or keeponerror}.\n");
     P (dip, "\tdlimit=value          Set the dump data buffer limit.\n");
@@ -132,7 +132,8 @@ dthelp(dinfo_t *dip)
     P (dip, "\tmaxfiles=value        The maximum files for all directories.\n");
     P (dip, "\tffreq=value           The frequency (in records) to flush buffers.\n");
     P (dip, "\tfstrim_freq=value     The file system trim frequency (in files).\n");
-    P (dip, "\tfill_pattern=value    The 32 bit hex fill pattern to use.\n");
+    P (dip, "\tfill_pattern=value    The write fill pattern (32 bit hex).\n");
+    P (dip, "\tprefill_pattern=value The read prefill pattern (32 bit hex).\n");
     P (dip, "\tflow=type             Set flow to: none, cts_rts, or xon_xoff.\n");
 /*  P (dip, "\thz=value              Set number of clock ticks per second.\n");	*/
     P (dip, "\tincr=value            Set number of record bytes to increment.\n");
@@ -206,11 +207,15 @@ dthelp(dinfo_t *dip)
     P (dip, "\tseek=value            The number of records to seek past.\n");
     P (dip, "\tstep=value            The number of bytes seeked after I/O.\n");
     P (dip, "\tstats=level           The stats level: {brief, full, or none}\n");
-    P (dip, "\tstopon=filename       Watch for file existance, then stop.\n");
+    P (dip, "\tstopon=filename       Watch for file existence, then stop.\n");
     P (dip, "\tsleep=time            The sleep time (in seconds).\n");
     P (dip, "\tmsleep=value          The msleep time (in milliseconds).\n");
     P (dip, "\tusleep=value          The usleep time (in microseconds).\n");
+    P (dip, "\tshowbtags             Show block tags and btag data.\n");
+    P (dip, "\tshowfslba             Show file system offset to physical LBA.\n");
+    P (dip, "\tshowfsmap             Show file system map extent information.\n");
     P (dip, "\tshowtime=value        Show time value in ctime() format.\n");
+    P (dip, "\tshowvflags=value      Show block tag verify flags set.\n");
     P (dip, "\tthreads=value         The number of threads to execute.\n");
     P (dip, "\ttrigger={br, bdr, lr, seek, cdb:bytes, cmd:str, and/or triage}\n");
     P (dip, "\t                      The triggers to execute on errors.\n");
@@ -234,7 +239,6 @@ dthelp(dinfo_t *dip)
     P (dip, "\t  Where type is:\n");
     P (dip, "\t    dt                The dt I/O behavior (default).\n");
     P (dip, "\t    dtapp             The dtapp I/O behavior.\n");
-    P (dip, "\t    thumper           The thumper I/O behavior.\n");
     P (dip, "\n    For help on each I/O behavior use: \"iobehavior=type help\"\n");
 
     P (dip, "\n    Block Tag Verify Flags: (prefix with ~ to clear flag)\n");
@@ -276,6 +280,14 @@ dthelp(dinfo_t *dip)
     P (dip, "\t                      Stop the specified job.\n");
     P (dip, "\twait[={jid|tag}] | [job=value] | [tag=string]\n");
     P (dip, "\t                      Wait for all jobs or specified job.\n");
+
+    P (dip, "\n    File System Map Format:\n");
+    P (dip, "\tshowfslba [bs=value] [count=value] [limit=value] [offset=value]\n");
+    P (dip, "\t                      Show FS offset(s) mapped to physical LBA(s)\n");
+    P (dip, "\t                      The default is to show LBA for specified offset.\n");
+    P (dip, "\tshowfsmap [bs=value] [count=value] [limit=value] [offset=value]\n");
+    P (dip, "\t                      Show the file system map extent information.\n");
+    P (dip, "\t                      The default is to show the full extent map.\n");
 
     P (dip, "\n    File Locking Options:\n");
     P (dip, "\tenable=lockfiles      Enables file locks (locks & unlocks)\n");
@@ -423,7 +435,7 @@ dthelp(dinfo_t *dip)
 				(dip->di_fill_once == True) ? enabled_str : disabled_str);
     P (dip, "\tfsalign          File system align.         (Default: %s)\n",
 				(dip->di_fsalign_flag) ? enabled_str : disabled_str);
-    P (dip, "\tfsmap            File system map.    i      (Default: %s)\n",
+    P (dip, "\tfsmap            File system map control.   (Default: %s)\n",
 				(dip->di_fsmap_flag) ? enabled_str : disabled_str);
     P (dip, "\tfstrim           File system trim.          (Default: %s)\n",
 				(dip->di_fstrim_flag) ? enabled_str : disabled_str);
@@ -472,7 +484,9 @@ dthelp(dinfo_t *dip)
 				(dip->di_noprog_flag) ? enabled_str : disabled_str);
     P (dip, "\tpipes            Pipe mode control flag.    (Default: %s)\n",
 				(PipeModeFlag) ? enabled_str : disabled_str);
-    P (dip, "\tprefill          Prefill read buffer.       (Default: %s)\n",
+    P (dip, "\tpoison           Poison read buffer flag.   (Default: %s)\n",
+				(dip->di_poison_buffer) ? enabled_str : disabled_str);
+    P (dip, "\tprefill          Prefill read buffer flag.  (Default: %s)\n",
 				(dip->di_prefill_buffer == UNINITIALIZED) ? "runtime"
 				: (dip->di_prefill_buffer) ? enabled_str : disabled_str);
     P (dip, "\tjob_stats        The job statistics flag.   (Default: %s)\n",
@@ -627,6 +641,8 @@ dthelp(dinfo_t *dip)
 							dip->di_start_delay);
     P (dip, "\tread_delay=value      Delay before reading each record. (Default: %u)\n",
 							dip->di_read_delay);
+    P (dip, "\tverify_delay=value    Delay before verifying data.      (Default: %u)\n",
+							dip->di_verify_delay);
     P (dip, "\twrite_delay=value     Delay before writing each record. (Default: %u)\n",
 							dip->di_write_delay);
     P (dip, "\tterm_delay=value      Delay before terminating.         (Default: %u secs)\n",
@@ -712,6 +728,9 @@ dthelp(dinfo_t *dip)
     P (dip, "\t    %%secs    = Seconds since start.   %%seq    = The sequence number.\n");
     P (dip, "\t    %%script  = The script file name.  %%tmpdir = The temporary directory.\n");
     P (dip, "\t    %%uuid    = The UUID string.       %%workload = The workload name.\n");
+    P (dip, "\t    %%month   = The month of the year. %%day    = The day of the month.\n");
+    P (dip, "\t    %%year    = The four digit year.   %%hour   = The hour of the day.\n");
+    P (dip, "\t    %%minutes = The minutes of hour.   %%seconds= The seconds of minute.\n");
     P (dip, "\n");
     P (dip, "\t    String 'gtod' = \"%%tod (%%etod) %%prog (j:%%job t:%%thread): \"\n");
     P (dip, "\n");

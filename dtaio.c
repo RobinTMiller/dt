@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -539,7 +539,7 @@ dtaio_waitall(struct dinfo *dip, hbool_t canceling)
 	    if ( (isEof_flag == False) && (os_isCancelled(error) == False) ) {
 		dip->di_current_acb = acbp;
 		ReportErrorInfo(dip, dip->di_dname, error, "dtaio_waitall", OTHER_OP, True);
-		ReportDeviceInfo(dip, acbp->aio_nbytes, 0, eio_flag);
+		ReportDeviceInfo(dip, acbp->aio_nbytes, 0, eio_flag, NotMismatchedData);
 		if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
 		     (dip->di_trigger_control == TRIGGER_ON_ERRORS) ) {
 		    if (dip->di_mode == READ_MODE) {
@@ -834,8 +834,12 @@ dtaio_read_data(struct dinfo *dip)
 	     */
 	    if ( (dip->di_compare_flag == True) && (dip->di_io_mode == TEST_MODE) ) {
 		if (dip->di_prefill_buffer == True) {
-		    uint32_t pattern = (dip->di_fill_pattern) ? dip->di_fill_pattern : (uint32_t)dip->di_thread_number;
-		    init_buffer(dip, dip->di_data_buffer, bsize, pattern);
+		    uint32_t pattern = (dip->di_prefill_pattern) ? dip->di_prefill_pattern : (uint32_t)dip->di_thread_number;
+		    if (dip->di_poison_buffer) {
+			poison_buffer(dip, dip->di_data_buffer, bsize, pattern);
+		    } else {
+			init_buffer(dip, dip->di_data_buffer, bsize, pattern);
+		    }
 		}
 		init_padbytes(dip->di_data_buffer, bsize, ~dip->di_pattern);
 	    }

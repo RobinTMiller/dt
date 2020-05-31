@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -32,6 +32,16 @@
  *
  * Modification History:
  *
+ * January 9th, 2020 by Robin T. Miller
+ *      When displaying block tags, do *not* overwrite the write time or CRC,
+ * if we are doing immediate read-after-write, since the expected block tag is
+ * the full block tag just written. This fudging of the btag data is to avoid
+ * reporting incorrect btag reporting when we are in read only pass, since we
+ * do not have the original write time stamps.
+ * 
+ * December 22nd, 2019 by Robin T. Miller
+ *      For file systems, report the physical LBA, if we can map the offset.
+ * 
  * March 8th, 2016 by Robin T. Miller
  * 	Fix bug in display_iot_data() where the wrong received word0 was copied,
  * which results in a wrong received block number and offset with timestamps!
@@ -72,6 +82,8 @@
 int compare_iot_block(dinfo_t *dip, uint8_t *pptr, uint8_t *vptr, hbool_t raw_flag);
 hbool_t	is_iot_data(dinfo_t *dip, uint8_t *rptr, size_t rsize, int rprefix_size,
 		    int *iot_offset, iotlba_t *rlbn);
+
+static char *notmapped_str = "<not mapped or not a valid offset>";
 
 /*
  * init_iotdata() - Initialize Buffer with IOT test pattern.
@@ -239,12 +251,19 @@ void
 report_bad_sequence(dinfo_t *dip, int start, int length, Offset_t offset)
 {
     Offset_t pos = (offset + ((start-1) * dip->di_lbdata_size));
+    uint64_t lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_lbdata_size, pos, MismatchedData);
+
     Fprintf(dip, DT_FIELD_WIDTH "%d\n",
 	  "Start of corrupted blocks", start);
     Fprintf(dip, DT_FIELD_WIDTH "%d (%d bytes)\n",
 	  "Length of corrupted blocks", length, (length * dip->di_lbdata_size));
-    Fprintf(dip, DT_FIELD_WIDTH FUF " (lba %u)\n",
-	   "Corrupted blocks file offset", pos, (u_int32)(pos / dip->di_lbdata_size));
+    if (lba == NO_LBA) {
+	Fprintf(dip, DT_FIELD_WIDTH FUF " (<not mapped>)\n",
+		"Corrupted blocks file offset", pos);
+    } else {
+	Fprintf(dip, DT_FIELD_WIDTH FUF " (LBA "FUF")\n",
+	       "Corrupted blocks file offset", pos, lba);
+    }
     return;
 }
 
@@ -252,12 +271,19 @@ void
 report_good_sequence(dinfo_t *dip, int start, int length, Offset_t offset)
 {
     Offset_t pos = (offset + ((start-1) * dip->di_lbdata_size));
+    uint64_t lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_lbdata_size, pos, MismatchedData);
+
     Fprintf(dip, DT_FIELD_WIDTH "%d\n",
 	    "Start of good blocks", start);
     Fprintf(dip, DT_FIELD_WIDTH "%d (%d bytes)\n",
 	    "Length of good blocks", length, (length * dip->di_lbdata_size));
-    Fprintf(dip, DT_FIELD_WIDTH FUF " (lba %u)\n",
-	    "Good blocks file offset", pos, (u_int32)(pos / dip->di_lbdata_size));
+    if (lba == NO_LBA) {
+	Fprintf(dip, DT_FIELD_WIDTH FUF " (<not mapped>)\n",
+		"Good blocks file offset", pos);
+    } else {
+	Fprintf(dip, DT_FIELD_WIDTH FUF " (LBA "FUF")\n",
+		"Good blocks file offset", pos, lba);
+    }
     return;
 }
 
@@ -308,7 +334,7 @@ analyze_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
      * Compare one lbdata sized block at a time.
      */
     while (blocks) {
-	int result = result = compare_iot_block(dip, pptr, vptr, raw_flag);
+	int result = compare_iot_block(dip, pptr, vptr, raw_flag);
 	if (result == 0) {
 	    good_blocks++;
 	    if (good_start == 0) {
@@ -358,11 +384,6 @@ analyze_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
     return;
 }
 
-#define BITS_PER_BYTE		8
-#define BYTES_PER_LINE		16
-#define BYTE_EXPECTED_WIDTH	55
-#define WORD_EXPECTED_WIDTH	43
-
 /* Loop through received data to determine if it contains any IOT data pattern. */
 hbool_t
 is_iot_data(dinfo_t *dip, uint8_t *rptr, size_t rsize, int rprefix_size, int *iot_offset, iotlba_t *rlbn)
@@ -410,6 +431,7 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
     size_t limit = MIN(bsize,dip->di_dump_limit);
     uint32_t received_word0, received_word1, received_iot_seed;
     int btag_size = 0;
+    uint64_t lba;
     uint8_t *eiot = pptr, *riot = vptr;
     btag_t *ebtag = NULL, *rbtag = NULL;
 
@@ -419,18 +441,26 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 	btag_size = getBtagSize(ebtag);
 	eiot += btag_size;
 	riot += btag_size;
-	/* Avoid flagging write time as a miscompare! */
-	ebtag->btag_write_secs = rbtag->btag_write_secs;
-	ebtag->btag_write_usecs = rbtag->btag_write_usecs;
-	if (good_data == True) {
-	    ebtag->btag_crc32 = rbtag->btag_crc32;
+	if (raw_flag == False) {
+	    /* Avoid flagging write time as a miscompare! */
+	    ebtag->btag_write_secs = rbtag->btag_write_secs;
+	    ebtag->btag_write_usecs = rbtag->btag_write_usecs;
+	    if (good_data == True) {
+		ebtag->btag_crc32 = rbtag->btag_crc32;
+	    }
 	}
     }
     Fprintf(dip, "\n");
-    Fprintf(dip, DT_FIELD_WIDTH "%u (%s)\n", "Record block",
+    Fprintf(dip, DT_FIELD_WIDTH "%u (%s)\n", "Record Block",
 	    block, (good_data == True) ? "good data" : "bad data" );
-    Fprintf(dip, DT_FIELD_WIDTH FUF " (lba %u)\n", "Record block offset",
-	    block_offset, (uint32_t)(block_offset / dip->di_lbdata_size));
+    lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_lbdata_size, block_offset, MismatchedData);
+    if (lba == NO_LBA) {
+	Fprintf(dip, DT_FIELD_WIDTH FUF " (<not mapped>)\n", "Record Block Offset",
+		block_offset);
+    } else {
+	Fprintf(dip, DT_FIELD_WIDTH FUF " (LBA "FUF")\n", "Record Block Offset",
+		block_offset, lba);
+    }
 
     /* 
      * Verify and display the prefix string (if any).
@@ -447,7 +477,7 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 	 * we are comparing the ASCII prefix string + NULL bytes!
 	 */
 	result = memcmp(eiot, riot, (size_t)dip->di_fprefix_size);
-        Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Prefix string compare",
+        Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Prefix String Compare",
 		(result == 0) ? "correct" : "incorrect");
 	/* If the prefix is incorrect, display prefix information. */
 	if (result != 0) {
@@ -496,8 +526,8 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 	    } else { /* Expected and received are the same length! */
 		raprefix_size = rindex;
 	    }
-	    Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Expected prefix string", (pptr + btag_size));
-	    Fprintf(dip, DT_FIELD_WIDTH, "Received prefix string");
+	    Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Expected Prefix String", (pptr + btag_size));
+	    Fprintf(dip, DT_FIELD_WIDTH, "Received Prefix String");
 	    if (printable) {
 		*abp = '\0';
 		Fprint(dip, "%s\n", astr);
@@ -505,11 +535,11 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 		Fprint(dip, "<non-printable string>\n");
 	    }
 	    if (rprefix_size != dip->di_fprefix_size) {
-		Fprintf(dip, DT_FIELD_WIDTH "%d\n", "Expected prefix length", dip->di_fprefix_size);
-		Fprintf(dip, DT_FIELD_WIDTH "%d\n", "Received prefix length", rprefix_size);
+		Fprintf(dip, DT_FIELD_WIDTH "%d\n", "Expected Prefix Length", dip->di_fprefix_size);
+		Fprintf(dip, DT_FIELD_WIDTH "%d\n", "Received Prefix Length", rprefix_size);
 	    } else if (raprefix_size != aprefix_size) {
-		  Fprintf(dip, DT_FIELD_WIDTH "%d\n", "Expected ASCII prefix length", aprefix_size);
-		  Fprintf(dip, DT_FIELD_WIDTH "%d\n", "Received ASCII prefix length", raprefix_size);
+		  Fprintf(dip, DT_FIELD_WIDTH "%d\n", "Expected ASCII Prefix Length", aprefix_size);
+		  Fprintf(dip, DT_FIELD_WIDTH "%d\n", "Received ASCII Prefix Length", raprefix_size);
 	    }
 	}
     } /* end 'if (dip->di_fprefix_size)...' */
@@ -538,20 +568,20 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 	/* Check for invalid time values, with upper limit including fudge factor! */
 	if ( (seconds == (time_t)0) || (seconds > (time((time_t)0) + 300)) ) {
 	    Fprintf(dip, DT_FIELD_WIDTH "%s\n",
-		    "Data block written on", "<invalid time value>");
+		    "Data Block Written on", "<invalid time value>");
 	} else {
-	    Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Data block written on",
+	    Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Data Block Written on",
 		    os_ctime(&seconds, dip->di_time_buffer, sizeof(dip->di_time_buffer)));
 	}
 	if ( seconds ) {
 	    /* Remember: When writing, we may have raw,reread options enabled! */
 	    if ( (dip->di_mode == WRITE_MODE) && (seconds < dip->di_write_pass_start) ) {
 		/* Note: This occurs when we read stale data from the past! */
-		Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Write pass start time",
+		Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Write Pass Start Time",
 			os_ctime(&dip->di_write_pass_start, dip->di_time_buffer, sizeof(dip->di_time_buffer)));
 	    } else if ( (dip->di_mode == READ_MODE) && (seconds > dip->di_read_pass_start) ) {
 		/* Note: This is possible with wrong block data from another thread! */
-		Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Read pass start time",
+		Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Read Pass Start Time",
 			os_ctime(&dip->di_read_pass_start, dip->di_time_buffer, sizeof(dip->di_time_buffer)));
 	    }
 	}
@@ -565,19 +595,20 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 	received_iot_seed = (received_word0 - received_lbn);
     } /* end 'if (dip->di_timestamp_flag)...' */
 
-    Fprintf(dip, DT_FIELD_WIDTH "%u (0x%08x)\n", "Expected block number", expected_lbn, expected_lbn);
-    Fprintf(dip, DT_FIELD_WIDTH "%u (0x%08x)\n", "Received block number", received_lbn, received_lbn);
+    Fprintf(dip, DT_FIELD_WIDTH "%u (0x%08x)\n", "Expected Block Number", expected_lbn, expected_lbn);
+    Fprintf(dip, DT_FIELD_WIDTH "%u (0x%08x)\n", "Received Block Number", received_lbn, received_lbn);
     /* Report a little more information about the incorrect received block! */
     if (expected_lbn != received_lbn) {
 	Offset_t received_offset = makeOffset(received_lbn, bsize);
 	/* See if the received offset is within the expected data range. */
-	if ( (received_offset < dip->di_file_position) ||
+	if ( isDiskDevice(dip) &&
+	     (received_offset < dip->di_file_position) ||
 	     (received_offset > (dip->di_file_position + (Offset_t)dip->di_data_limit)) ) {
-	    Fprintf(dip, DT_FIELD_WIDTH FUF " (%s Range: "FUF" - "FUF")\n", "Received block offset",
+	    Fprintf(dip, DT_FIELD_WIDTH FUF " (%s Range: "FUF" - "FUF")\n", "Received Block Offset",
 		    received_offset, (dip->di_slices) ? "Slice" : "Data",
 		    dip->di_file_position, (dip->di_file_position + (Offset_t)dip->di_data_limit));
 	} else {
-	    Fprintf(dip, DT_FIELD_WIDTH FUF "\n", "Received block offset", received_offset);
+	    Fprintf(dip, DT_FIELD_WIDTH FUF "\n", "Received Block Offset", received_offset);
 	}
     }
 
@@ -596,16 +627,16 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 	    /* Ok, this looks like valid IOT data. */
 	    if (dip->di_pass_count < 256) {		/* Handle case where we wrap! */
 		Fprintf(dip, DT_FIELD_WIDTH "%u\n",
-			"Data written during pass", (received_iot_seed / IOT_SEED));
+			"Data Written During Pass", (received_iot_seed / IOT_SEED));
 		Fprintf(dip, DT_FIELD_WIDTH "0x%08x (pass %u)\n",
-			"Expected data is for seed",
+			"Expected Data is for Seed",
 			dip->di_iot_seed_per_pass, (dip->di_iot_seed_per_pass / IOT_SEED));
 	    } else {
 		Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
-			"Expected data is for seed", dip->di_iot_seed_per_pass);
+			"Expected Data is for Seed", dip->di_iot_seed_per_pass);
 	    }
 	    Fprintf(dip, DT_FIELD_WIDTH "0x%08x (%s)\n",
-		    "Received data is from seed", received_iot_seed,
+		    "Received Data is from Seed", received_iot_seed,
 		    (expected_lbn == received_lbn) ? "stale data" : "wrong data");
 	} else { /* Let's search for the IOT seed! */
 	    /* Format: <optional prefix><lbn or timestamp><lbn + IOT_SEED>...*/
@@ -620,25 +651,25 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 		     ( (received_iot_seed % IOT_SEED) == 0) ||
 		       (received_iot_seed == (dip->di_iot_seed_per_pass - IOT_SEED)) ) {
 		    Fprintf(dip, DT_FIELD_WIDTH "%u (0x%x) (word %u, zero based)\n",
-			    "Seed detected at offset", doff, doff, (doff / sizeof(expected_lbn)));
+			    "Seed Detected at Offset", doff, doff, (doff / sizeof(expected_lbn)));
 		    if (dip->di_pass_count < 256) {		/* Handle case where we wrap! */
 			Fprintf(dip, DT_FIELD_WIDTH "%u\n",
-				"Data written during pass", (received_iot_seed / IOT_SEED));
+				"Data Written During Pass", (received_iot_seed / IOT_SEED));
 		    }
 		    received_lbn = (received_word0 - (received_iot_seed * seed_word));
-		    Fprintf(dip, DT_FIELD_WIDTH "%u (0x%08x)\n", "Calculated block number",
+		    Fprintf(dip, DT_FIELD_WIDTH "%u (0x%08x)\n", "Calculated Block Number",
 			    received_lbn, received_lbn);
 		    if (dip->di_pass_count < 256) {		/* Handle case where we wrap! */
 			Fprintf(dip, DT_FIELD_WIDTH "0x%08x (pass %u)\n",
-				"Expected data is for seed",
+				"Expected Data is for Seed",
 				dip->di_iot_seed_per_pass, (dip->di_iot_seed_per_pass / IOT_SEED));
 		    } else {
 			Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
-				"Expected data is for seed", dip->di_iot_seed_per_pass);
+				"Expected Data is for Seed", dip->di_iot_seed_per_pass);
 		    }
 		    /* Since part of the block is corrupt, always report wrong data. */
 		    Fprintf(dip, DT_FIELD_WIDTH "0x%08x (%s)\n",
-			    "Received data is from seed", received_iot_seed, "wrong data");
+			    "Received Data is from Seed", received_iot_seed, "wrong data");
 		    break; /* Stop upon 1st valid IOT data. */
 		}
 		seed_word++;
@@ -802,27 +833,49 @@ display_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
     uint8_t *pptr = pbuffer;
     uint8_t *vptr = vbuffer;
     size_t count = bcount;
-    int block = 0, blocks = (int)(count / dip->di_lbdata_size);
+    lbdata_t dsize = dip->di_lbdata_size;
+    int block = 0, blocks = (int)(count / dsize);
     unsigned int bad_blocks = 0, good_blocks = 0;
-    Offset_t block_offset, record_offset;
+    Offset_t block_offset, record_offset, ending_offset;
     large_t starting_lba, ending_lba;
 
     /* Note: Use dt's offset rather than the OS fd offset (for now)! */
     block_offset = record_offset = getFileOffset(dip);
-    //block_offset = record_offset = get_current_offset(dip, (ssize_t)bcount);
 
     Fprintf(dip, "\n");
     Fprintf(dip, DT_FIELD_WIDTH "%lu\n", "Record #", (dip->di_records_read + 1));
-    Fprintf(dip, DT_FIELD_WIDTH FUF "\n", "File offset", record_offset);
-    Fprintf(dip, DT_FIELD_WIDTH "%u (%#x)\n", "Transfer count", bcount, bcount);
-    starting_lba = (record_offset / dip->di_lbdata_size);
-    ending_lba = ((starting_lba + howmany(bcount, dip->di_lbdata_size)) - 1);
-    Fprintf(dip, DT_FIELD_WIDTH LUF" - "LUF"\n", "Record block range", starting_lba, ending_lba);
-    Fprintf(dip, DT_FIELD_WIDTH LLPXFMT "\n", "Read buffer address", vptr);
-    Fprintf(dip, DT_FIELD_WIDTH LLPXFMT "\n", "Pattern base address", pptr);
+    Fprintf(dip, DT_FIELD_WIDTH FUF "\n", "Starting Record Offset", record_offset);
+    Fprintf(dip, DT_FIELD_WIDTH "%u (%#x)\n", "Transfer Count", bcount, bcount);
+
+    ending_offset = (record_offset + bcount);
+    Fprintf(dip, DT_FIELD_WIDTH FUF "\n", "Ending Record Offset", ending_offset);
+
+    if (dip->di_fsmap) {
+	starting_lba =  MapOffsetToLBA(dip, dip->di_fd, dsize, record_offset, MismatchedData);
+	ending_lba =  MapOffsetToLBA(dip, dip->di_fd, dsize, (ending_offset - 1), MismatchedData);
+        /* Starting LBA */
+	if (starting_lba == NO_LBA) {
+	    Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Starting Physical LBA", notmapped_str);
+	} else {
+	    Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", "Starting Physical LBA", starting_lba, starting_lba);
+	}
+        /* Ending LBA */
+	if (ending_lba == NO_LBA) {
+	    Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Ending Physical LBA", notmapped_str);
+	} else {
+	    Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", "Ending Physical LBA", ending_lba, ending_lba);
+	}
+    } else {
+        /* Original non-FS map display. */
+	starting_lba = (record_offset / dsize);
+	ending_lba = ((starting_lba + howmany(bcount, dsize)) - 1);
+	Fprintf(dip, DT_FIELD_WIDTH LUF" - "LUF"\n", "Record Block Range", starting_lba, ending_lba);
+    }
+    Fprintf(dip, DT_FIELD_WIDTH LLPXFMT "\n", "Read Buffer Address", vptr);
+    Fprintf(dip, DT_FIELD_WIDTH LLPXFMT "\n", "Pattern Base Address", pptr);
     if (dip->di_fprefix_size) {
 	int aprefix_size = (int)strlen(dip->di_fprefix_string);
-        Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Prefix string", dip->di_fprefix_string);
+        Fprintf(dip, DT_FIELD_WIDTH "%s\n", "Prefix String", dip->di_fprefix_string);
         Fprintf(dip, DT_FIELD_WIDTH "%d bytes (0x%x) plus %d zero bytes\n", "Prefix length",
 		dip->di_fprefix_size, dip->di_fprefix_size, dip->di_fprefix_size - aprefix_size);
     }
@@ -842,37 +895,36 @@ display_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
 	    hbool_t context_flag = False;
 	    if ( (dip->di_dump_context_flag == True) && ((blocks - 1) > 0) ) {
 		/* Verify the next block for good/bad to set context. */
-		nresult = compare_iot_block(dip, (pptr + dip->di_lbdata_size),
-					    (vptr + dip->di_lbdata_size), raw_flag);
+		nresult = compare_iot_block(dip, (pptr + dsize),
+					    (vptr + dsize), raw_flag);
 		if (nresult != 0) {
 		    context_flag = True;	/* Next block is bad, display good! */
 		}
 	    }
 	    if ( (dip->di_dumpall_flag == True) || (context_flag == True) ) {
 		display_iot_block(dip, block, block_offset, pptr, vptr,
-				  dip->di_lbdata_size, True, raw_flag);
+				  dsize, True, raw_flag);
 	    }
 	} else {
 	    if ( (dip->di_dumpall_flag == True) ||
 		 (dip->di_max_bad_blocks && (bad_blocks < dip->di_max_bad_blocks) )) {
 		display_iot_block(dip, block, block_offset, pptr, vptr,
-				  dip->di_lbdata_size, False, raw_flag);
+				  dsize, False, raw_flag);
 	    }
 	    bad_blocks++;
 	}
 	block++;
 	blocks--;
-	pptr += dip->di_lbdata_size;
-	vptr += dip->di_lbdata_size;
-	block_offset += dip->di_lbdata_size;
+	pptr += dsize;
+	vptr += dsize;
+	block_offset += dsize;
     }
     /*
      * Warn user (including me), that some of the IOT data was NOT displayed!
      */ 
-    if ((count % dip->di_lbdata_size) != 0) {
+    if ((count % dsize) != 0) {
 	Fprint(dip, "\n");
-	Wprintf(dip, "A partial IOT data block of %u bytes was NOT displayed!\n",
-	       (count % dip->di_lbdata_size) );
+	Wprintf(dip, "A partial IOT data block of %u bytes was NOT displayed!\n", (count % dsize) );
     }
     return;
 }

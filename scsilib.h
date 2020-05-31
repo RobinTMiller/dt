@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2017			    *
+ *			  COPYRIGHT (c) 2006 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -43,6 +43,9 @@ extern int os_set_timeout(scsi_generic_t *sgp, unsigned timeout);
 extern int os_get_qdepth(scsi_generic_t *sgp, unsigned int *qdepth);
 extern int os_set_qdepth(scsi_generic_t *sgp, unsigned int qdepth);
 extern int os_spt(scsi_generic_t *sgp);
+#if defined(_AIX)
+extern int os_spta(scsi_generic_t *sgp);
+#endif /* defined(_AIX) */
 extern hbool_t os_is_retriable(scsi_generic_t *sgp);
 extern char *os_host_status_msg(scsi_generic_t *sgp);
 extern char *os_driver_status_msg(scsi_generic_t *sgp);

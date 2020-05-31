@@ -1,6 +1,6 @@
 /****************************************************************************
  *      								    *
- *      		  COPYRIGHT (c) 1988 - 2017     		    *
+ *      		  COPYRIGHT (c) 1988 - 2020     		    *
  *      		   This Software Provided       		    *
  *      			     By 				    *
  *      		  Robin's Nest Software Inc.    		    *
@@ -31,6 +31,10 @@
  *      dt's history functions.
  * 
  * Modification History:
+ * 
+ * May 5th, 2020 by Robin T. Miller
+ *      Use high resolution timer for more accurate history timing. This is
+ * implemented on Windows, but Unix systems still use gettimeofday() API.
  * 
  * February 2nd, 2016 by Robin T. Miller
  * 	Display device name when dumping history, needed for multiple devices.
@@ -314,7 +318,7 @@ save_history_data(
     hp->hist_request_size = rsize;
     hp->hist_transfer_size = tsize;
     if (dip->di_history_timing) { /* expensive syscall! */
-	(void)gettimeofday(&hp->hist_timer_info, NULL);
+	(void)highresolutiontime(&hp->hist_timer_info, NULL);
     }
     /*DEBUG*/
     //if (dip->di_history_index%2 == 0) hp->hist_transfer_size = FAILURE;

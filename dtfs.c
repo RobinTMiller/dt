@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -129,7 +129,7 @@ isFsFullOk(struct dinfo *dip, char *op, char *path)
  *      dirpath = The directory name. (caller must check!)
  *
  * Return Value:
- *	Returns a pointer to the new directory with filename.
+ *      Returns a pointer to the new directory with filename.
  */
 char *
 make_dir_filename(struct dinfo *dip, char *dirpath)

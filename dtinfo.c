@@ -1,6 +1,6 @@
 /****************************************************************************
  *      								    *
- *      		  COPYRIGHT (c) 1988 - 2019     		    *
+ *      		  COPYRIGHT (c) 1988 - 2020     		    *
  *      		   This Software Provided       		    *
  *      			     By 				    *
  *      		  Robin's Nest Software Inc.    		    *
@@ -31,6 +31,20 @@
  *      Setup device and/or system information for 'dt' program.
  * 
  * Modification History:
+ * 
+ * February 4th, 2020 by Robin T. Miller
+ *      For Windows and existing file, set the filesize like we do for Unix!
+ * 
+ * December 28th, 2019 by Robin T. Miller
+ *      For regular files, do NOT override the user specified block sizes
+ * for regular files unless Direct I/O is specified, otherwise we cannot
+ * perform non-block aligned I/O. In my haste to fix (override) incorrect
+ * min/max/incr values for user specified device sizes (dsize=value), I
+ * accidently broke this previous (desirable) file system behavior.
+ * 
+ * December 20th, 2019 by Robin T. Miller
+ *      With changing dispose mode to KEEP_ON_ERROR, ensure existing files
+ * do *not* get deleted by setting dispose to KEEP_FILE.
  * 
  * July 19th, 2019 by Robin T. Miller
  *      When user specifies an alternate device size (dsize=4k), ensure all
@@ -185,26 +199,72 @@ setup_device_defaults(struct dinfo *dip)
 	    Printf(dip, "Device size: %u, Real Device Size: %u, User Device Size: %u\n",
 		   dip->di_dsize, dip->di_rdsize, dip->di_device_size);
 	}
-	if (dip->di_device_size) dip->di_dsize = dip->di_device_size; /* Override! */
-	if (!dip->di_device_size && dip->di_rdsize) dip->di_device_size = dip->di_rdsize;
-	if (!dip->di_device_size) dip->di_device_size = BLOCK_SIZE;
-	if (!dip->di_lbdata_size) dip->di_lbdata_size = dip->di_device_size;
-	if (dip->di_max_size && !dip->di_user_min) dip->di_min_size = dip->di_device_size;
-	if (dip->di_min_size && !dip->di_user_incr) dip->di_incr_count = dip->di_device_size;
-	/* Ensure min and incr values are non-zero! */
-	if (dip->di_max_size && !dip->di_min_size) dip->di_min_size = dip->di_device_size;
-	if (dip->di_min_size && !dip->di_incr_count) dip->di_incr_count = dip->di_device_size;
+	if (dip->di_device_size) {
+	    dip->di_dsize = dip->di_device_size;	/* Override, with user dsize! */
+	}
+	if ((dip->di_device_size == 0) && dip->di_rdsize) {
+	    dip->di_device_size = dip->di_rdsize;	/* Use real device block size. */
+	}
+	if (dip->di_device_size == 0) {
+	    dip->di_device_size = BLOCK_SIZE;		/* Set our default block size. */
+	}
+	if (dip->di_lbdata_size == 0) {
+	    dip->di_lbdata_size = dip->di_device_size;	/* Set lbdata size also for IOT. */
+	}
+	if (dip->di_max_size && (dip->di_user_min == False)) {
+	    dip->di_min_size = dip->di_device_size;	/* Set a min value, if none specified. */
+	}
+	if (dip->di_min_size && (dip->di_user_incr == False)) {
+	    dip->di_incr_count = dip->di_device_size;	/* Set increment value, if none specified. */
+	}
+	/* Ensure min and incr values are non-zero, if user specified ranges. */
+	if (dip->di_max_size && (dip->di_min_size == 0)) {
+	    dip->di_min_size = dip->di_device_size;	/* Set a min value, required with max. */
+	}
+	if (dip->di_min_size && (dip->di_incr_count == 0)) {
+	    dip->di_incr_count = dip->di_device_size;	/* Set an incr value, required with min. */
+	}
 	/* Ensure variable sizes are in line with the device size (user or OS block size). */
-	if (dip->di_block_size < dip->di_device_size) dip->di_block_size = dip->di_device_size;
-	if (dip->di_min_size && (dip->di_min_size < dip->di_device_size)) dip->di_min_size = dip->di_device_size;
-	if (dip->di_max_size && (dip->di_max_size < dip->di_device_size)) dip->di_max_size = dip->di_device_size;
-	if (dip->di_incr_count && (dip->di_incr_count < dip->di_device_size)) dip->di_incr_count = dip->di_device_size;
+	/* When using direct I/O or specifying a device size, we override to make correct. */
+	/* Note to self: If user values are *not* correct, then options need updated! */
+	if ( isDiskDevice(dip) || (dip->di_dio_flag == True) ) {
+	    if (dip->di_block_size < dip->di_device_size) {
+		if (dip->di_debug_flag) {
+		    Wprintf(dip, "Block size %u, overridden with device size %u.\n",
+			    dip->di_block_size, dip->di_device_size);
+		}
+		dip->di_block_size = dip->di_device_size;
+	    }
+	    if (dip->di_min_size && (dip->di_min_size < dip->di_device_size)) {
+		if (dip->di_debug_flag) {
+		    Wprintf(dip, "Minimum size %u, overridden with device size %u.\n",
+			    dip->di_min_size, dip->di_device_size);
+		}
+		dip->di_min_size = dip->di_device_size;
+	    }
+	    if (dip->di_max_size && (dip->di_max_size < dip->di_device_size)) {
+		if (dip->di_debug_flag) {
+		    Wprintf(dip, "Maximum size %u, overridden with device size %u.\n",
+			    dip->di_max_size, dip->di_device_size);
+		}
+		dip->di_max_size = dip->di_device_size;
+	    }
+	    if (dip->di_incr_count && (dip->di_incr_count < dip->di_device_size)) {
+		if (dip->di_debug_flag) {
+		    Wprintf(dip, "Increment count %u, overridden with device size %u.\n",
+			    dip->di_incr_count, dip->di_device_size);
+		}
+		dip->di_incr_count = dip->di_device_size;
+	    }
+	}
 	/* End of device size sanity checks! */
 	if (dip->di_fsalign_flag && dip->di_random_io) {
-	    if (!dip->di_random_align) dip->di_random_align = dip->di_device_size;
+	    if (dip->di_random_align == 0) {
+		dip->di_random_align = dip->di_device_size; /* Align to device size. */
+	    }
 	}
 	if (dip->di_sleep_res == SLEEP_DEFAULT) {
-	    dip->di_sleep_res = SLEEP_USECS;   	/* Disks get microsecond delays! */
+	    dip->di_sleep_res = SLEEP_USECS;   		/* Disks get microsecond delays! */
 	}
 	if (dip->di_fsync_flag == UNINITIALIZED) {
 	    if ( (dtp->dt_dtype == DT_BLOCK)   ||
@@ -212,11 +272,9 @@ setup_device_defaults(struct dinfo *dip)
 		dip->di_fsync_flag = True;
 	    } else if (dtp->dt_dtype == DT_DISK) {
 		/*
-		 * Devices identified as DT_DISK should be the
-		 * raw (character) device.  Since some OS's,
-		 * such as AIX don't like fsync() to disks,
-		 * we'll disable it since it really only has
-		 * meaning to block or regular (FS) files.
+		 * Devices identified as DT_DISK should be the raw (character) device. 
+		 * Since some OS's, such as AIX don't like fsync() to disks, we'll disable 
+		 * it since it really only has meaning to block or regular (FS) files.
 		 */
 		dip->di_fsync_flag = False;
 	    }
@@ -1106,21 +1164,18 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
 	 * See if the file exists, and what its' size is.
 	 */
 	if ( GetFileAttributesEx(dname, GetFileExInfoStandard, fadp) ) {
+	    dip->di_existing_file = True;
 	    if (fadp->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 		dip->di_dtype = dtp = setup_device_type("directory");
 	    } else { /* Assuming a regular file (for now). */
-		if ( (dip->di_dispose_mode == DELETE_FILE) &&
-		     dip->di_keep_existing && !dip->di_num_procs) {
-		    dip->di_dispose_mode = KEEP_FILE;   /* Keep existing files! */
-		}
-		/*
-		 * If mulitple directories or files, assume regular files!
-		 */
-		//if (!dip->di_dir && !dip->di_file_limit) {
+		/* Note: Match Unix code below! */
 		if (dip->di_multiple_files) {
-		    /* Setup the 64-bit file size please! */
+		    SetupRegularFile(dip, (large_t)0);
+		} else {
 		    filesize = (large_t)(((large_t)fadp->nFileSizeHigh << 32L) + fadp->nFileSizeLow);
+		    SetupRegularFile(dip, (large_t)filesize);
 		}
+		dip->di_dispose_mode = KEEP_FILE;   /* Keep existing files! */
 	    }
 	} else { /* GetFileAttributesEx() failed, could be file does not exist! */
 	    if (dip->di_debug_flag || dip->di_fDebugFlag) {
@@ -1145,19 +1200,12 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
 	    if ( S_ISDIR(sb.st_mode) ) {
 		dip->di_dtype = dtp = setup_device_type("directory");
 	    } else if ( S_ISREG(sb.st_mode) ) {
-		//if (dip->di_dir || dip->di_file_limit) {
 		if (dip->di_multiple_files) {
 		    SetupRegularFile(dip, (large_t)0);
 		} else {
 		    SetupRegularFile(dip, (large_t)sb.st_size);
 		}
-		/*
-		 * TODO: This needs cleaned up! Don't understand logic.
-		 */
-		if ( (dip->di_dispose_mode == DELETE_FILE) &&
-		     dip->di_keep_existing && !dip->di_num_procs) {
-		    dip->di_dispose_mode = KEEP_FILE;   /* Keep existing files! */
-		}
+		dip->di_dispose_mode = KEEP_FILE;   /* Keep existing files! */
 	    }
 # if defined(_QNX_SOURCE)
 	    else if ( S_ISBLK(sb.st_mode) ) {

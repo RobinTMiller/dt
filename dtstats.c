@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -231,7 +231,7 @@ init_stats(struct dinfo *dip)
  *									*
  ************************************************************************/
 void
-report_pass(struct dinfo *dip, enum stats stats_type)
+report_pass(dinfo_t *dip, stats_t stats_type)
 {
     gather_stats(dip);		/* Gather the total statistics.	*/
     gather_totals(dip);		/* Update the total statistics. */
@@ -456,11 +456,11 @@ report_stats(struct dinfo *dip, enum stats stats_type)
     if (stats_type == TOTAL_STATS) {
 	if (dip->di_io_type == RANDOM_IO) {
 	    Lprintf (dip, DT_FIELD_WIDTH, "Random I/O Parameters");
-	    Lprintf (dip, "position=" FUF ", ralign=" FUF ", rlimit=" LUF "\n",
+	    Lprintf (dip, "offset=" FUF ", ralign=" FUF ", rlimit=" LUF "\n",
 		     dip->di_file_position, dip->di_random_align, dip->di_rdata_limit);
 	} else if (dip->di_slices) {
 	    Lprintf (dip, DT_FIELD_WIDTH, "Slice Range Parameters");
-	    Lprintf (dip, "position=" FUF " (lba " LUF "), limit=" LUF "\n",
+	    Lprintf (dip, "offset=" FUF " (lba " LUF "), limit=" LUF "\n",
 		     dip->di_file_position, (large_t)(dip->di_file_position / dip->di_dsize), dip->di_data_limit);
 	}
 
@@ -547,7 +547,7 @@ report_stats(struct dinfo *dip, enum stats stats_type)
 	    Lprintf (dip, DT_FIELD_WIDTH "0x%08x\n",
 		     "Last IOT seed value used", dip->di_iot_seed_per_pass);
 	}
-	if (!dip->di_iot_pattern) {
+        if (!dip->di_iot_pattern) {
 	    if (dip->di_output_file && dip->di_verify_flag) {
 		Lprintf (dip, DT_FIELD_WIDTH "0x%08x%s\n",
 			 "Data pattern read/written", dip->di_pattern, pinfo);
@@ -745,7 +745,7 @@ report_stats(struct dinfo *dip, enum stats stats_type)
 	Lprintf (dip, "%lu/%lu\n", dip->di_pass_count, dip->di_pass_limit);
     }
 
-    if (dip->di_file_limit || dip->di_user_dir_limit || dip->di_user_subdir_limit || dip->di_user_subdir_depth) {
+     if (dip->di_file_limit || dip->di_user_dir_limit || dip->di_user_subdir_limit || dip->di_user_subdir_depth) {
 	large_t max_files = calculate_max_files(dip);
 
 	if ( (stats_type == JOB_STATS) || (stats_type == TOTAL_STATS) ) {

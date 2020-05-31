@@ -177,11 +177,12 @@ typedef dev_t os_dev_t;
 
 #define os_chdir(path)		chdir(path)
 
-#if defined(MacDarwin) || defined(SOLARIS)
+#if defined(__hpux) || defined(MacDarwin) || defined(SOLARIS)
+/* Extra processing for these operation systems for Direct I/O. */
 extern HANDLE os_open_file(char *name, int oflags, int perm);
-#else /* !defined(MacDarwin) && !defined(SOLARIS) */
+#else /* !defined(__hpux) && !defined(MacDarwin) && !defined(SOLARIS) */
 # define os_open_file		open
-#endif /* defined(MacDarwin) || defined(SOLARIS) */
+#endif /* defined(__hpux) || defined(MacDarwin) || defined(SOLARIS) */
 #define os_close_file		close
 #define os_seek_file		lseek
 #define os_read_file		read
@@ -204,6 +205,9 @@ extern HANDLE os_open_file(char *name, int oflags, int perm);
 
 #define OS_ERROR_INVALID	EINVAL
 #define OS_ERROR_DISK_FULL	ENOSPC
+
+/* TODO: Define a Unix version of high resolution time like Windows has. */
+#define highresolutiontime	gettimeofday
 
 #define os_isAccessDenied(error) ( (error == EACCES) ? True : False)
 #define os_isADirectory(error)	( (error == EISDIR) ? True : False)

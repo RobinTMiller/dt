@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -503,7 +503,11 @@ cleanup_job(dinfo_t *mdip, job_info_t *job, hbool_t lock_jobs)
 	tPerror(mdip, status, "pthread_mutex_destroy() of per job print lock failed!");
     }
     FreeMem(mdip, job, sizeof(*job));
-    //mdip->di_job = NULL;
+    /* Note: This job may *not* belong to this device entry (e.g. master entry). */
+    /* But in all other cases, we *cannot* leave this or it may be referenced! */
+    if (mdip->di_job == job) {
+	mdip->di_job = NULL;
+    }
     if ( (lock_jobs == True) && (lock_status == SUCCESS) ) {
 	(void)release_jobs_lock(mdip);
     }
@@ -1892,8 +1896,8 @@ wait_for_job_by_id(dinfo_t *dip, job_id_t job_id)
 	}
 	job_finished++;
 	status = job->ji_job_status;
+	(void)remove_job(dip, job, False);
 	(void)release_jobs_lock(dip);
-	(void)remove_job(dip, job, True);
 	break;
     }
     if (job_found == 0) {
@@ -1929,8 +1933,8 @@ wait_for_job_by_tag(dinfo_t *dip, char *job_tag)
 	}
 	job_finished++;
 	status = job->ji_job_status;
+	(void)remove_job(dip, job, False);
 	(void)release_jobs_lock(dip);
-	(void)remove_job(dip, job, True);
 	break;
     }
     if (job_found == 0) {
@@ -2163,8 +2167,6 @@ create_job_log(dinfo_t *dip, job_info_t *job)
 	}
 	/* Format special control strings or log directory + log file name. */
 	job->ji_job_logfile = FmtLogFile(dip, path, True);
-	FreeStr(dip, dip->di_job_log);	/* Avoid unnecessary cloning! */
-	dip->di_job_log = NULL;		/* The thread job log is gone! */
 	if (dip->di_debug_flag) {
 	    Printf(dip, "Job %u, job log file is %s...\n",
 		   dip->di_job->ji_job_id, job->ji_job_logfile);
@@ -2209,7 +2211,7 @@ execute_threads(dinfo_t *mdip, dinfo_t **initial_dip, job_id_t *job_id)
 	status = create_job_log(dip, job);
 	if (status == FAILURE) {
 	    release_job_lock(dip, job);
-	    (void)cleanup_job(dip, job, True);
+	    (void)cleanup_job(dip, job, False);
 	    return(FAILURE);
 	}
     }
@@ -2218,7 +2220,7 @@ execute_threads(dinfo_t *mdip, dinfo_t **initial_dip, job_id_t *job_id)
 	status = (*dip->di_iobf->iob_job_init)(dip, job);
 	if (status == FAILURE) {
 	    release_job_lock(dip, job);
-	    (void)cleanup_job(dip, job, True);
+	    (void)cleanup_job(dip, job, False);
 	    return(FAILURE);
 	}
     } else if ( (dip->di_iobehavior == DT_IO) && dip->di_iolock && (dip->di_slices == 0) ) {
@@ -2228,20 +2230,20 @@ execute_threads(dinfo_t *mdip, dinfo_t **initial_dip, job_id_t *job_id)
 	io_global_data_t *iogp = Malloc(dip, sizeof(*iogp));
 	if (iogp == NULL) {
 	    release_job_lock(dip, job);
-	    (void)cleanup_job(dip, job, True);
+	    (void)cleanup_job(dip, job, False);
 	    return(FAILURE);
 	}
 	if ( (status = pthread_mutex_init(&iogp->io_lock, attrp)) != SUCCESS) {
 	    tPerror(dip, status, "pthread_mutex_init() of global I/O lock failed!");
 	    release_job_lock(dip, job);
-	    (void)cleanup_job(dip, job, True);
+	    (void)cleanup_job(dip, job, False);
 	    return(FAILURE);
 	}
 	job->ji_opaque = iogp;
 	if ( (status = pthread_mutex_init(&job->ji_thread_lock, attrp)) != SUCCESS) {
 	    tPerror(dip, status, "pthread_mutex_init() of thread wait lock failed!");
 	    release_job_lock(dip, job);
-	    (void)cleanup_job(dip, job, True);
+	    (void)cleanup_job(dip, job, False);
 	    return(FAILURE);
 	}
 #endif /* defined(DT_IOLOCK) */
@@ -2394,7 +2396,7 @@ threads_starting(dinfo_t *dip)
  * The jobs lock was acquired before starting the thread, so after all
  * the threads have successfully started, we'll release the lock and let'em
  * all start running (or enter pause state). I added this since threads
- * starting their I/O slow down the thread creation too much. Of course,
+ * starting their I/O slows down the thread creation too much. Of course,
  * thread startup will still be slow, if there are lots of other jobs.
  */
 int

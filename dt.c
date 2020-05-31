@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,37 @@
  *	Main line code for generic data test program 'dt'.
  *
  * Modification History:
+ * 
+ * May 11th, 2020 by Robin T. MIller
+ *      Add options for date and time field separator used when formatting
+ * the log prefix format strings (e.g. "%ymd", "%hms").
+ * 
+ * May 7th, 2020 by Robin T. Miller
+ *      Apply special step option handling to both disks and files, by setting
+ * up and ending offset so I/O loops break reaching this offset.
+ * 
+ * April 8th, 2020 by Robin T. Miller
+ *      Add flag for output position, so zero offset is handled properly.
+ *      Note: This allows copying to a different offset from input file!
+ * 
+ * March 31st, 2020 by Robin T. Miller
+ *      Add "showvflags=hex" option to show block tag verify flags set.
+ * 
+ * March 19th, 2020 by Robin T. Miller
+ *      When selecting 100% reads (readp=100), switch output file to input file.
+ *      This helps with automation desiring to do read verify only w/of= option!
+ * 
+ * March 7th, 2020 by Robin T. Miller
+ *      Remove a file position sanity check no longer valid with updates made
+ * in FindCapacity() with new logic associated with the file position option.
+ * 
+ * February 12th, 2020 by Robin T. Miller
+ *      For Unix systems, increase the open file resource limit, now that low
+ * limits are imposed on newer Linux distros, to avoid false failures!
+ * 
+ * February 11th, 2020 by Robin T. Miller
+ *      Added "showfslba" and "showfsmap" commands to show the file system map,
+ * for the file specified, assuming we can acquire FS extents to map physical LBAs.
  * 
  * Decamber 6th, 2019 by Robin T. Miller
  *      When re-enabling stats via "enable=stats", ensure all the stat flags
@@ -269,6 +300,7 @@
 #    endif /* !defined(sun) */
 #    include <sys/file.h>
 #    include <sys/param.h>
+#    include <sys/resource.h>
 #    if defined(sun) || defined(_OSF_SOURCE)
 #      include <sys/mman.h>
 #    endif /* defined(sun) || defined(_OSF_SOURCE) */
@@ -311,6 +343,13 @@ os_tid_t MonitorThreadId;		/* The monitoring thread ID.	*/
 # define iotuneThreadId		iotuneThread
 # define MonitorThreadId	MonitorThread       
 #endif /* defined(WIN32) */
+
+/* Note: No extra I/O behaviors in the open source dt! */
+iobehavior_funcs_t *iobehavior_funcs_table[] = {
+    NULL
+};
+
+iobehavior_funcs_t *find_iobehavior(dinfo_t *dip, char *name);
 
 /*
  * File Lock Modes:
@@ -397,6 +436,7 @@ int ParseWorkload(dinfo_t *dip, char *workload);
 static dinfo_t *init_device_information(void);
 void init_device_defaults(dinfo_t *dip);
 
+int do_show_fsmap(dinfo_t *dip);
 int do_precopy_setup(dinfo_t *idip, dinfo_t *odip);
 int do_common_copy_setup(dinfo_t *idip, dinfo_t *odip);
 int do_common_validate(dinfo_t *dip);
@@ -462,7 +502,6 @@ char    *keepalive0 = "%d Stats: mode %i, blocks %l, %m Mbytes, pass %p/%P,"
 char    *keepalive1 = "%d Stats: mode %i, blocks %L, %M Mbytes, pass %p/%P,"
                       " elapsed %T";
                                         /* Default keepalive messages.  */
-
 /*
  * When stats is set to brief, these message strings get used:
  * Remember: The stats type is automatically prepended: "End of TYPE"
@@ -666,6 +705,24 @@ ProcessStartupScripts(dinfo_t *dip)
     return(status);
 }
 
+iobehavior_funcs_t *
+find_iobehavior(dinfo_t *dip, char *name)
+{
+    iobehavior_funcs_t **iobtp = &iobehavior_funcs_table[0];
+    iobehavior_funcs_t *iobf;
+
+    while ( iobf = *iobtp++ ) {
+	if ( EQ(iobf->iob_name, name) ) {
+	    return(iobf);
+	}
+	/* We now support a tool to dt mapping function. */
+	if ( iobf->iob_maptodt_name && EQ(iobf->iob_maptodt_name, name) ) {
+	    return(iobf);
+	}
+    }
+    return(NULL);
+}
+
 /*
  * main() - Start of data transfer program.
  */
@@ -676,6 +733,11 @@ main(int argc, char **argv)
     dinfo_t *dip = NULL;
     int pstatus, status;
     hbool_t FirstTime = True;
+    hbool_t maptodt = False;
+    iobehavior_funcs_t *iobf = NULL;
+#if defined(__unix)
+    struct rlimit rlim, *prlim = &rlim;
+#endif /* defined(__unix) */
 
     efp = stderr;
     ofp = stdout;
@@ -703,7 +765,32 @@ main(int argc, char **argv)
     page_size = getpagesize();
 #if defined(__unix)
     hertz = sysconf(_SC_CLK_TCK);
-    max_open_files = sysconf(_SC_OPEN_MAX);
+    //max_open_files = sysconf(_SC_OPEN_MAX);
+    status = getrlimit(RLIMIT_NOFILE, prlim);
+    if (status == SUCCESS) {
+	max_open_files = prlim->rlim_cur;
+    }
+    if ((max_open_files < DEFAULT_MAX_OPEN_FILES) || getenv(MAXFILES_ENVNAME)) {
+        char *p;
+	if (p = getenv(MAXFILES_ENVNAME)) {
+	    int maxfiles = number(dip, p, ANY_RADIX, &status, ANY_RADIX);
+	    if (status == SUCCESS) {
+		max_open_files = maxfiles;
+	    }
+	} else {
+	    max_open_files = DEFAULT_MAX_OPEN_FILES;
+	}
+	if (max_open_files > prlim->rlim_cur) {
+	    if ( getuid() ) {
+		prlim->rlim_cur = prlim->rlim_max; /* non-root to hard limit! */
+		max_open_files = prlim->rlim_max;
+	    } else {
+		prlim->rlim_cur = max_open_files; /* Try to set to higher limit. */
+	    }
+            /* Note: This may fail, esp. for non-root users! */
+	    status = setrlimit(RLIMIT_NOFILE, prlim);
+	}
+    }
 #elif defined(WIN32x)
     /* TODO: Don't think this is necessary now! */
     /*
@@ -749,6 +836,34 @@ main(int argc, char **argv)
     
     dip->argc = argc;
     dip->argv = argv;
+
+    /*
+     * Try to find the I/O behavior based on the program name. 
+     * Note: The purpose of this is to link tool to dt and map! 
+     */
+    iobf = find_iobehavior(dip, cmdname);
+    /* Note: This check is necessary until we have dt I/O functions! */
+    if ( (iobf == NULL) && NEL("dt", cmdname, 2) ) {
+	Printf(dip, "Sorry, we don't know any I/O behavior named '%s'!\n", cmdname);
+	exit(FAILURE);
+    }
+    /* Handle special I/O tool mapping (if supported). */
+    if (iobf) {
+	int status = SUCCESS;
+	/* Special name to map tool options to dt options. */
+	if (iobf->iob_maptodt_name) {
+	    maptodt = (EQS(cmdname, iobf->iob_maptodt_name)) ? True : False;
+	}
+	/* Map the tool options, if mapping is supported. */
+	if ( (maptodt == True) && iobf->iob_dtmap_options ) {
+	    status = (*iobf->iob_dtmap_options)(dip, argc, argv);
+	    exit(status);	/* Only display the mapped options! */
+	} else if (iobf->iob_map_options) {
+	    status = (*iobf->iob_map_options)(dip, argc, argv);
+	}
+	if (status == FAILURE) exit(status);
+	InteractiveFlag = False;
+    }
 
     do {
 	dip = master_dinfo;
@@ -807,7 +922,7 @@ main(int argc, char **argv)
 	
 	/*
 	 * Interactive or pipe mode, prompt for more options if device
-	 * or operation type not specified.  Allows "dt enable=pipes"
+	 * or operation type is not specified. Allows "dt enable=pipes"
 	 */
 	if ( ( (dip->di_input_file == NULL) && (dip->di_output_file == NULL) ) && 
 	     (InteractiveFlag || PipeModeFlag || dip->script_level) ) {
@@ -819,6 +934,14 @@ main(int argc, char **argv)
 	status = do_common_validate(dip);
 	if (status == FAILURE) {
 	    dip->di_exit_status = HandleExit(dip, status);
+	    continue;
+	}
+
+	if (dip->di_fsmap_type != FSMAP_TYPE_NONE) {
+            status = do_show_fsmap(dip);
+	    if (status == FAILURE) {
+		dip->di_exit_status = HandleExit(dip, status);
+	    }
 	    continue;
 	}
 
@@ -1034,7 +1157,7 @@ initiate_job(dinfo_t *mdip, job_id_t *job_id)
 	}
 	idip->di_mode = READ_MODE;
 	idip->di_ftype = INPUT_FILE;
-	if (os_isdir(idip->di_input_file)) {
+	if ( (idip->di_iobehavior == DT_IO) && os_isdir(idip->di_input_file)) {
             char *dirpath = idip->di_input_file;
 	    idip->di_input_file = make_dir_filename(idip, dirpath);
 	    FreeStr(idip, dirpath);
@@ -1057,7 +1180,7 @@ initiate_job(dinfo_t *mdip, job_id_t *job_id)
 	}
 	odip->di_mode = WRITE_MODE;
 	odip->di_ftype = OUTPUT_FILE;
-	if (os_isdir(odip->di_output_file)) {
+        if ( (odip->di_iobehavior == DT_IO) && os_isdir(odip->di_output_file) ) {
             char *dirpath = odip->di_output_file;
 	    odip->di_output_file = make_dir_filename(odip, dirpath);
 	    FreeStr(odip, dirpath);
@@ -1123,7 +1246,9 @@ initiate_job(dinfo_t *mdip, job_id_t *job_id)
 	dip = odip;
     }
 
-    (void)do_prejob_start_processing(mdip, dip);
+    if (dip->di_iobehavior != DTAPP_IO) {
+	(void)do_prejob_start_processing(mdip, dip);
+    }
 
     /*
      * Finally create a job and execute the threads!
@@ -1445,7 +1570,7 @@ docopy(void *arg)
 	if (status == SUCCESS) {
 	    status = init_slice(odip, odip->di_thread_number);
 	}
-    } else if (odip->di_ofile_position) {
+    } else if (odip->di_user_position || odip->di_ofile_position) {
 	/* Copy the output offset for common processing. */
 	odip->di_file_position = odip->di_ofile_position;
     }
@@ -2450,6 +2575,63 @@ create_thread_log(dinfo_t *dip)
 	}
     }
     return(status);
+}
+
+/* Beware: We are called from the main thread, without normal device setup! */
+int
+do_show_fsmap(dinfo_t *dip)
+{
+    int status = SUCCESS;
+
+    if (dip->di_input_file == NULL) {
+	Eprintf(dip, "You must specify an input file to show the file system map!\n");
+	return(FAILURE);
+    }
+    dip->di_dname = strdup(dip->di_input_file);
+    /* Setup the device type and various defaults. */
+    status = setup_device_info(dip, dip->di_input_file, dip->di_input_dtype);
+    if (status == FAILURE) return(status);
+    if (dip->di_fsfile_flag == False) {
+        Eprintf(dip, "This device is NOT a file system file: %s\n", dip->di_dname);
+        return(FAILURE);
+    }
+
+    if ( (status = (*dip->di_funcs->tf_open)(dip, dip->di_initial_flags)) == FAILURE) {
+        return(status);
+    }
+    if (dip->di_fsmap_type == FSMAP_TYPE_MAP_EXTENTS) {
+	status = os_report_file_map(dip, dip->di_fd, dip->di_dsize, dip->di_file_position, dip->di_data_limit);
+    } else if (dip->di_fsmap_type == FSMAP_TYPE_LBA_RANGE) {
+        Offset_t offset = dip->di_file_position;
+        large_t data_limit = dip->di_data_limit;
+	uint64_t lba = NO_LBA;
+        hbool_t firstTime = True;
+
+	if (dip->di_record_limit != INFINITY) {
+	    data_limit = (dip->di_record_limit * dip->di_block_size);
+	}
+	if (data_limit < (large_t)offset) {
+            data_limit += offset;
+	}
+	for (; ((large_t)offset < data_limit) ;) {
+	    lba = os_map_offset_to_lba(dip, dip->di_fd, dip->di_dsize, offset);
+	    if (dip->di_fsmap == NULL) {
+        	break;
+	    }
+	    if (firstTime) {
+		firstTime = False;
+		Printf(dip, "%14s %14s\n", "File Offset", "Physical LBA");
+	    }
+	    if (lba == NO_LBA) {
+		Printf(dip, "%14llu %14s\n", offset, "<not mapped>");
+	    } else {
+		Printf(dip, "%14llu %14llu\n", offset, lba);
+	    }
+            offset += dip->di_block_size;
+	}
+    }
+    status = (*dip->di_funcs->tf_close)(dip);
+    return(SUCCESS);
 }
 
 void
@@ -3473,6 +3655,17 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    continue;
 	}
+	if ( match(&string, "vdelay=") || match(&string, "verify_delay=") ) {
+	    if (match (&string, "random")) {
+		dip->di_verify_delay = RANDOM_DELAY_VALUE;
+	    } else {
+		dip->di_verify_delay = (u_int)number(dip, string, ANY_RADIX, &status, True);
+		if (status == FAILURE) {
+		    return ( HandleExit(dip, status) );
+		}
+	    }
+	    continue;
+	}
 	if ( match(&string, "wdelay=") || match(&string, "write_delay=") ) {
 	    if (match (&string, "random")) {
 		dip->di_write_delay = RANDOM_DELAY_VALUE;
@@ -3748,7 +3941,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	}
 	if (match (&string, "max=")) {
 	    dip->di_user_max = True;
-	    dip->di_max_size = (size_t) number(dip, string, ANY_RADIX, &status, True);
+	    dip->di_max_size = (size_t)number(dip, string, ANY_RADIX, &status, True);
 	    if (status == FAILURE) {
 		return ( HandleExit(dip, status) );
 	    }
@@ -3756,7 +3949,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	}
 	if (match (&string, "min=")) {
 	    dip->di_user_min = True;
-	    dip->di_min_size = (size_t) number(dip, string, ANY_RADIX, &status, True);
+	    dip->di_min_size = (size_t)number(dip, string, ANY_RADIX, &status, True);
 	    if (status == FAILURE) {
 		return ( HandleExit(dip, status) );
 	    }
@@ -4033,6 +4226,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_noprog_flag = True;
 		goto eloop;
 	    }
+	    if (match(&string, "poison")) {
+		dip->di_poison_buffer = True;
+		goto eloop;
+	    }
 	    if (match(&string, "prefill")) {
 		dip->di_prefill_buffer = True;
 		goto eloop;
@@ -4144,11 +4341,11 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    if (match(&string, "unmap")) {
 		dip->di_unmap_flag = True;
 		dip->di_unmap_type = UNMAP_TYPE_UNMAP;
-		dip->di_get_lba_status_flag = True;
+		//dip->di_get_lba_status_flag = True;
 		goto eloop;
 	    }
 #endif /* defined(SCSI) */
-	    if (match(&string, "savecorrupted")) {
+	    if ( match(&string, "savecorrupted") || match(&string, "sdc") ) {
 		dip->di_save_corrupted = True;
 		goto eloop;
 	    }
@@ -4474,6 +4671,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_pad_check = False;
 		goto dloop;
 	    }
+	    if (match(&string, "poison")) {
+		dip->di_poison_buffer = False;
+		goto dloop;
+	    }
 	    if (match(&string, "prefill")) {
 		dip->di_prefill_buffer = False;
 		goto dloop;
@@ -4580,7 +4781,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		goto dloop;
 	    }
 #endif /* defined(SCSI) */
-	    if (match(&string, "savecorrupted")) {
+	    if ( match(&string, "savecorrupted") || match(&string, "sdc") ) {
 		dip->di_save_corrupted = False;
 		goto dloop;
 	    }
@@ -4660,6 +4861,16 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		Eprintf(dip, "Dispose modes are 'delete', 'keep', or 'keeponerror'.\n", string);
 		return ( HandleExit(dip, FAILURE) );
 	    }
+	    continue;
+	}
+	if (match (&string, "datesep=")) {
+	    if (dip->di_date_sep) free(dip->di_date_sep);
+	    dip->di_date_sep = strdup(string);
+	    continue;
+	}
+	if (match (&string, "timesep=")) {
+	    if (dip->di_time_sep) free(dip->di_time_sep);
+	    dip->di_time_sep = strdup(string);
 	    continue;
 	}
 	if (match (&string, "filesep=")) {
@@ -4948,8 +5159,8 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    continue;
 	}
-	if (match (&string, "iobehavior=")) {
-	    if (match (&string, "dt")) {
+	if ( match(&string, "iob=") || match(&string, "iobehavior=") ) {
+	    if ( match(&string, "dt") ) {
 		dip->di_iobehavior = DT_IO;
 		continue;
 	   } else {
@@ -5228,14 +5439,14 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    return ( HandleExit(dip, FAILURE) );
 	} /* End of "oflags=" option. */
 	if ( match(&string, "oncerr=") || match(&string, "onerr=") ) {
-	    if (match(&string, "abort")) {
+	    if ( match(&string, "abort") || match(&string, "stop") ) {
 		dip->di_oncerr_action = ONERR_ABORT;
 	    } else if (match(&string, "continue")) {
 		dip->di_oncerr_action = ONERR_CONTINUE;
 	    } else if (match(&string, "pause")) {
 		dip->di_oncerr_action = ONERR_PAUSE;
 	    } else {
-		Eprintf(dip, "The valid error actions are 'abort', 'continue', or 'pause'.\n");
+		Eprintf(dip, "The valid error actions are 'abort/stop', 'continue', or 'pause'.\n");
 		return ( HandleExit(dip, FAILURE) );
 	    }
 	    continue;
@@ -5250,6 +5461,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	if ( match(&string, "fpattern") || match(&string, "fill_pattern=") ) {
 	    dip->di_fill_pattern = (uint32_t)number(dip, string, HEX_RADIX, &status, True);
 	    dip->di_user_fpattern = True;
+	    continue;
+	}
+	if ( match(&string, "ppattern") || match(&string, "prefill_pattern=") ) {
+	    dip->di_prefill_pattern = (uint32_t)number(dip, string, HEX_RADIX, &status, True);
 	    continue;
 	}
 	if (match (&string, "pattern=")) {	/* TODO: This is overloaded! */
@@ -5342,6 +5557,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    if (status == FAILURE) {
 		return ( HandleExit(dip, status) );
 	    }
+	    dip->di_user_oposition = True;
 	    continue;
 	}
 	if (match (&string, "procs=")) {
@@ -5623,6 +5839,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		FreeStr(dip, dip->di_stop_on_file);
 	    }
 	    dip->di_stop_on_file = strdup(string);
+	    if (dip->di_stop_on_file) {
+		/* Delete existing stopon file. */
+		(void)os_delete_file(dip->di_stop_on_file);
+	    }
 	    continue;
 	}
 	if (match (&string, "trigger=")) {
@@ -5988,6 +6208,30 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    FreeStr(dip, workload_options);
 	    return ( HandleExit(dip, SUCCESS) );
 	}
+	if (match (&string, "showbtags")) {
+	    /* The user *must* specify the data range. */
+	    dip->di_btag_flag = True;
+	    dip->di_dump_btags = True;
+	    dip->di_dump_limit = sizeof(btag_t);
+	    /* Disable all stats. */
+	    dip->di_job_stats_flag = False;
+	    dip->di_pstats_flag = False;
+	    dip->di_total_stats_flag = False;
+	    dip->di_stats_flag = False;
+	    dip->di_stats_level = STATS_NONE;
+	    /* Disable SCSI information too. */
+	    dip->di_scsi_flag = False;
+            continue;
+	}
+	if (match (&string, "showfslba")) {
+	    dip->di_fsmap_type = FSMAP_TYPE_LBA_RANGE;
+            dip->di_data_limit = dip->di_block_size;
+            continue;
+	}
+	if (match (&string, "showfsmap")) {
+	    dip->di_fsmap_type = FSMAP_TYPE_MAP_EXTENTS;
+            continue;
+	}
 	if (match (&string, "showtime=")) {
 	    char time_buffer[TIME_BUFFER_SIZE];
 	    time_t time_value = (time_t)number(dip, string, ANY_RADIX, &status, True);
@@ -5996,6 +6240,14 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    Printf(dip, "The time is: " TMF " seconds => %s\n", time_value,
 		   os_ctime(&time_value, time_buffer, sizeof(time_buffer)));
+	    return ( HandleExit(dip, SUCCESS) );
+	}
+	if (match (&string, "showvflags=")) {
+	    uint32_t verify_flags = (uint32_t)number(dip, string, HEX_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    show_btag_verify_flags_set(dip, verify_flags);
 	    return ( HandleExit(dip, SUCCESS) );
 	}
 	if (match (&string, "workload=")) {
@@ -6307,7 +6559,7 @@ time_value(dinfo_t *dip, char *str)
     char *eptr;
     time_t value;
 
-    value = CvtTimetoValue (str, &eptr);
+    value = CvtTimetoValue(str, &eptr);
 
     if (*eptr != '\0') {
 	Eprintf(dip, "Invalid character detected in time string: '%c'\n", *eptr);
@@ -7361,7 +7613,9 @@ StartMonitorThread(dinfo_t *dip, unsigned int interval)
     if (interval < monitor_interval) {
 	monitor_interval = interval;	/* Dynamically adjust, as required. */
     }
-    if ( MonitorThread == (pthread_t)NULL ) {
+    /* Beware: Multiple threads may be invoking this startup! */
+    if (dip->di_TimerActive == False) {
+        dip->di_TimerActive = True;
 	/* Note: Monitor every second to handle new jobs with smaller intervals! */
 	monitor_interval = interval;
 	dip->di_monitor_interval = monitor_interval; // 1; // interval; (last)
@@ -7374,6 +7628,7 @@ StartMonitorThread(dinfo_t *dip, unsigned int interval)
 	    }
 	} else {
 	    tPerror(dip, status, "pthread_create() failed");
+	    dip->di_TimerActive = False;
 	}
     }
     return(status);
@@ -7432,6 +7687,31 @@ ParseWorkload(dinfo_t *dip, char *workload)
     dip->cmdbufptr = cmdbufptr;
     dip->cmdbufsiz = cmdbufsiz;
     return(status);
+}
+
+int
+SetupCommandBuffers(dinfo_t *dip)
+{
+    /*
+     * Setup command buffers, if not already done!
+     */
+    if (dip->cmdbufptr == NULL) {
+	dip->cmdbufsiz = ARGS_BUFFER_SIZE;
+	if ( (dip->cmdbufptr = Malloc(dip, dip->cmdbufsiz)) == NULL ) {
+	    return(FAILURE);
+	}
+	/*
+	 * Allocate an array of pointers for parsing arguments.
+	 * Note: This overrides what arrived via the CLI in main()!
+	 */ 
+	dip->argv = (char **)Malloc(dip, (sizeof(char **) * ARGV_BUFFER_SIZE) );
+	if (dip->argv == NULL) {
+	    return(FAILURE);
+	}
+    } else {
+	*dip->cmdbufptr = '\0';
+    }
+    return(SUCCESS);
 }
 
 /*
@@ -7914,7 +8194,8 @@ init_device_information(void)
     dip->di_script_verify = DEFAULT_SCRIPT_VERIFY;
     dip->di_sleep_res = SLEEP_DEFAULT;
     dip->di_uuid_dashes = True;
-    dip->di_initial_vflags = BTAGV_QV;
+    /* Note: Decided to enable all vflags, since this affects btag reporting! */
+    dip->di_initial_vflags = BTAGV_ALL; /* BTAGV_QV; */
     dip->di_btag_vflags = dip->di_initial_vflags;
 
     /* Initialize debug flags. */
@@ -8021,7 +8302,7 @@ init_device_defaults(dinfo_t *dip)
     dip->di_scsi_write_type = ScsiWriteTypeDefault;
     dip->di_unmap_type = UNMAP_TYPE_NONE;
     dip->di_unmap_flag = False;
-    dip->di_get_lba_status_flag = False;
+    dip->di_get_lba_status_flag = True;
     dip->di_idt = IDT_BOTHIDS;
 #else /* !defined(SCSI) */
     dip->di_scsi_flag = False;
@@ -8101,7 +8382,8 @@ init_device_defaults(dinfo_t *dip)
     dip->di_noprog_flag = False;
     dip->di_noprogtime = 0;
     dip->di_noprogttime = 0;
-    dip->di_prefill_buffer = UNINITIALIZED;
+    dip->di_poison_buffer = DEFAULT_POISON_FLAG;
+    dip->di_prefill_buffer = DEFAULT_PREFILL_FLAG;
     dip->di_unique_log = False;
     dip->di_unique_file = False;
     dip->di_user_incr = False;
@@ -8112,11 +8394,12 @@ init_device_defaults(dinfo_t *dip)
     dip->di_user_lbdata = False;
     dip->di_user_lbsize = False;
     dip->di_user_position = False;
+    dip->di_user_oposition = False;
     dip->di_incr_pattern = False;
     dip->di_logappend_flag = False;
     dip->di_logdiag_flag = False;
     dip->di_logpid_flag = False;
-    dip->di_stop_immediate = False;
+    dip->di_stop_immediate = True;
     dip->di_syslog_flag = False;
     dip->di_loop_on_error = False;
     dip->di_mmap_flag = False;
@@ -8152,6 +8435,7 @@ init_device_defaults(dinfo_t *dip)
     dip->di_open_delay = DEFAULT_OPEN_DELAY;
     dip->di_close_delay = DEFAULT_CLOSE_DELAY;
     dip->di_read_delay = DEFAULT_READ_DELAY;
+    dip->di_verify_delay = DEFAULT_VERIFY_DELAY;
     dip->di_write_delay = DEFAULT_WRITE_DELAY;
     dip->di_start_delay = DEFAULT_START_DELAY;
     dip->di_delete_delay = DEFAULT_DELETE_DELAY;
@@ -8172,6 +8456,7 @@ init_device_defaults(dinfo_t *dip)
     dip->di_fs_block_size = 0;
     dip->di_fs_space_free = 0;
     dip->di_fs_total_space = 0;
+    dip->di_fsmap_type = FSMAP_TYPE_NONE;
 
     dip->di_multi_flag = False;
     dip->di_multi_volume = 1;
@@ -8389,8 +8674,7 @@ cleanup_device(dinfo_t *dip, hbool_t master)
 	dip->di_filesystem_options = NULL;
     }
     if (dip->di_fsmap) {
-	Free(dip, dip->di_fsmap);
-	dip->di_fsmap = NULL;
+	os_free_file_map(dip);
     }
     if (dip->di_protocol_version) {
 	FreeStr(dip, dip->di_protocol_version);
@@ -8751,6 +9035,7 @@ do_common_validate(dinfo_t *dip)
 {
     int status = SUCCESS;
     char *devs;
+
     if ( (dip->di_input_file == NULL) && (dip->di_output_file == NULL) ) {
 	Eprintf(dip, "You must specify an input file, an output file, or both.\n");
 	return(FAILURE);
@@ -8852,6 +9137,13 @@ do_datatest_validate(dinfo_t *dip)
     int status = SUCCESS;
 
     if (dip->di_iobehavior == DT_IO) {
+        /* Switch output file to input file for 100% reads! (for automation) */
+	if ( (dip->di_read_percentage == 100) &&
+	     dip->di_output_file && (dip->di_input_file == NULL) ) {
+	    dip->di_input_file = dip->di_output_file;
+	    dip->di_output_file = NULL;
+	    dip->di_read_percentage = 0;
+	}
 	if ( ((dip->di_aio_flag == True) || (dip->di_mmap_flag == True)) &&
 	      (dip->di_read_percentage || dip->di_random_percentage ||
 	       dip->di_random_rpercentage || dip->di_random_wpercentage) ) {
@@ -9450,6 +9742,8 @@ do_common_device_setup(dinfo_t *dip)
 	return(FAILURE);
     }
 
+#if 0
+    /* This is no longer a valid sanity check due to changes in FindCapacity() for file position! */
     /*
      * Sanity check the random I/O data limits.
      */
@@ -9462,18 +9756,22 @@ do_common_device_setup(dinfo_t *dip)
 	}
 	return(FAILURE);
     }
+#endif /* 0 */
 
     /*
      * Special handling for step option:
      *
+     * With a step option and a data limit, we need to set the end offset.
+     * The I/O loops will stop when the offset reaches this end offset.
+     * 
      * For regular files, we must setup an end position (offset), since
      * doing I/O to a file system will NOT encounter an EOF like raw disks.
      * Slices also requires an ending position when step option is used.
-     * 
+     *
      * Note: setup_slice() sets this for slices, called after this function!
      */
     if (dip->di_step_offset &&
-	((dip->di_dtype->dt_dtype == DT_REGULAR) || dip->di_slices) ) {
+      ((dip->di_dtype->dt_dtype == DT_REGULAR) || dip->di_slices) ) {
 	if (dip->di_data_limit && (dip->di_data_limit != INFINITY)) {
 	    dip->di_end_position = (dip->di_file_position + dip->di_data_limit);
 	} else {
@@ -9519,7 +9817,7 @@ do_common_device_setup(dinfo_t *dip)
     /*
      * Extra verify buffer required for read-after-write operations.
      */
-    if (dip->di_raw_flag || (dip->di_iobehavior == DTAPP_IO) ) {
+    if ( dip->di_raw_flag || (dip->di_iobehavior == DTAPP_IO) ) {
 	dip->di_verify_buffer = malloc_palign(dip, dip->di_verify_buffer_size, dip->di_align_offset);
     }
 
@@ -9822,7 +10120,6 @@ do_monitor_processing(dinfo_t *mdip, dinfo_t *dip)
 
     /* Note: Using mdip for monitoring thread (right now)! */
     (void)StartMonitorThread(mdip, (unsigned int)dip->di_alarmtime);
-    dip->di_TimerActive = True;
 
 #if 0
     /*

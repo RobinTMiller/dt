@@ -37,7 +37,7 @@
 
 #if !defined(HAVE_UUID)
 /* Note: FreeBSD has UUID API's, but different than Linux and Solaris! */
-# if defined(__linux) || defined(__sun) || defined(_WIN32) || defined(MacDarwin) || defined(FreeBSD)
+# if  defined(__linux) || defined(__sun) || defined(_WIN32) || defined(MacDarwin) || defined(FreeBSD)
 #  define HAVE_UUID 1
 # else
 #  define HAVE_UUID 0
@@ -177,8 +177,8 @@ typedef volatile slarge_t 	 v_slarge;
 # define FXF		LXF 
 
 /* Note: Formats for leading zeros, half or full 64-bits. */
-# define LLHXFMT	"%08I64X"
-# define LLFXFMT	"%016I64X"
+# define LLHXFMT	"%08I64x"
+# define LLFXFMT	"%016I64x"
 
 /* Note: Replacement for "%p" which differs between OS's, esp. Windows! */
 # define LLPXFMT "0x%I64x"
@@ -200,8 +200,8 @@ typedef volatile slarge_t       v_slarge;
 # define LUF		"%lu"
 # define LDF		"%ld"
 # define LXF		"%#lx"
-# define LLHXFMT	"%08lX"
-# define LLFXFMT	"%016lX"
+# define LLHXFMT	"%08lx"
+# define LLFXFMT	"%016lx"
 
 # define LLPXFMT	"0x%lx"
 # define LLPX0FMT	"0x%016lx"
@@ -212,7 +212,7 @@ typedef volatile slarge_t       v_slarge;
 
 # endif /* defined(_WIN64) */
 /*
- * 32-bit Definitions: (yea, messy... historic, needs cleaned up!)
+ * 32-bit Definitions:
  */
 # elif defined(WIN32)
 
@@ -228,8 +228,8 @@ typedef volatile slarge_t 	 v_slarge;
 # define LXF		"0x%I64x"
 # define FUF		LUF 
 # define FXF		LXF 
-# define LLHXFMT	"%08I64X"
-# define LLFXFMT	"%016I64X"
+# define LLHXFMT	"%08I64x"
+# define LLFXFMT	"%016I64x"
 
 # define LLPXFMT	"0x%lx"
 # define LLPX0FMT	"0x%08lx"
@@ -262,8 +262,8 @@ typedef volatile slarge_t	v_slarge;
 #    define LUF		"%llu"
 #    define LDF		"%lld"
 #    define LXF		"%#llx"
-#    define LLHXFMT	"%08llX"
-#    define LLFXFMT	"%016llX"
+#    define LLHXFMT	"%08llx"
+#    define LLFXFMT	"%016llx"
 #  endif /* if defined(SCO) */
 
 # define LLPXFMT	"0x%x"
@@ -423,7 +423,7 @@ typedef unsigned int iotlba_t;
 #define RETRYABLE	-2			/* Retryable error.	*/
 #define TRUE		1			/* Boolean TRUE value.	*/
 #define FALSE		0			/* Boolean FALSE value.	*/
-#define UNINITIALIZED	255			/* Uninitialized flag.	*/
+//#define UNINITIALIZED	255			/* Uninitialized flag.	*/
 #define NO_LBA		0xFFFFFFFFFFFFFFFFULL	/* No LBA vlaue.	*/
 
 #define BLOCK_SIZE		512		/* Bytes in block.	*/
@@ -468,7 +468,8 @@ typedef unsigned int iotlba_t;
  */
 typedef enum hbool {
     False = 0,
-    True  = 1
+    True  = 1,
+    UNINITIALIZED = -1
 } hbool_t;
 
 typedef volatile hbool_t vbool_t;

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2018			    *
+ *			  COPYRIGHT (c) 2006 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,9 @@
  *	This module contains *unix OS specific functions.
  * 
  * Modification History:
+ * 
+ * December 24th, 2019 by Robin T. Miller
+ *      Added Linux support to map file offsets to physical LBA's.
  * 
  * March 1st, 2018 by Robin T Miller
  *      Add isDeviceMounted() for Linux only (right now), to determine if
@@ -683,12 +686,12 @@ os_open_file(char *name, int oflags, int perm)
     HANDLE fd;
     hbool_t dio_flag = (oflags & O_DIRECT) ? True : False;
     
-    oflags &= ~O_DIRECT;	/* Clear the psuedo-flag. */
-    
+    /* Handle Direct I/O on HFS and Veritas file systems. */
     fd = open(name, oflags, perm);
     /* If requested, try to enable Direct I/O (DIO). */
     if ( (fd != NoFd) && (dio_flag == True) ) {
 	int status;
+	oflags &= ~O_DIRECT;	/* Clear the psuedo-flag. */
 	if ( (status = directio(fd, DIRECTIO_ON)) < 0) {
 	    if (errno == ENOTTY) {
 		(void)ioctl(fd, VX_SETCACHE, VX_DIRECT);
@@ -698,7 +701,26 @@ os_open_file(char *name, int oflags, int perm)
     return(fd);
 }
 
-#endif /* defined(MacDarwin) || defined(SOLARIS) */
+#elif defined(__hpux)
+
+HANDLE
+os_open_file(char *name, int oflags, int perm)
+{
+    HANDLE fd;
+    hbool_t dio_flag = (oflags & O_DIRECT) ? True : False;
+    
+    oflags &= ~O_DIRECT;	/* Clear the psuedo-flag. */
+    
+    fd = open(name, oflags, perm);
+    /* If requested, try to enable Direct I/O (DIO). */
+    if ( (fd != NoFd) && (dio_flag == True) ) {
+	int status;
+	status = ioctl(fd, VX_SETCACHE, VX_DIRECT);
+    }
+    return(fd);
+}
+
+#endif /* defined(__hpux) || defined(MacDarwin) || defined(SOLARIS) */
     
 char *
 os_ctime(time_t *timep, char *time_buffer, int timebuf_size)
@@ -707,8 +729,8 @@ os_ctime(time_t *timep, char *time_buffer, int timebuf_size)
 
     bp = ctime_r(timep, time_buffer);
     if (bp == NULL) {
-	Perror(NULL, "ctime_r() failed");
-	(int)sprintf(time_buffer, "<no time available>\n");
+	//Perror(NULL, "ctime_r() failed");
+	(int)sprintf(time_buffer, "<no time available>");
     } else {
 	if (bp = strrchr(time_buffer, '\n')) {
 	    *bp = '\0';
@@ -1229,30 +1251,30 @@ os_DirectIO(struct dinfo *dip, char *file, hbool_t flag)
  * Inputs:
  *      dip = The device information pointer.
  *      file = The file name we're working on.
- *	flag = Flag to control enable/disable.
+ *	dio_flag = Flag to control enable/disable.
  *
  * Return Value:
  *      Returns SUCCESS (if enabled) or FAILURE (couldn't enable DIO).
  */
 int
-os_VeritasDirectIO(struct dinfo *dip, char *file, hbool_t flag)
+os_VeritasDirectIO(struct dinfo *dip, char *file, hbool_t dio_flag)
 {
     char fmt[STRING_BUFFER_SIZE];
-    char *dio_msg = (flag) ? "Enabling" : "Disabling";
+    char *dio_msg = (dio_flag) ? "Enabling" : "Disabling";
     int status;
 
     if (dip->di_debug_flag || dip->di_fDebugFlag) {
 	Printf(dip, "%s direct I/O via VX_SETCACHE/VX_DIRECT IOCTL...\n", dio_msg);
     }
-    if ( (status = ioctl(dip->di_fd, VX_SETCACHE, (flag) ? VX_DIRECT : 0)) < 0) {
+    if ( (status = ioctl(dip->di_fd, VX_SETCACHE, (dio_flag) ? VX_DIRECT : 0)) < 0) {
 	if (dip->di_debug_flag) {
 	    ReportErrorInfo(dip, dip->di_dname, os_get_error(), "os_VeritasDirectIO() VX_SETCACHE/VX_DIRECT", IOCTL_OP, False);
 	}
     }
-    if ( (status == SUCCESS) && flag) {
+    if ( (status == SUCCESS) && dio_flag) {
         int cache_flags = 0;
-	status = ioctl(dip->di_fd, VX_GETCACHE, &cache_flags);
-	if (cache_flags == 0) {
+	int rc = ioctl(dip->di_fd, VX_GETCACHE, &cache_flags);
+	if ( (rc == SUCCESS) && (cache_flags == 0) ) {
 	    Wprintf(dip, "VX_GETCACHE reports VX_DIRECT is NOT set, continuing...\n");
 	}
     }
@@ -1461,7 +1483,11 @@ os_create_random_seed(void)
     struct timeval *tv = &time_val;
 
     if ( gettimeofday(tv, NULL) == SUCCESS ) {
-	return( ((uint64_t)tv->tv_sec << 32L) + (uint64_t)tv->tv_usec );
+        /* Note: This is *not* very unique for threads started rapidly! */
+        /* Added thread ID to help make the seed unique, helps per thread. */
+        /* Note: If seed is set from master thread, the thread ID does not help! */
+        /* What we really needs is a high resolution clock to match Windows! */
+	return( ((uint64_t)tv->tv_sec << 32L) | (uint64_t)tv->tv_usec + (uint64_t)pthread_self() );
     } else {
 	return(0);
     }
@@ -1666,3 +1692,224 @@ os_get_uuid(hbool_t want_dashes)
 }
 
 #endif /* HAVE_UUID */
+
+#if defined(__linux__)
+
+#include <linux/types.h>
+#include <linux/fs.h>
+#include <linux/fiemap.h>
+
+#define FIEMAP_FLAGS_UNKNOWN (FIEMAP_EXTENT_UNKNOWN | FIEMAP_EXTENT_DELALLOC | FIEMAP_EXTENT_NOT_ALIGNED)
+
+/*
+ * Forward References:
+ */
+static void report_file_extent(dinfo_t *dip, struct fiemap_extent *fep, uint32_t dsize);
+
+/* ------------------------------------------------------------------------------------------------------- */
+
+/* Helper function to display the file offset and LBA range. */
+
+static void
+report_file_extent(dinfo_t *dip, struct fiemap_extent *fep, uint32_t dsize)
+{
+    char buffer[STRING_BUFFER_SIZE];
+    __u64 starting_lba = 0, ending_lba = 0;
+    __u64 total_blocks = (fep->fe_length / dsize);
+    char *bp = buffer;
+
+    /*
+     * Example: 
+     *  
+     *   File Offset    Begin LBA      End LBA     Blocks
+     *    	   0         2288         6383      4096
+     *       2097152      7568792      7570839      2048
+     *       3145728      7576984      7579031      2048
+     *       4194304      7581080      7583127      2048
+     *		...
+     */
+    if (fep->fe_physical && !(fep->fe_flags & FIEMAP_FLAGS_UNKNOWN)) {
+	starting_lba = (fep->fe_physical / dsize);
+	ending_lba   = ((fep->fe_physical + fep->fe_length) / dsize) - 1;
+	bp += sprintf(bp, "%12llu %12llu", starting_lba, ending_lba);
+    } else {
+	bp += sprintf(bp, "      -          -   ");
+    }
+    if ( (fep->fe_physical == 0) && (total_blocks == 0) ) {
+	bp += sprintf(bp, "      -   ");
+    } else {
+	bp += sprintf(bp, "%10llu", total_blocks);
+    }
+    Printf(dip, "%14llu %s\n", fep->fe_logical, buffer);
+}
+
+/* ------------------------------------------------------------------------------------------------------- */
+
+/* Note: We are using the file map data structures in: /usr/include/linux/fiemap.h, not our own! */
+
+void *
+os_get_file_map(dinfo_t *dip, HANDLE fd)
+{
+    struct fiemap fmap, *fmp = &fmap;
+    struct fiemap_extent *fep = NULL;
+    void *fsp = NULL;
+    size_t fiedata_size;
+    __u32 extent_count;
+
+    /* Caller must free file map to force repopulating! */
+    if (dip->di_fsmap) {
+	return(dip->di_fsmap);
+    }
+    /*
+     * Request the map header, to find the extents mapped.
+     */
+    memset(fmp, '\0', sizeof(*fmp));
+    fmp->fm_flags = FIEMAP_FLAG_SYNC;
+    fmp->fm_length = FIEMAP_MAX_OFFSET;
+    if ( ioctl(fd, FS_IOC_FIEMAP, fmp) == FAILURE) {
+	if (dip->di_fDebugFlag) {
+	    tPerror(dip, errno, "FIEMAP IOCTL() failed on %s", dip->di_dname);
+	}
+	return(NULL);
+    }
+    if ( (extent_count = fmp->fm_mapped_extents) == 0) {
+	return(NULL);
+    }
+    /* Allocate sufficent memory for the map header and all extents. */
+    fiedata_size = sizeof(*fmp) + (sizeof(*fep) * extent_count);
+    fsp = Malloc(dip, fiedata_size);
+    if (fsp == NULL) { return(NULL); }
+
+    fmp = (struct fiemap *)fsp;
+    fep = (struct fiemap_extent *)(fmp + 1);
+
+    /* Note: We may not need this! */
+    if (dip->di_fs_block_size == 0) {
+	if (ioctl(dip->di_fd, FIGETBSZ, &dip->di_fs_block_size) == FAILURE) {
+	    Wprintf(dip, "Unable to determine file system block size!\n");
+	}
+    }
+
+    fmp->fm_flags  = 0;
+    fmp->fm_length = FIEMAP_MAX_OFFSET;
+    fmp->fm_extent_count = extent_count;
+
+    if ( ioctl(fd, FS_IOC_FIEMAP, fmp) == FAILURE) {
+	if (dip->di_fDebugFlag) {
+	    tPerror(dip, errno, "FIEMAP IOCTL() failed on %s", dip->di_dname);
+	}
+	free(fsp);
+	return(NULL);
+    }
+    dip->di_fsmap = fmp;
+    return(fmp);
+}
+
+void
+os_free_file_map(dinfo_t *dip)
+{
+    if (dip->di_fsmap) {
+	Free(dip, dip->di_fsmap);
+	dip->di_fsmap = NULL;
+    }
+    return;
+}
+
+int
+os_report_file_map(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset, int64_t length)
+{
+    unsigned int extents;
+    struct fiemap *fmp;
+    struct fiemap_extent *fep;
+    Offset_t fileOffset = offset;
+    int64_t recordLength = length;
+    hbool_t firstTime = True;
+    hbool_t foundExtent = False;
+    hbool_t sparseReported = False;
+    int status = SUCCESS;
+
+    if ( (fmp = (struct fiemap *)os_get_file_map(dip, fd)) == NULL) {
+	return(FAILURE);
+    }
+    fep = (struct fiemap_extent *)(fmp + 1);
+
+    for (extents = 0; (extents < fmp->fm_mapped_extents) && (recordLength > 0); extents++, fep++) {
+	__u64 ending_logical = (fep->fe_logical + fep->fe_length);
+	if ( (fileOffset >= fep->fe_logical) && (fileOffset < ending_logical) ) {
+	    if (firstTime) {
+		firstTime = False;
+		Printf(dip, "File: %s, LBA Size: %u bytes\n", dip->di_dname, dsize);
+		Printf(dip, "\n");
+		Printf(dip, "%14s %12s %12s %10s\n", "File Offset", "Start LBA", "End LBA", "Blocks");
+	    }
+	    report_file_extent(dip, fep, dsize);
+	    fileOffset += fep->fe_length;
+	    recordLength -= fep->fe_length;
+	    foundExtent = True;
+	} else if ( (foundExtent == True) && fileOffset < ending_logical) {
+	    if (sparseReported == False) {
+		Wprintf(dip, "File offset "FUF" was NOT found, possible sparse file!\n", fileOffset);
+		sparseReported = True;
+	    }
+	    /* Handle sparse files by reporting subsequent extents within length specified! */
+	    report_file_extent(dip, fep, dsize);
+	    fileOffset += fep->fe_length;
+	    recordLength -= fep->fe_length;
+	}
+    }
+    return(status);
+}
+
+uint64_t
+os_map_offset_to_lba(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset)
+{
+    unsigned int extents;
+    struct fiemap *fmp;
+    struct fiemap_extent *fep;
+    uint64_t lba = NO_LBA;
+
+    if ( (fmp = (struct fiemap *)os_get_file_map(dip, fd)) == NULL) {
+	return(lba);
+    }
+    fep = (struct fiemap_extent *)(fmp + 1);
+
+    for (extents = 0; extents < fmp->fm_mapped_extents; extents++, fep++) {
+	__u64 ending_logical = (fep->fe_logical + fep->fe_length);
+	if ( (offset >= fep->fe_logical) && (offset < ending_logical) ) {
+	    lba = ( (offset - fep->fe_logical) + fep->fe_physical) / dsize;
+	    if (dip->di_fDebugFlag) {
+		Printf(dip, "File offset: "FUF", Physical LBA "LUF"\n", offset, lba);
+		report_file_extent(dip, fep, dsize);
+	    }
+	    break;
+	}
+    }
+    if ( (lba == NO_LBA) && dip->di_fDebugFlag ) {
+	Wprintf(dip, "File mapping NOT found for offset "FUF", assuming not written...\n", offset);
+    }
+    return(lba);
+}
+
+#else /* !defined(__linux__) */
+
+void
+os_free_file_map(dinfo_t *dip)
+{
+    return;
+}
+
+int
+os_report_file_map(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset, int64_t length)
+{
+    return(WARNING);
+}
+
+uint64_t
+os_map_offset_to_lba(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset)
+{
+    uint64_t lba = NO_LBA;
+    /* TBA */
+    return(lba);
+}
+
+#endif /* defined(__linux__) */

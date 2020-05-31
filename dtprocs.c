@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2019			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -850,13 +850,15 @@ init_slice(struct dinfo *dip, int slice)
 static int
 init_slice_info(struct dinfo *dip, slice_info_t *sip, large_t *data_resid)
 {
-    large_t dlimit = (dip->di_data_limit - dip->di_file_position);
+    /* Note: The data limit was adjusted by file position by FindCapacity(). */
+    large_t data_limit = dip->di_data_limit;
+    //large_t data_limit = (dip->di_data_limit - dip->di_file_position);
     large_t slice_length;
     int status = SUCCESS;
 
     sip->slice = 0;
     sip->slice_position = dip->di_file_position;
-    slice_length = (dlimit / dip->di_slices);
+    slice_length = (data_limit / dip->di_slices);
     sip->slice_length = rounddown(slice_length, dip->di_dsize);
     if (sip->slice_length < (large_t)dip->di_dsize) {
 	LogMsg (dip, dip->di_efp, logLevelCrit, 0,
@@ -864,7 +866,7 @@ init_slice_info(struct dinfo *dip, slice_info_t *sip, large_t *data_resid)
 		sip->slice_length, dip->di_dsize);
 	status = FAILURE;
     } else {
-	*data_resid = (dlimit - (sip->slice_length * dip->di_slices));
+	*data_resid = (data_limit - (sip->slice_length * dip->di_slices));
 	*data_resid = rounddown(*data_resid, dip->di_dsize);
     }
     return(status);

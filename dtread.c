@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,7 +30,18 @@
  *	Read routines for generic data test program.
  *
  * Modification History:
- *
+ * 
+ * May 5th, 2020 by Robin T. Miller
+ *      Use high resolution timer for more accurate I/O timing. This is
+ * implemented on Windows, but Unix systems still use gettimeofday() API.
+ * 
+ * March 7th, 2020 by Robin T. Miller
+ *      Apply new logic in FindCapacity() to properly handle file position.
+ * 
+ * March 6th, 2020 by Robin T. Miller
+ *      Update SetupCapacityPercentage() to better handle slices with a file
+ * position and capacity percentage, Starting offset is for mixed FS/disk test.
+ * 
  * May 28th, 2019 by Robin T. Miller
  *      Don't adjust offset when read error occurs (count is -1), since this
  * causes the wrong offset when we've specified an error limit.
@@ -233,7 +244,7 @@ read_data(struct dinfo *dip)
 	if (dip->di_terminating) break;
 
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
-	    gettimeofday(&loop_start_time, NULL);
+	    highresolutiontime(&loop_start_time, NULL);
 	    if (dip->di_records_read) {
 		/* Adjust the actual usecs to adjust for possible usleep below! */
 		dip->di_actual_total_usecs += timer_diff(&loop_end_time, &loop_start_time);
@@ -497,7 +508,7 @@ read_data(struct dinfo *dip)
 	}
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
-	    gettimeofday(&loop_end_time, NULL);
+	    highresolutiontime(&loop_end_time, NULL);
 	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
             dip->di_target_total_usecs += dip->di_iops_usecs; 
             dip->di_actual_total_usecs += loop_usecs;
@@ -600,7 +611,7 @@ read_data_iolock(struct dinfo *dip)
 	if (dip->di_terminating) break;
 
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
-	    gettimeofday(&loop_start_time, NULL);
+	    highresolutiontime(&loop_start_time, NULL);
 	    if (dip->di_records_read) {
 		/* Adjust the actual usecs to adjust for possible usleep below! */
 		dip->di_actual_total_usecs += timer_diff(&loop_end_time, &loop_start_time);
@@ -831,7 +842,7 @@ read_data_iolock(struct dinfo *dip)
 	}
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
-	    gettimeofday(&loop_end_time, NULL);
+	    highresolutiontime(&loop_end_time, NULL);
 	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
             dip->di_target_total_usecs += dip->di_iops_usecs; 
             dip->di_actual_total_usecs += loop_usecs;
@@ -941,7 +952,7 @@ check_read(struct dinfo *dip, ssize_t count, size_t size)
 		    dip->di_warning_errors++;
 		    return (WARNING);
 		}
-		ReportDeviceInfo(dip, count, 0, False);
+		ReportDeviceInfo(dip, count, 0, False, NotMismatchedData);
 		RecordErrorTimes(dip, True);
 	    }
 	}
@@ -977,7 +988,7 @@ read_eof(struct dinfo *dip)
     if (!dip->di_end_of_file) {
 	Fprintf(dip, "ERROR: File %lu, Record %lu, expected EOF was NOT detected!\n",
 		(dip->di_files_read + 1), (dip->di_records_read + 1));
-	ReportDeviceInfo (dip, count, 0, False);
+	ReportDeviceInfo (dip, count, 0, False, NotMismatchedData);
 	RecordErrorTimes(dip, True);
 	dip->di_read_errors++;
 	status = FAILURE;
@@ -1013,14 +1024,14 @@ read_eom(struct dinfo *dip)
 	if (dip->di_end_of_file) {
 	    Fprintf(dip, "ERROR: File %lu, Record %lu, expected EOM was NOT detected!\n",
 			(dip->di_files_read + 1), (dip->di_records_read + 1));
-	    ReportDeviceInfo (dip, count, 0, False);
+	    ReportDeviceInfo(dip, count, 0, False, NotMismatchedData);
 	    RecordErrorTimes(dip, True);
 	    return (FAILURE);
 	}
     } else if ( !dip->di_end_of_logical ) {
 	Fprintf(dip, "ERROR: File %lu, Record %lu, expected EOM was NOT detected!\n",
 		(dip->di_files_read + 1), (dip->di_records_read + 1));
-	ReportDeviceInfo (dip, count, 0, False);
+	ReportDeviceInfo(dip, count, 0, False, NotMismatchedData);
 	RecordErrorTimes(dip, True);
 	dip->di_read_errors++;
 	return (FAILURE);
@@ -1060,8 +1071,12 @@ read_record (	struct dinfo	*dip,
      * Note: To avoid the performance hit, this is not always done! 
      */
     if ( (dip->di_compare_flag == True) && (dip->di_prefill_buffer == True) ) {
-	uint32_t pattern = (dip->di_fill_pattern) ? dip->di_fill_pattern : (uint32_t)dip->di_thread_number;
-	init_buffer(dip, buffer, bsize, pattern);
+	uint32_t pattern = (dip->di_prefill_pattern) ? dip->di_prefill_pattern : (uint32_t)dip->di_thread_number;
+	if (dip->di_poison_buffer) {
+	    poison_buffer(dip, buffer, bsize, pattern);
+	} else {
+	    init_buffer(dip, buffer, bsize, pattern);
+	}
     }
 
 retry:
@@ -1233,6 +1248,7 @@ FindCapacity(struct dinfo *dip)
     int		attempts = 0;
     ssize_t	count, last = 0;
     large_t	capacity_bytes = 0;
+    large_t	user_capacity = dip->di_user_capacity;
     u_char	*buffer;
     int		mode = O_RDONLY;
     HANDLE	fd, saved_fd = NoFd;
@@ -1240,19 +1256,49 @@ FindCapacity(struct dinfo *dip)
     hbool_t	temp_fd = False;
     hbool_t	expect_error = True;
 
-#if defined(DEBUG)
-    Printf(dip, "FindCapacity: rdsize = %u\n", dip->di_rdsize);
-    Printf(dip, "FindCapacity: data_limit = " LUF "\n", dip->di_data_limit);
-    Printf(dip, "FindCapacity: rdata_limit = " LUF "\n", dip->di_rdata_limit);
-    Printf(dip, "FindCapacity: user_capacity = " LUF "\n", dip->di_user_capacity);
-    Printf(dip, "FindCapacity: slices = %u, slice_number = %d\n", dip->di_slices, dip->di_slice_number);
-#endif /* defined(DEBUG) */
+//#if defined(DEBUG)
+    /* This comes in handy at times, for debugging! */
+    if (dip->di_debug_flag && dip->di_Debug_flag) {
+	Printf(dip, "FindCapacity: offset = "FUF"\n", dip->di_file_position);
+	Printf(dip, "FindCapacity: rdsize = %u\n", dip->di_rdsize);
+	Printf(dip, "FindCapacity: data_limit = " LUF "\n", dip->di_data_limit);
+	Printf(dip, "FindCapacity: rdata_limit = " LUF "\n", dip->di_rdata_limit);
+	Printf(dip, "FindCapacity: user_capacity = " LUF "\n", dip->di_user_capacity);
+	Printf(dip, "FindCapacity: slices = %u, slice_number = %d\n", dip->di_slices, dip->di_slice_number);
+    }
+//#endif /* defined(DEBUG) */
+
+    /* 
+     * For disks, ensure we don't exceed the capacity, esp. for slices and random I/O. 
+     *  
+     * Note: This must be done early, esp. to apply capacity percentage, and setup limits. 
+     * But for random I/O and slices, we must be in range of disk blocks to avoid false seek 
+     * failures, due to accessing non-existant offsets! Understood? (Note to self! ;) 
+     *  
+     * Please Note: This is tricky logic, and if not done right, leads to false failures! 
+     */
+    if ( isDiskDevice(dip) && user_capacity && dip->di_file_position) {
+        /* All this setup is done magically by functions in dtinfo.c! */
+        uint32_t disk_block_size = (dip->di_rdsize) ? dip->di_rdsize : BLOCK_SIZE;
+	large_t capacity_bytes = (dip->di_capacity * disk_block_size);
+        /* Our goal here is to make the adjust capacity, look like a smaller disk! */
+        large_t disk_capacity = (capacity_bytes - dip->di_file_position);
+        /* Note: This user capacity is overloaded, cleanup one day! */
+        user_capacity = min(disk_capacity, user_capacity);
+    }
     /*
      * The user capacity is setup for disk devices, so this appears to be the best common 
      * location to calculate capacity percentage. 
      */
-    if (dip->di_capacity_percentage && dip->di_user_capacity) {
-	dip->di_user_capacity = SetupCapacityPercentage(dip, dip->di_user_capacity);
+    if (dip->di_capacity_percentage && (user_capacity || dip->di_user_capacity) ) {
+	user_capacity = SetupCapacityPercentage(dip, user_capacity);
+    }
+    if ( user_capacity && (dip->di_user_capacity != user_capacity) ) {
+	if (dip->di_debug_flag || dip->di_Debug_flag || dip->di_rDebugFlag) {
+	    Printf (dip, "Previous user capacity "LDF", adjusted capacity "LDF"\n",
+		    dip->di_user_capacity, user_capacity);
+	}
+        dip->di_user_capacity = user_capacity;
     }
 
     /* Note; For SCSI I/O, the user capacity should already be setup! */
@@ -1404,22 +1450,28 @@ set_random_limit:
 	    Printf (dip, "Random data limit set to " LUF " bytes (%.3f Mbytes), " LUF " blocks.\n",
 		dip->di_rdata_limit, ((double)dip->di_rdata_limit/(double)MBYTE_SIZE), (dip->di_rdata_limit / dsize));
 	}
+#if 0
+        /* This is no longer a valid check, since we adjust the capacity based on file position. */
 	if (dip->di_rdata_limit <= (large_t)dip->di_file_position) {
 	    LogMsg (dip, dip->di_efp, logLevelCrit, 0,
 		    "Please specify a random data limit (" LUF ") > file position (" FUF ")!\n",
 		    dip->di_rdata_limit, dip->di_file_position);
 	    return(FAILURE);
 	}
+#endif /* 0 */
     } else if (dip->di_debug_flag || dip->di_Debug_flag || (status == FAILURE)) {
 	    Printf (dip, "Data limit set to " LUF " bytes (%.3f Mbytes), " LUF " blocks.\n",
-		dip->di_data_limit, ((double)dip->di_data_limit/(double)MBYTE_SIZE),
-				     (dip->di_data_limit / dsize));
+		    dip->di_data_limit, ((double)dip->di_data_limit/(double)MBYTE_SIZE),
+		    (dip->di_data_limit / dsize));
+#if 0
+        /* This is not a valid check if data limits or capacity percentages are specified! */
 	if ((large_t)dip->di_file_position > dip->di_data_limit) {
 	    LogMsg (dip, dip->di_efp, logLevelCrit, 0,
 		    "Please specify a file position (" FUF ") < data limit (" LUF ")!\n",
 		    dip->di_file_position, dip->di_data_limit);
 	    return(FAILURE);
 	}
+#endif /* 0 */
     }
     return (SUCCESS);
 }
@@ -1427,7 +1479,9 @@ set_random_limit:
 large_t
 SetupCapacityPercentage(dinfo_t *dip, large_t bytes)
 {
-    return ( (large_t)( (double)bytes * ((double)dip->di_capacity_percentage / 100.0)) );
+    large_t data_limit;
+    data_limit = (large_t)((double)bytes * ((double)dip->di_capacity_percentage / 100.0));
+    return( data_limit );
 }
 
 void

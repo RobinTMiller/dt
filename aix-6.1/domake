@@ -1,0 +1,2 @@
+make -f ../Makefile.aix VPATH=.. OS=aix CC=gcc
+#make -f ../Makefile.aix VPATH=.. OS=aix PORG=-g CC=gcc

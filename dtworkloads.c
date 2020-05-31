@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -182,6 +182,46 @@ workload_entry_t predefined_workloads[] =
     {	"video_on_demand",
 	"Video on Demand (VOD) Workload",
 	"bs=512k readp=0 randp=100 disable=verify flags=direct"
+    },
+    {	"longevity_common",
+	"Longevity Common Options (template)",
+	"min=8k max=1m incr=vary "
+	"enable=raw,reread enable=syslog "
+	"history=5 history_data=128 enable=history_timing "
+	"logprefix='%seq %nos %et %prog (j:%job t:%thread): ' "
+	"keepalivet=5m runtime=-1 "
+	"onerr=abort noprogt=30s noprogtt=5m"
+    },
+    {	"longevity_file_dedup",
+	"Longevity File System w/Dedup Workload",
+	"workload=longevity_common "
+	"min_limit=1m max_limit=2g "
+	"flags=direct notime=close,fsync oflags=trunc "
+	"pf="PATTERN_FILE_DIR"pattern_dedup "
+	"maxdatap=75 threads=4"
+    },
+    {	"longevity_disk_dedup",
+	"Longevity Direct Disk w/Dedup Workload",
+	"workload=longevity_common "
+	"pf="PATTERN_FILE_DIR"pattern_dedup "
+	"capacityp=75 slices=4"
+    },
+    {	"longevity_file_system",
+	"Longevity File System Workload",
+	"workload=longevity_common workload=high_validation "
+	"min_limit=1m max_limit=2g incr_limit=vary "
+	"flags=direct notime=close,fsync oflags=trunc "
+	"maxdatap=75 threads=4"
+    },
+    {	"longevity_disk_unmap",
+	"Longevity Direct Disk w/SCSI UNMAP Workload",
+	"workload=longevity_common workload=high_validation "
+	"capacityp=75 slices=4 unmap=unmap"
+    },
+    {	"longevity_disk",
+	"Longevity Direct Disk Workload",
+	"workload=longevity_common workload=high_validation "
+	"capacityp=75 slices=4"
     },
     {	"san_file_system",
 	"SAN File System Workload",

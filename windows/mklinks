@@ -2,7 +2,6 @@
 ln ../dt.h .
 ln ../dt.c .
 ln ../dtaio.c .
-ln ../dtapp.c .
 ln ../dtbtag.c .
 ln ../dtgen.c .
 ln ../dtinfo.c .

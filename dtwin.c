@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2017			    *
+ *			  COPYRIGHT (c) 2006 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,13 @@
  *	This module contains *unix OS specific functions.
  * 
  * Modification History:
+ * 
+ * May 5th, 2020 by Robin T. Miller
+ *      Include the high resolution gettimeofday() as highresolutiontime(),
+ * which will be used where more accurate timing is desired, such as history
+ * entries. The Unix eqivalent gettimeofday() is only accurate to 10-15ms,
+ * but is preferred (by some) in block tags (btags) for Epoch write times.
+ * Note: Robin often creates large history with timing for tracing I/O's.
  * 
  * April 6th, 2015 by Robin T. Miller
  * 	In os_rename_file(), do not delete the newpath unless the oldpath
@@ -323,9 +330,9 @@ pthread_mutex_init(pthread_mutex_t *lock, void *attr)
 {
     /*
      * HANDLE WINAPI CreateMutex(
-     *  _In_opt_  LPSECURITY_ATTRIBUTES lpMutexAttributes,
-     * _In_      BOOL bInitialOwner,
-     * _In_opt_  LPCTSTR lpName
+     *   _In_opt_  LPSECURITY_ATTRIBUTES lpMutexAttributes,
+     *   _In_      BOOL bInitialOwner,
+     *   _In_opt_  LPCTSTR lpName
      * );
      */
     *lock = CreateMutex(NULL, False, NULL);
@@ -992,8 +999,7 @@ os_ctime(time_t *timep, char *time_buffer, int timebuf_size)
 
     error = ctime_s(time_buffer, timebuf_size, timep);
     if (error) {
-	tPerror(NULL, error, "_ctime_s() failed");
-	(int)sprintf(time_buffer, "<no time available>\n");
+	(int)sprintf(time_buffer, "<no time available>");
     } else {
 	char *bp;
 	if (bp = strrchr(time_buffer, '\n')) {
@@ -1539,7 +1545,7 @@ syslog(int priority, char *format, ...)
                             sourceName); // Event source name. 
     if (h == NULL) {
 	if (debug_flag) {
-	    Fprintf(NULL, "RegisterEventSource() failed, error %d", GetLastError());
+	    Fprintf(NULL, "RegisterEventSource() failed, error %d\n", GetLastError());
 	}
         return;
     }
@@ -1558,19 +1564,17 @@ syslog(int priority, char *format, ...)
             NULL))                // No data. 
     {
 	if (debug_flag) {
-	    Fprintf(NULL, "ReportEvent() failed, error %d", GetLastError());
+	    Fprintf(NULL, "ReportEvent() failed, error %d\n", GetLastError());
 	}
     }
     DeregisterEventSource(h); 
     return;
 }
 
-#if 1
-
 /* Reference: http://msdn.microsoft.com/en-us/library/windows/desktop/dn553408(v=vs.85).aspx */
 
 int
-gettimeofday(struct timeval *tv, struct timezone *tz)
+highresolutiontime(struct timeval *tv, struct timezone *tz)
 {
     LARGE_INTEGER CounterTime, Frequency;
     double counter;
@@ -1593,8 +1597,6 @@ gettimeofday(struct timeval *tv, struct timezone *tz)
 
     return 0;
 }
-
-#else /* 0 */
 
 /*
  * Taken from URL: 
@@ -1637,8 +1639,6 @@ gettimeofday(struct timeval *tv, struct timezone *tz)
     }
     return 0;
 }
-
-#endif /* 1 */
 
 /*
  * localtime_r() - Get Local Time.
@@ -2942,87 +2942,9 @@ os_symlink_file(char *oldpath, char *newpath)
     return ( (CreateSymbolicLink(newpath, oldpath, 0) == True) ? SUCCESS : FAILURE);
 }
 
-#endif /* !deifned(WINDOWS_XP) */
+#endif /* !defined(WINDOWS_XP) */
 
-/* Note: This is dated, and no longer required for latest Windows builds! */
-#if 0
-/* 
- * Note: Defined in winioctl.h with Visual Studio 2017 and SDK 10+.
- */
 #if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
-
-//#include <ntifs.h>
-
-/* Until include files are sorted out, include the definitions here! */
-
-#define FSCTL_FILE_LEVEL_TRIM CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 130, METHOD_BUFFERED, FILE_WRITE_DATA)
-
-//
-//======================== FSCTL_FILE_LEVEL_TRIM ===========================
-//
-// Structure defintions for supporint file level trim
-//
-typedef struct _FILE_LEVEL_TRIM_RANGE {
-    //
-    // Bytes offset from the front of the given file to trim at.
-    //
-    ULONGLONG Offset;
-    //
-    // Length in bytes to trim from the given offset.
-    //
-    ULONGLONG Length;
-} FILE_LEVEL_TRIM_RANGE, *PFILE_LEVEL_TRIM_RANGE;
-
-//
-// Input buffer defining what ranges to trim.
-//
-typedef struct _FILE_LEVEL_TRIM {
-    //
-    // Used when interacting with byte range locks. Set to zero if not SMB or similar.
-    //
-    ULONG Key;
-    //
-    // A count of how many Offset:Length pairs are given
-    //
-    ULONG NumRanges;
-    //
-    // All the pairs.
-    //
-    FILE_LEVEL_TRIM_RANGE Ranges[1];
-} FILE_LEVEL_TRIM, *PFILE_LEVEL_TRIM;
-
-//
-//  This is an optional output buffer
-//
-typedef struct _FILE_LEVEL_TRIM_OUTPUT {
-    //
-    // Receives the number of input ranges that were processed.
-    //
-    ULONG NumRangesProcessed;
-} FILE_LEVEL_TRIM_OUTPUT, *PFILE_LEVEL_TRIM_OUTPUT;
-
-#endif /* 0 */
-
-#if 0
-
-typedef struct _FILE_LEVEL_TRIM_RANGE {
-    DWORDLONG Offset;
-    DWORDLONG Length;
-} FILE_LEVEL_TRIM_RANGE, *PFILE_LEVEL_TRIM_RANGE;
-
-typedef struct _FILE_LEVEL_TRIM {
-    DWORD                 Key;
-    DWORD                 NumRanges;
-    FILE_LEVEL_TRIM_RANGE Ranges[1];
-} FILE_LEVEL_TRIM, *PFILE_LEVEL_TRIM;
-
-typedef struct _FILE_LEVEL_TRIM_OUTPUT {
-    DWORD NumRangesProcessed;
-} FILE_LEVEL_TRIM_OUTPUT, *PFILE_LEVEL_TRIM_OUTPUT;
-
-#endif 0
-
-//static hbool_t file_trim_debug = True;
 
 int
 os_file_trim(HANDLE handle, Offset_t offset, uint64_t length)
@@ -3161,4 +3083,912 @@ os_get_uuid(hbool_t want_dashes)
     RpcStringFree(&struuid);
 
     return( strdup(auuid) );
+}
+
+/* --------------------------------------------------------------------------------------------------------- */
+/*
+ * NTFS File Offset to Physical LBA mapping functions.
+ */
+#include <ntddvol.h>
+#include <winioctl.h>
+
+/* Note: Data structures added for Robin's reference, I am not a Windows guy! */
+
+typedef struct {
+    /*
+     * typedef struct _VOLUME_DISK_EXTENTS {
+     *   DWORD       NumberOfDiskExtents;
+     *   DISK_EXTENT Extents[ANYSIZE_ARRAY];
+     * } VOLUME_DISK_EXTENTS, *PVOLUME_DISK_EXTENTS;
+     */
+    VOLUME_DISK_EXTENTS volExtents;
+    /*
+     * typedef struct _DISK_EXTENT {
+     *   DWORD         DiskNumber;
+     *   LARGE_INTEGER StartingOffset;
+     *   LARGE_INTEGER ExtentLength;
+     * } DISK_EXTENT, *PDISK_EXTENT;
+     */
+    DISK_EXTENT extent;
+} MIRRORED_DISK_EXTENT;
+
+typedef enum SupportedFileSystems {
+    FAT32,
+    NTFS
+} SupportedFileSystems_t;
+
+typedef struct {
+    HANDLE fileHandle;				/* The file handle. */
+    BOOL closeFileHandle;			/* Close file handle if True. */
+    HANDLE hVolume;				/* The volume handle (e.g. C:\). */
+    MIRRORED_DISK_EXTENT volumeExtents;
+    /* 
+     * typedef struct {
+     *   LARGE_INTEGER VolumeSerialNumber;
+     *   LARGE_INTEGER NumberSectors;
+     *   LARGE_INTEGER TotalClusters;
+     *   LARGE_INTEGER FreeClusters;
+     *   LARGE_INTEGER TotalReserved;
+     *   DWORD         BytesPerSector;
+     *   DWORD         BytesPerCluster;
+     *   DWORD         BytesPerFileRecordSegment;
+     *   DWORD         ClustersPerFileRecordSegment;
+     *   LARGE_INTEGER MftValidDataLength;
+     *   LARGE_INTEGER MftStartLcn;
+     *   LARGE_INTEGER Mft2StartLcn;
+     *   LARGE_INTEGER MftZoneStart;
+     *   LARGE_INTEGER MftZoneEnd;
+     * } NTFS_VOLUME_DATA_BUFFER, *PNTFS_VOLUME_DATA_BUFFER;  
+     */ 
+    NTFS_VOLUME_DATA_BUFFER volumeData;
+    LONGLONG volStartSector;
+    /*
+     * typedef struct {
+     *   LARGE_INTEGER StartingVcn;
+     * } STARTING_VCN_INPUT_BUFFER, *PSTARTING_VCN_INPUT_BUFFER; 
+     */
+    STARTING_VCN_INPUT_BUFFER inputVcn;
+    /*
+     * typedef struct RETRIEVAL_POINTERS_BUFFER {
+     *   DWORD                    ExtentCount;
+     *   LARGE_INTEGER            StartingVcn;
+     *   struct {
+     *     LARGE_INTEGER NextVcn;
+     *     LARGE_INTEGER Lcn;
+     *   };
+     *   __unnamed_struct_087a_54 Extents[1];
+     * } RETRIEVAL_POINTERS_BUFFER, *PRETRIEVAL_POINTERS_BUFFER;
+     */
+    RETRIEVAL_POINTERS_BUFFER rpBuf;
+    BOOLEAN verify;				/* Verify the translation. */
+    SupportedFileSystems_t fileSystemType;
+    DWORD rootStart;
+    DWORD clusterStart;
+    char fullVolName[MAX_PATH];
+    char fileSystemName[MAX_PATH];
+} TRANSLATION;
+
+typedef void (*IterateAction)(dinfo_t *dip, LONGLONG vcn, LONGLONG lcn, LONGLONG clusters);
+
+/*
+ * Forward References:
+ */
+TRANSLATION *initFileTranslation(dinfo_t *dip, char *filename, HANDLE fileHandle, BOOL verify);
+void closeTranslation(dinfo_t *dip, TRANSLATION *translation);
+void resetTranslation(TRANSLATION *translation);
+DWORD getNextTranslation( dinfo_t *dip,
+			  TRANSLATION *translation,
+			  LONGLONG *fileOffset,
+			  LONGLONG *startSector,
+			  LONGLONG *nSectors);
+BOOL getLBAandLengthByOffset( dinfo_t *dip,
+			      TRANSLATION *translation,
+			      LONGLONG fileOffset,
+			      LONGLONG recordLength,
+			      LONGLONG *startSectorLBA,
+			      LONGLONG *runLength);
+BOOL validateTranslation( dinfo_t *dip,
+			  TRANSLATION *translation,
+			  LONGLONG *fileOffset,
+			  LONGLONG *startSector);
+void printClusterMap(dinfo_t *dip, LONGLONG vcn, LONGLONG lcn, LONGLONG clusters);
+BOOL printAllClusters(dinfo_t *dip, PVOID translationToken);
+BOOL iterateAllClusters(dinfo_t *dip, HANDLE fileHandle, IterateAction callback);
+
+/* --------------------------------------------------------------------------------------------------------- */
+
+/* Callback function to print the cluster map entries. Do we need this? */
+void
+printClusterMap(dinfo_t *dip, LONGLONG vcn, LONGLONG lcn, LONGLONG clusters)
+{
+    Printf(dip, "VCN: %I64d LCN: %I64d Clusters: %I64d\n", vcn, lcn, clusters);
+}
+
+/* Print all clusters for the current translation object. Do we need this? */
+BOOL
+printAllClusters(dinfo_t *dip, PVOID translationToken)
+{
+    TRANSLATION *translation = (TRANSLATION *)translationToken;
+
+    return iterateAllClusters(dip, translation->fileHandle, printClusterMap);
+}
+
+/*
+ * Iterate across the VCN -> LCN mapping,
+ * calling the supplied callback function for each iteration.
+ */
+BOOL
+iterateAllClusters(dinfo_t *dip, HANDLE fileHandle, IterateAction callback)
+{
+    STARTING_VCN_INPUT_BUFFER inputVcn;
+    RETRIEVAL_POINTERS_BUFFER rpBuf;
+    DWORD dwBytesReturned;
+    DWORD error = NO_ERROR;
+    BOOL result = False;
+
+    inputVcn.StartingVcn.QuadPart = 0; /* Start at the beginning. */
+
+   do {
+        result = DeviceIoControl(fileHandle,
+				 FSCTL_GET_RETRIEVAL_POINTERS,
+				 &inputVcn,
+				 sizeof(STARTING_VCN_INPUT_BUFFER),
+				 &rpBuf,
+				 sizeof(RETRIEVAL_POINTERS_BUFFER),
+				 &dwBytesReturned,
+				 NULL);
+
+        error = GetLastError();
+
+        switch (error) {
+
+            case ERROR_HANDLE_EOF:
+                result = True;
+                break;
+
+            case ERROR_MORE_DATA:
+                inputVcn.StartingVcn = rpBuf.Extents[0].NextVcn;
+		/* Fall through... */
+	    case NO_ERROR:
+                callback(dip, rpBuf.StartingVcn.QuadPart, rpBuf.Extents[0].Lcn.QuadPart,
+			 rpBuf.Extents[0].NextVcn.QuadPart - rpBuf.StartingVcn.QuadPart);
+                result = True;
+                break;
+
+            default:
+		if (dip->di_fDebugFlag) {
+		    os_perror(dip, "iterateAllClusters: FSCTL_GET_RETRIEVAL_POINTERS failed");
+		}
+                break;
+        }
+    } while (error == ERROR_MORE_DATA);
+
+    return(result);
+}
+
+/* --------------------------------------------------------------------------------------------------------- */
+
+/*
+ * This does the initial setup to acquire required information for file offset mapping!
+ */
+TRANSLATION *
+initFileTranslation(dinfo_t *dip, char *filename, HANDLE fileHandle, BOOL verify)
+{
+    TRANSLATION *transaction = NULL;
+    BOOL result = True;
+
+    do {
+        transaction = Malloc(dip, sizeof(TRANSLATION));
+        if (transaction == NULL) {
+            result = False;
+            break;
+        }
+
+        transaction->verify = verify;
+	transaction->fileHandle = INVALID_HANDLE_VALUE;
+
+	/* Attributes URL: https://docs.microsoft.com/en-us/windows/win32/fileio/file-attribute-constants */
+        DWORD Attributes = GetFileAttributes(filename);
+
+        if  (Attributes == INVALID_FILE_ATTRIBUTES) {
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "GetFileAttributes() failed on %s", filename);
+	    }
+            result = False;
+            break;
+        }
+
+        if (Attributes & (FILE_ATTRIBUTE_COMPRESSED|FILE_ATTRIBUTE_ENCRYPTED)) {
+	    if (dip->di_fDebugFlag) {
+		Wprintf(dip, "Compressed or encrypted file detected, NOT supported!\n");
+	    }
+            SetLastError(ERROR_INVALID_PARAMETER);
+            result = False;
+            break;
+        }
+
+	if (fileHandle != INVALID_HANDLE_VALUE) {
+	    transaction->fileHandle = fileHandle;	/* The file is already open. */
+	    transaction->closeFileHandle = False;	/* Don't close during cleanup. */
+	} else {
+	    transaction->fileHandle = CreateFile(filename,
+						 verify ? GENERIC_READ : FILE_READ_ATTRIBUTES,
+						 FILE_SHARE_READ|FILE_SHARE_WRITE,
+						 0,
+						 OPEN_EXISTING,
+						 FILE_FLAG_NO_BUFFERING,
+						 0);
+
+	    if (transaction->fileHandle == INVALID_HANDLE_VALUE) {
+		if (dip->di_fDebugFlag) {
+		    os_perror(dip, "CreateFile() failed on %s", filename);
+		}
+		result = False;
+		break;
+	    }
+	    transaction->closeFileHandle = True;	/* Close file handle during cleanup. */
+	}
+
+        char volumeName[MAX_PATH];
+	/*
+	 * BOOL GetVolumePathName(
+	 *   LPCSTR lpszFileName,
+	 *   LPSTR  lpszVolumePathName,
+	 *   DWORD  cchBufferLength
+	 * );
+	 */
+        result = GetVolumePathName(filename, volumeName, sizeof(volumeName));
+
+        if (result == False) {
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "GetVolumePathName() failed on %s", filename);
+	    }
+            break;
+        }
+
+        DWORD SectorsPerCluster;
+        DWORD NumberOfFreeClusters;
+        DWORD TotalNumberOfClusters;
+	/*
+	 * BOOL GetDiskFreeSpace(
+	 *   LPCSTR  lpRootPathName,
+	 *   LPDWORD lpSectorsPerCluster,
+	 *   LPDWORD lpBytesPerSector,
+	 *   LPDWORD lpNumberOfFreeClusters,
+	 *   LPDWORD lpTotalNumberOfClusters
+	 * );
+	 */
+        result = GetDiskFreeSpace(volumeName,
+				  &SectorsPerCluster,
+				  &transaction->volumeData.BytesPerSector,
+				  &NumberOfFreeClusters,
+				  &TotalNumberOfClusters);
+        if (result == False) {
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "GetDiskFreeSpace() failed on %s\n", volumeName);
+	    }
+            break;
+        }
+        transaction->volumeData.BytesPerCluster = (transaction->volumeData.BytesPerSector * SectorsPerCluster);
+        transaction->volumeData.NumberSectors.QuadPart = TotalNumberOfClusters;
+        transaction->volumeData.NumberSectors.QuadPart *= SectorsPerCluster;
+
+        DWORD maxNameLength;
+        DWORD fileSystemFlags;
+	/*
+	 * BOOL GetVolumeInformation(
+	 *   LPCSTR  lpRootPathName,
+	 *   LPSTR   lpVolumeNameBuffer,
+	 *   DWORD   nVolumeNameSize,
+	 *   LPDWORD lpVolumeSerialNumber,
+	 *   LPDWORD lpMaximumComponentLength,
+	 *   LPDWORD lpFileSystemFlags,
+	 *   LPSTR   lpFileSystemNameBuffer,
+	 *   DWORD   nFileSystemNameSize
+	 * );
+	 */
+        result = GetVolumeInformation(volumeName,
+				      NULL, 0,
+				      NULL,
+				      &maxNameLength,
+				      &fileSystemFlags,
+				      transaction->fileSystemName,
+				      sizeof(transaction->fileSystemName));
+        if (result == False) {
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "GetVolumeInformation() failed on %s", volumeName);
+	    }
+	    break;
+        }
+
+        if ( EQ(transaction->fileSystemName, "FAT32") ) {
+            transaction->fileSystemType = FAT32;
+	    if (dip->di_fDebugFlag) {
+		Wprintf(dip, "FAT32 file system detected, we do NOT support this!");
+	    }
+            SetLastError(ERROR_NOT_SUPPORTED);
+	    break;
+        } else if ( EQS(transaction->fileSystemName, "NTFS") ) {
+            transaction->fileSystemType = NTFS;
+        } else {
+            result = False;
+            SetLastError(ERROR_NOT_SUPPORTED);
+            break;
+        }
+
+	int vlen = (int)strlen(volumeName);
+	/* Remove trailing slash, if any. */
+	if (volumeName[vlen-1] == '\\') {
+	    volumeName[vlen-1] = '\0';
+	}
+	/* Construct the full volume name. "\\.\" is the hidden device directory! */
+        _snprintf(transaction->fullVolName, sizeof(transaction->fullVolName), "\\\\.\\%s", volumeName);
+
+	/*
+	 * Please Note: This open WILL fail, if you do NOT have permissions! (administrator/system)
+	 */
+        transaction->hVolume = CreateFile(transaction->fullVolName,
+					  GENERIC_READ,
+					  (FILE_SHARE_READ | FILE_SHARE_WRITE),
+					  NULL, OPEN_EXISTING,
+					  FILE_ATTRIBUTE_NORMAL, NULL);
+
+        if (transaction->hVolume == INVALID_HANDLE_VALUE) {
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "CreateFile()/GENERIC_READ failed on %s", transaction->fullVolName);
+	    }
+	    result = False;
+            break;
+        }
+
+        DWORD dwBytesReturned = 0;
+        transaction->volumeData.BytesPerCluster = 0;
+        result = DeviceIoControl(transaction->hVolume,
+				 FSCTL_GET_NTFS_VOLUME_DATA,
+				 NULL, 0,
+				 &transaction->volumeData,
+				 sizeof(transaction->volumeData),
+				 &dwBytesReturned,
+				 NULL);
+
+	if (dip->di_fDebugFlag) {
+	    Printf(dip, "Volume Serial number "LXF"\n", transaction->volumeData.VolumeSerialNumber.QuadPart);
+	}
+
+        result = DeviceIoControl(transaction->hVolume,
+				 IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
+				 NULL, 0,
+				 &transaction->volumeExtents,
+				 sizeof(transaction->volumeExtents),
+				 &dwBytesReturned,
+				 NULL);
+
+        if (result == False) {
+            if (GetLastError() != ERROR_MORE_DATA) {
+                result = False;
+                break;
+            }
+        }
+
+        if (transaction->fileSystemType == FAT32) {
+	    result = False;	/* Not supporting this! */
+        } else { /* NTFS! */
+            transaction->clusterStart = 0;
+            transaction->rootStart = 0;
+        }
+        if (result == False) {
+            break;
+        }
+
+        LONGLONG volumeLength = (transaction->volumeData.NumberSectors.QuadPart * transaction->volumeData.BytesPerSector);
+
+	/* FM! */
+        if (transaction->volumeExtents.volExtents.NumberOfDiskExtents > 1) {
+            if ((transaction->volumeExtents.volExtents.NumberOfDiskExtents > 2) ||
+                (transaction->volumeExtents.volExtents.Extents[0].StartingOffset.QuadPart !=
+                 transaction->volumeExtents.volExtents.Extents[1].StartingOffset.QuadPart) ||
+                (transaction->volumeExtents.volExtents.Extents[0].ExtentLength.QuadPart !=
+                transaction->volumeExtents.volExtents.Extents[1].ExtentLength.QuadPart) ||
+                (transaction->volumeExtents.volExtents.Extents[0].ExtentLength.QuadPart < volumeLength) ||
+                 (transaction->volumeExtents.volExtents.Extents[1].ExtentLength.QuadPart < volumeLength)) {
+		if (dip->di_fDebugFlag) {
+		    Wprintf(dip, "Stripped or compressed file detected, NOT supported!\n");
+		}
+                SetLastError(ERROR_NOT_SUPPORTED);
+                result = False;
+                break;
+            }
+        }
+
+        transaction->volStartSector = (transaction->volumeExtents.volExtents.Extents[0].StartingOffset.QuadPart / transaction->volumeData.BytesPerSector);
+
+        memset(&transaction->inputVcn, 0, sizeof(STARTING_VCN_INPUT_BUFFER));
+        memset(&transaction->rpBuf, 0, sizeof(RETRIEVAL_POINTERS_BUFFER));
+
+    } while(0);
+
+    if (result == False) {
+        if (transaction) {
+	    closeTranslation(dip, transaction);
+	    transaction = NULL;
+        }
+    }
+    return(transaction);
+}
+
+void
+closeTranslation(dinfo_t *dip, TRANSLATION *translation)
+{
+    if ( translation->fileHandle && (translation->fileHandle != INVALID_HANDLE_VALUE) ) {
+	if (translation->closeFileHandle) {
+	    CloseHandle(translation->fileHandle);
+	}
+    }
+    if ( translation->hVolume && (translation->hVolume != INVALID_HANDLE_VALUE) ) {
+	CloseHandle(translation->hVolume);
+    }
+    /* BEWARE: By freeing here, the caller must NULL its' pointer to avoid reuse! */
+    FreeMem(dip, translation, sizeof(*translation));
+    return;
+}
+
+void
+resetTranslation(TRANSLATION *translation)
+{
+    translation->inputVcn.StartingVcn.QuadPart = 0;
+    return;
+}
+
+DWORD
+getNextTranslation(
+    dinfo_t *dip,
+    TRANSLATION *translation,
+    LONGLONG *fileOffset,
+    LONGLONG *startSector,
+    LONGLONG *nSectors)
+{
+    DWORD dwBytesReturned;
+    DWORD error = NO_ERROR;
+
+    /*
+     * DeviceIoControl(
+     *   (HANDLE) hDevice,              // handle to file, directory, or volume
+     *   FSCTL_GET_RETRIEVAL_POINTERS,  // dwIoControlCode(LPVOID) lpInBuffer,
+     *   (DWORD) nInBufferSize,         // size of input buffer
+     *   (LPVOID) lpOutBuffer,          // output buffer
+     *   (DWORD) nOutBufferSize,        // size of output buffer
+     *   (LPDWORD) lpBytesReturned,     // number of bytes returned
+     *   (LPOVERLAPPED) lpOverlapped ); // OVERLAPPED structure
+     */
+    BOOL result = DeviceIoControl(translation->fileHandle,
+				  FSCTL_GET_RETRIEVAL_POINTERS,
+				  &translation->inputVcn,
+				  sizeof(STARTING_VCN_INPUT_BUFFER),
+				  &translation->rpBuf,
+				  sizeof(RETRIEVAL_POINTERS_BUFFER),
+				  &dwBytesReturned,
+				  NULL);
+    error = GetLastError();
+
+    switch (error) {
+
+	case ERROR_HANDLE_EOF:
+	    /* Indicates where are no more records, thus EOF! */
+	    break;
+
+	case ERROR_MORE_DATA:
+	    translation->inputVcn.StartingVcn = translation->rpBuf.Extents[0].NextVcn;
+	    /* Fall through... */
+	case NO_ERROR: {
+	    /*
+	     * This has to be scaled by the cluster factor and offset by the volume extent 
+	     * starting offset, and everything normalized to sectors.
+	     */
+	    LONGLONG lengthInClusters = (translation->rpBuf.Extents[0].NextVcn.QuadPart - translation->rpBuf.StartingVcn.QuadPart);
+	    /*
+	     * typedef struct _VOLUME_LOGICAL_OFFSET {
+	     *   LONGLONG LogicalOffset;
+	     * } VOLUME_LOGICAL_OFFSET, *PVOLUME_LOGICAL_OFFSET;
+	     */
+	    VOLUME_LOGICAL_OFFSET logicalOffset;
+	    struct {
+		/* 
+		 * typedef struct _VOLUME_PHYSICAL_OFFSETS {
+		 *   ULONG                  NumberOfPhysicalOffsets;
+		 *   VOLUME_PHYSICAL_OFFSET PhysicalOffset[ANYSIZE_ARRAY];
+		 * } VOLUME_PHYSICAL_OFFSETS, *PVOLUME_PHYSICAL_OFFSETS;
+		 */
+		VOLUME_PHYSICAL_OFFSETS physical;
+		/*
+		 * typedef struct _VOLUME_PHYSICAL_OFFSET {
+		 *   ULONG    DiskNumber;
+		 *   LONGLONG Offset;
+		 * } VOLUME_PHYSICAL_OFFSET, *PVOLUME_PHYSICAL_OFFSET;
+		 */
+		VOLUME_PHYSICAL_OFFSET plex2;
+	    } outputBuffer;
+
+	    logicalOffset.LogicalOffset = (translation->rpBuf.Extents[0].Lcn.QuadPart * translation->volumeData.BytesPerCluster);
+
+	    result = DeviceIoControl(translation->hVolume,
+				     IOCTL_VOLUME_LOGICAL_TO_PHYSICAL,
+				     &logicalOffset,
+				     sizeof(VOLUME_LOGICAL_OFFSET),
+				     &outputBuffer,
+				     sizeof(outputBuffer),
+				     &dwBytesReturned,
+				     NULL);
+	    if (result == False) {
+		error = GetLastError();
+		break;
+	    }
+
+	    *startSector = (outputBuffer.physical.PhysicalOffset[0].Offset / translation->volumeData.BytesPerSector);
+	    *startSector += translation->clusterStart;
+
+	    *nSectors = (lengthInClusters * translation->volumeData.BytesPerCluster) / translation->volumeData.BytesPerSector;
+	    *fileOffset = (translation->rpBuf.StartingVcn.QuadPart * translation->volumeData.BytesPerCluster);
+
+	    if (translation->verify) {
+		BOOL result = validateTranslation(dip, translation, fileOffset, startSector);
+		if (result == False) {
+		    error = ERROR_INVALID_DATA;
+		}
+	    }
+	    break;
+	}
+	default: {
+	    /* Note: This occurs with sparse files since data is not mapped! */
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "FSCTL_GET_RETRIEVAL_POINTERS failed");
+	    }
+	    break;
+	}
+    } /* end of switch() */
+    return(error);
+}
+
+/*
+ * Pass in a file offset (byte offset in file), and the length in bytes
+ * of the data at that offset, and get back the physical LBA (sector offset)
+ * and byte length of this on disk run.
+ *
+ * Returns true if the operation succeeded, false otherwise.
+ * If runLength < recordLength, this record is split across more than one physical run.
+ * runLength should be added to fileOffset, and subtracted from recordLength, and
+ * getLBAandLengthByOffset() should be called again to get the next LBA.
+ * RecordLength mod BytesPerSector must be zero!
+ */
+BOOL
+getLBAandLengthByOffset(
+    dinfo_t *dip,
+    TRANSLATION *translation,
+    LONGLONG fileOffset,
+    LONGLONG recordLength,
+    LONGLONG *startSectorLBA,
+    LONGLONG *runLength)
+{
+    BOOL result = True;
+    BOOL foundRun = False;
+    DWORD error = NO_ERROR;
+    LONGLONG currentRunOffset = 0;
+    LONGLONG nextRunOffset = 0;
+    LONGLONG startSector = 0;
+    LONGLONG nSectors = 0;
+
+    resetTranslation(translation);
+    /* 
+     * Loop until we find translation or we fail.
+     */
+    while (foundRun == False) {
+
+        error = getNextTranslation(dip, translation,
+				   &currentRunOffset, &startSector, &nSectors);
+
+        switch (error) {
+
+	    case ERROR_HANDLE_EOF:
+		result = False;
+		break;
+
+	    case NO_ERROR:
+	    case ERROR_MORE_DATA: {
+		/*
+		 * Compute the record LBA and length.
+		 */
+		LONGLONG newRunOffset = currentRunOffset + (nSectors * translation->volumeData.BytesPerSector);
+		if (newRunOffset <= nextRunOffset) {
+		    /*
+		     * Assume the file offset was invalid.
+		     */
+		    result = False;
+		    SetLastError(ERROR_INVALID_PARAMETER);
+		    break;
+		}
+		nextRunOffset = newRunOffset;
+
+		if ( (fileOffset >= currentRunOffset) && (fileOffset < nextRunOffset) ) {
+		    /*
+		     * Found the file offset in this cluster offset range.
+		     */
+		    foundRun = True;
+		    /*
+		     * Calculate the record offset within the current range.
+		     */
+		    LONGLONG recordOffset = (fileOffset - currentRunOffset);
+		    LONGLONG sectorOffset = (recordOffset / translation->volumeData.BytesPerSector);
+
+		    //Printf(dip, "getLBAandLengthByOffset: File Offset "LUF", Record Offset "LUF", Sector Offset "LUF", currentRunOffset "LUF"\n",
+		    //	   fileOffset, recordOffset, sectorOffset, currentRunOffset);
+
+		    *startSectorLBA = (startSector + sectorOffset);
+		    nSectors -= sectorOffset;
+		    *runLength = (nSectors * translation->volumeData.BytesPerSector);
+		    if (*runLength > recordLength) {
+			*runLength = recordLength;
+		    }
+
+		    if (translation->verify) {
+			result = validateTranslation(dip, translation, &fileOffset, startSectorLBA);
+			if (result == False) {
+			    error = ERROR_INVALID_DATA;
+			}
+		    }
+		}
+		break;
+	    }
+	    default: {
+		result = False;
+		break;
+	    }
+	} /* end of switch() */
+        if (result == False) {
+            break;
+        }
+        currentRunOffset = nextRunOffset;
+
+    } /* end of while(foundRun == False) */
+
+    return(result);
+}
+
+/*
+ * This reads one cluster of data from both the file and disk, using the file offset,
+ * and the physical disk, using the startSector, and compares them.
+ */
+BOOL
+validateTranslation(
+    dinfo_t *dip,
+    TRANSLATION *translation,
+    LONGLONG *fileOffset,
+    LONGLONG *startSector)
+{
+    char physicalDisk[MAX_PATH];
+
+    _snprintf(physicalDisk, sizeof(physicalDisk), "\\\\.\\PhysicalDrive%d",
+	      translation->volumeExtents.volExtents.Extents[0].DiskNumber);
+
+    if (dip->di_fDebugFlag) {
+	Printf(dip, "validateTranslation: Physical disk is %s\n", physicalDisk);
+    }
+    HANDLE hDisk = CreateFile(physicalDisk,
+			      GENERIC_READ,
+			      (FILE_SHARE_READ | FILE_SHARE_WRITE),
+			      NULL, OPEN_EXISTING,
+			      FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (hDisk == INVALID_HANDLE_VALUE) {
+	if (dip->di_fDebugFlag) {
+	    os_perror(dip, "CreateFile()/GENERIC_READ failed on %s", physicalDisk);
+	}
+        return False;
+    }
+
+    LARGE_INTEGER offset;
+    BOOL result = True;
+    DWORD bytesRead;
+
+    char *physicalBuffer = Malloc(dip, translation->volumeData.BytesPerCluster);
+    char *fileBuffer = Malloc(dip, translation->volumeData.BytesPerCluster);
+
+    if ( (physicalBuffer == NULL) || (fileBuffer == NULL) ) {
+        result = False;
+    }
+
+    /* Note: I am NOT a fan of this style of error handling! */
+    do {
+        if (result == False) {
+            break;
+        }
+
+        offset.QuadPart = (*startSector * translation->volumeData.BytesPerSector);
+        result = SetFilePointerEx(hDisk, offset, NULL, FILE_BEGIN);
+        if (result == False) {
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "SetFilePointerEx() at offset "FUF" failed on %s", offset, physicalDisk);
+	    }
+            break;
+        }
+
+        result = ReadFile(hDisk, physicalBuffer,
+			  translation->volumeData.BytesPerCluster,
+			  &bytesRead, NULL);
+        if (result == False) {
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "ReadFile() failed on %s", physicalDisk);
+	    }
+            break;
+        }
+
+        offset.QuadPart = *fileOffset;
+        result = SetFilePointerEx(translation->fileHandle, offset, NULL, FILE_BEGIN);
+        if (result == False) {
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "SetFilePointerEx() to offset "FUF" failed on %s", offset, physicalDisk);
+	    }
+            break;
+        }
+
+        result = ReadFile(translation->fileHandle, fileBuffer,
+			  translation->volumeData.BytesPerCluster,
+			  &bytesRead, NULL);
+        if (result == False) {
+	    if (dip->di_fDebugFlag) {
+		os_perror(dip, "ReadFile() failed on %s\n", physicalDisk);
+	    }
+            break;
+        }
+
+	/* Verify if this is the cluster information we're looking for! */
+        if (memcmp(physicalBuffer, fileBuffer, translation->volumeData.BytesPerCluster) != 0) {
+            result = False;
+	    break;
+        }
+	/* Success, the data matched! */
+    } while(0);
+
+    if (physicalBuffer) {
+        Free(dip, physicalBuffer);
+    }
+    if (fileBuffer) {
+        Free(dip, fileBuffer);
+    }
+    (void)CloseHandle(hDisk);
+    if (dip->di_fDebugFlag) {
+	Printf(dip, "validateTranslation: result %d\n", result);
+    }
+    return result;
+}
+
+/* --------------------------------------------------------------------------------------------------------- */
+
+/*
+ * Note: We are using the translation record as our file system map.
+ */
+void *
+os_get_file_map(dinfo_t *dip, HANDLE fd)
+{
+    /* Caller must free file map to force repopulating! */
+    if (dip->di_fsmap == NULL) {
+	TRANSLATION *translation;
+	char *filename = dip->di_dname;
+	HANDLE fileHandle = fd;
+
+	translation = initFileTranslation(dip, filename, fileHandle, False);
+	if (translation) {
+	    dip->di_fsmap = translation;
+	}
+    }
+    return(dip->di_fsmap);
+}
+
+void
+os_free_file_map(dinfo_t *dip)
+{
+    if (dip->di_fsmap) {
+	closeTranslation(dip, (TRANSLATION *)dip->di_fsmap);
+	dip->di_fsmap = NULL;
+    }
+    return;
+}
+
+int
+os_report_file_map(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset, int64_t length)
+{
+    TRANSLATION *translation;
+    LONGLONG fileOffset = offset;
+    LONGLONG recordLength = length;
+    LONGLONG startSectorLBA = 0;
+    LONGLONG runLength = 0;
+    BOOL firstTime = True;
+    BOOL result;
+
+    if ( (translation = (TRANSLATION *)os_get_file_map(dip, fd)) == NULL) {
+	return(FAILURE);
+    }
+
+    do {
+	result = getLBAandLengthByOffset(dip, translation,
+					 fileOffset, recordLength,
+					 &startSectorLBA, &runLength);
+	/* TODO: Handle sparse files! */
+	/* dt.exe (j:1 t:1): ERROR: FSCTL_GET_RETRIEVAL_POINTERS failed, error = 87 - The parameter is incorrect. */
+	if (result == False) {
+	    break;
+	}
+	LONGLONG startLBAOffset = (startSectorLBA * translation->volumeData.BytesPerSector);
+	LONGLONG starting_lba = (startLBAOffset / dsize);
+	LONGLONG ending_lba = (starting_lba + (runLength / dsize));
+	LONGLONG totalBlocks = (runLength / dsize);
+
+	if (firstTime) {
+	    firstTime = False;
+	    /*
+	     * Example: 
+	     *  
+	     * File: dt.data, LBA Size: 512, Cluster Size: 4096 on \\.\C: [NTFS]
+	     *     File Offset    Start LBA      End LBA     Blocks      VCN        LCN
+	     *               0     27827936     27828064        128        0    3189724
+	     *           65536     23595232     23595360        128       16    2660636
+	     *          131072      9206144      9206400        256       32     862000
+	     *          262144    520802432    520803968       1536       64   64811536
+	     */
+	    char physicalDisk[MAX_PATH];
+	    _snprintf(physicalDisk, sizeof(physicalDisk), "\\\\.\\PhysicalDrive%d",
+		      translation->volumeExtents.volExtents.Extents[0].DiskNumber);
+	    Printf(dip, "File: %s, LBA Size: %u bytes\n", dip->di_dname, dsize);
+	    Printf(dip, "Physical Disk: %s, Cluster Size: %d on %s [%s]\n",
+		   physicalDisk,
+		   translation->volumeData.BytesPerCluster,
+		   translation->fullVolName, translation->fileSystemName);
+	    Printf(dip, "\n");
+	    Printf(dip, "%14s %12s %12s %10s %8s %10s\n",
+		   "File Offset", "Start LBA", "End LBA", "Blocks", "VCN", "LCN");
+	}
+
+	Printf(dip, "%14llu %12llu %12llu %10llu %8llu %10llu\n",
+	       fileOffset, starting_lba, ending_lba, totalBlocks,
+	       translation->rpBuf.StartingVcn, translation->rpBuf.Extents[0].Lcn);
+
+	fileOffset += runLength;
+	recordLength -= runLength;
+    } while (recordLength > 0);
+
+    if (recordLength > 0) {
+	Wprintf(dip, "File offset "FUF" was NOT found, possible sparse file!\n", fileOffset);
+	Printf(dip, "Therefore, file offset maps for "LDF" bytes were NOT reported!\n", recordLength);
+    }
+    return ((result == True) ? SUCCESS : FAILURE);
+}
+
+uint64_t
+os_map_offset_to_lba(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset)
+{
+    TRANSLATION *translation;
+    LONGLONG fileOffset = offset;
+    LONGLONG recordLength = dsize;
+    LONGLONG startSectorLBA = 0;
+    LONGLONG runLength = 0;
+    uint64_t lba = NO_LBA;
+    BOOL result = NO_ERROR;
+
+    if ( (translation = (TRANSLATION *)os_get_file_map(dip, fd)) == NULL) {
+	return(lba);
+    }
+
+    result = getLBAandLengthByOffset(dip, translation,
+				     fileOffset, recordLength,
+				     &startSectorLBA, &runLength);
+    if (result == True) {
+	LONGLONG startLBAOffset = (startSectorLBA * translation->volumeData.BytesPerSector);
+	lba = (startLBAOffset / dsize);
+	if (dip->di_fDebugFlag) {
+	    Printf(dip, "File Offset: "FUF", Physical LBA "LDF" ("LXF"), VCN %d, LCN %d [cluster size: %d] on %s [%s]\n",
+		   fileOffset,
+		   startSectorLBA, startSectorLBA, translation->rpBuf.StartingVcn,
+		   translation->rpBuf.Extents[0].Lcn, translation->volumeData.BytesPerCluster,
+		   translation->fullVolName, translation->fileSystemName);
+	}
+    }
+    return(lba);
 }

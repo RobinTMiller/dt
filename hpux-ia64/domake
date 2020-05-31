@@ -1,0 +1,1 @@
+make -f ../Makefile.hpux-ia64 VPATH=.. OS=hpux

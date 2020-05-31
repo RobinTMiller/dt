@@ -31,6 +31,10 @@
  * 
  * Modification History:
  * 
+ * May 5th, 2020 by Robin T. Miller
+ *      Use high resolution timer for more accurate I/O timing. This is
+ * implemented on Windows, but Unix systems still use gettimeofday() API.
+ * 
  * May 28th, 2019 by Robin T. Miller
  *      Don't adjust offset when write error occurs (count is -1), since this
  * causes the wrong offset when we've specified an error limit.
@@ -285,7 +289,7 @@ write_data(struct dinfo *dip)
 	if (dip->di_terminating) break;
 
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
-	    gettimeofday(&loop_start_time, NULL);
+	    highresolutiontime(&loop_start_time, NULL);
 	    if (dip->di_records_written) {
 		/* Adjust the actual usecs to adjust for possible usleep below! */
 		dip->di_actual_total_usecs += timer_diff(&loop_end_time, &loop_start_time);
@@ -631,7 +635,7 @@ write_data(struct dinfo *dip)
 	}
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
-	    gettimeofday(&loop_end_time, NULL);
+	    highresolutiontime(&loop_end_time, NULL);
 	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
             dip->di_target_total_usecs += dip->di_iops_usecs;
 	    if (read_after_write_flag == True) {
@@ -863,7 +867,7 @@ write_data_iolock(struct dinfo *dip)
 	if (dip->di_terminating) break;
 
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
-	    gettimeofday(&loop_start_time, NULL);
+	    highresolutiontime(&loop_start_time, NULL);
 	    if (dip->di_records_written) {
 		/* Adjust the actual usecs to adjust for possible usleep below! */
 		dip->di_actual_total_usecs += timer_diff(&loop_end_time, &loop_start_time);
@@ -1224,7 +1228,7 @@ write_data_iolock(struct dinfo *dip)
 	}
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
-	    gettimeofday(&loop_end_time, NULL);
+	    highresolutiontime(&loop_end_time, NULL);
 	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
             dip->di_target_total_usecs += dip->di_iops_usecs;
 	    if (read_after_write_flag == True) {
@@ -1310,7 +1314,7 @@ check_write(struct dinfo *dip, ssize_t count, size_t size, Offset_t offset)
 		return (WARNING);
 	    }
 	    /* TODO: Do we really reach this code? */
-	    ReportDeviceInfo(dip, count, 0, False);
+	    ReportDeviceInfo(dip, count, 0, False, NotMismatchedData);
 	    RecordErrorTimes(dip, True);
 	}
 	dip->di_write_errors++;
@@ -1590,7 +1594,7 @@ write_verify(
      */
     if ((size_t)count < bsize) {
 	/* check_read() reports info regarding the short record read. */
-	ReportDeviceInfo(dip, count, 0, False);
+	ReportDeviceInfo(dip, count, 0, False, NotMismatchedData);
 	RecordErrorTimes(dip, True);
 	status = FAILURE;
 	if (dip->di_dtype->dt_dtype != DT_TAPE) {

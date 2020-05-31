@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,19 @@
  *	Utility routines for generic data test program.
  * 
  * Modification History:
+ * 
+ * May 20th, 2020 by Robin T. Miller
+ *      Update API's using popen to capture stderr along with stdout!
+ * 
+ * May 19th, 2020 by Robin T. Miller
+ *      Update ExecuteCommand() to add prefix flag to control log prefix.
+ * 
+ * May 19th, 2020 by Robin T. Miller
+ *      When not compiled with SCSI library, use dt's spt path as default.
+ * 
+ * May 13th, 2020 by Robin T. Miller
+ *      Add the thread number to the pass command, since oftentimes we only
+ * wish to perform an action on the first thread, and not all threads.
  * 
  * August 17th, 2019 by Robin T. Miller
  *      Update OS block tick conversion to avoid negative values, seen after
@@ -90,13 +103,17 @@
 #endif /* !defined(WIN32) */
 
 /*
+ * External References:
+ */
+extern char *spt_path;		/* Defined in dtscsi.c */
+
+/*
  * Forward References:
  */
 void convert_clock_ticks(clock_t ticks, clock_t *days, clock_t *hours,
 			 clock_t *minutes, clock_t *seconds, clock_t *frac);
 int ExecuteBuffered(dinfo_t *dip, char *cmd, char *buffer, int bufsize);
 int vSprintf(char *bufptr, const char *msg, va_list ap);
-static int get_max_cpu_busy(dinfo_t *dip, char *cmd);
 void report_EofMsg(dinfo_t *dip, ssize_t count, os_error_t error);
 
 static char *bad_conversion_str = "Warning: unexpected conversion size of %d bytes.\n";
@@ -355,6 +372,54 @@ init_buffer(    dinfo_t     *dip,
     bp = buffer;
     for (i = 0; i < count; i++) {
 	*bp++ = p.pat[i & (sizeof(u_int32) - 1)];
+    }
+    return;
+}
+
+/************************************************************************
+ *									*
+ * poision_buffer() - Poison Buffer with a Data Pattern.		*
+ *									*
+ * Inputs:							        * 
+ * 	dip = The device information pointer.			        *
+ *	buffer = Pointer to buffer to init.				*
+ *	count = Number of bytes to initialize.				*
+ *	pattern = Data pattern to init buffer with.			*
+ *									*
+ * Return Value:							*
+ *		Void.							*
+ *									*
+ ************************************************************************/
+void
+poison_buffer(  dinfo_t     *dip,
+		void        *buffer,
+		size_t      count,
+		u_int32     pattern )
+{
+    uint8_t *bp = buffer;
+    uint8_t *eptr = (bp + count) - sizeof(pattern);
+    uint32_t dsize = (dip->di_dsize) ? dip->di_dsize : BLOCK_SIZE;
+    union {
+	u_char pat[sizeof(u_int32)];
+	u_int32 pattern;
+    } p;
+
+    /* Varible length file records may be too short! */
+    if (count < sizeof(pattern)) {
+	return;
+    }
+    p.pattern = pattern;
+    /*
+     * Initialize the buffer with a data pattern, every dsize bytes.
+     */
+    while (bp < eptr) {
+	register uint8_t *bptr = bp;
+	register size_t i;
+        /* Byte at a time, buffer may be misaligned! */
+	for (i = 0; i < sizeof(pattern); i++) {
+	    *bptr++ = p.pat[i & (sizeof(uint32_t) - 1)];
+	}
+        bp += dsize;
     }
     return;
 }
@@ -1315,6 +1380,7 @@ get_data_limit(dinfo_t *dip)
     if ( dip->di_min_limit && dip->di_max_limit ) {
 	if (dip->di_variable_limit == True) {
 	    data_limit = get_variable_limit(dip);
+	    dip->di_data_limit = data_limit;
 	} else {
 	    /* Prime the data limit for the 1st file! */
 	    /* Note: Allowing data limit growing across directories. */
@@ -1667,22 +1733,22 @@ CvtStrtoLarge (dinfo_t *dip, char *nstr, char **eptr, int base)
 
     /* Thankfully we have POSIX standards, eh? :-( */
 #if defined(WIN32)
-    if ( (n = _strtoui64 (nstr, eptr, base)) == (large_t) 0) {
+    if ( (n = _strtoui64(nstr, eptr, base)) == (large_t) 0) {
 #elif defined(QuadIsLong)
     /* Note: The assumption here is that 64-bit OS's strtoul() return 64-bits! */
     /*       Now this was true on 64-bit Tru64 Unix on Alpha, but true for all OS's? */
+    /*       FYI: This is NOT true for Windows! (grrr) */
     if ( (n = strtoul (nstr, eptr, base)) == (large_t) 0) {
 #elif defined(QuadIsLongLong)
-#if defined(SCO) || defined(__QNXNTO__) || defined(SOLARIS) || defined(AIX) || defined(_NT_SOURCE)
-    if ( (n = strtoull (nstr, eptr, base)) == (large_t) 0) {
-#elif defined(HP_UX)
+# if defined(HP_UX)
     if ( (n = strtoumax(nstr, eptr, base)) == (large_t) 0) {
-#else /* !defined(SCO) && !defined(__QNXNTO__) && !defined(AIX) && !defined(_NT_SOURCE) */
-    if ( (n = strtouq (nstr, eptr, base)) == (large_t) 0) {
-#endif /* defined(SCO) || defined(__QNXNTO__) || defined(SOLARIS) || defined(AIX) || defined(_NT_SOURCE) */
-#else /* assume QuadIsDouble */
-    if ( (n = strtod (nstr, eptr)) == (large_t) 0) {
-#endif
+# else /* All other OS's */
+    if ( (n = strtoull(nstr, eptr, base)) == (large_t) 0) {
+# endif /* defined(SCO) || defined(__QNXNTO__) || defined(SOLARIS) || defined(AIX) || defined(_NT_SOURCE) */
+#else 
+  #error "Define 64-bit string conversion API!"
+#endif /* defined(WIN32) */
+	/* TODO: Add error checking AFTER standardizing on API! */
 	if (nstr == *eptr) {
 	    n++;
 	}
@@ -2435,6 +2501,7 @@ check_trigger_type(dinfo_t *dip, char *str)
 	trigger_type = TRIGGER_LR;
     } else if (strcmp(str, "seek") == 0) {
 	trigger_type = TRIGGER_SEEK;
+#if defined(SCSI)
     } else if (strncmp(str, "cdb:", 4) == 0) {
 	uint32_t value;
 	char *token, *saveptr;
@@ -2468,6 +2535,7 @@ check_trigger_type(dinfo_t *dip, char *str)
 	    }
 	}
 	Free(dip, cdbp);
+#endif /* defined(SCSI) */
     } else if (strncmp(str, "cmd:", 4) == 0) {
 	char *strp;
 	tdp->td_trigger_cmd = strdup(&str[4]);
@@ -2498,7 +2566,7 @@ int
 DoSystemCommand(dinfo_t *dip, char *cmdline)
 {
     if ( (cmdline == NULL) || (strlen(cmdline) == 0) ) return(WARNING);
-    return( ExecuteCommand(dip, cmdline, dip->di_debug_flag) );
+    return( ExecuteCommand(dip, cmdline, LogPrefixDisable, dip->di_debug_flag) );
 }
 
 int
@@ -2534,23 +2602,28 @@ StartupShell(dinfo_t *dip, char *shell)
  * 
  * Inputs:
  *	dip = The device information pointer.
- * 	cmd = The command line to execute.
+ *      cmd = The command line to execute.
+ *      prefix = The log prefix control flag.
  * 	verbose = Verbose control flag.
  * 
  * Return Value:
  * 	The exit status of the executed command line.
  */ 
 int
-ExecuteCommand(dinfo_t *dip, char *cmd, hbool_t verbose)
+ExecuteCommand(dinfo_t *dip, char *cmd, hbool_t prefix, hbool_t verbose)
 {
     FILE *pipef;
+    char cmd_line[STRING_BUFFER_SIZE];
     char cmd_output[STRING_BUFFER_SIZE];
     int status;
 
+    /* To easily acquire stderr, merge it with stdout! */
+    /* Note: Thankfully this works with Unix shell and DOS shell. */
+    (void)sprintf(cmd_line, "%s 2>&1", cmd);
     if (verbose == True) {
-	Printf(dip, "Executing: %s\n", cmd);
+	Printf(dip, "Executing: %s\n", cmd_line);
     }
-    pipef = popen(cmd, "r");
+    pipef = popen(cmd_line, "r");
     if (pipef == NULL) {
 	Perror(dip, "popen() failed");
 	return(FAILURE);
@@ -2560,7 +2633,11 @@ ExecuteCommand(dinfo_t *dip, char *cmd, hbool_t verbose)
      * Read and log output from the script.
      */
     while (fgets (cmd_output, sizeof(cmd_output), pipef) == cmd_output) {
-	Print(dip, "%s", cmd_output);
+	if (prefix) {
+	    Printf(dip, "%s", cmd_output);
+	} else {
+	    Print(dip, "%s", cmd_output);
+	}
     }
     status = pclose(pipef);
 #if 0
@@ -2587,14 +2664,16 @@ ExecuteCommand(dinfo_t *dip, char *cmd, hbool_t verbose)
 int
 ExecuteBuffered(dinfo_t *dip, char *cmd, char *buffer, int bufsize)
 {
+    char cmd_line[STRING_BUFFER_SIZE];
     FILE *pipef;
     int status;
     char *bp = buffer;
 
+    (void)sprintf(cmd_line, "%s 2>&1", cmd);
     if (dip->di_pDebugFlag) {
-	Printf(dip, "Executing: %s\n", cmd);
+	Printf(dip, "Executing: %s\n", cmd_line);
     }
-    pipef = popen(cmd, "r");
+    pipef = popen(cmd_line, "r");
     if (pipef == NULL) {
 	if (dip->di_pDebugFlag) {
 	    Perror(dip, "popen() failed");
@@ -2633,15 +2712,15 @@ ExecutePassCmd(dinfo_t *dip)
     
     /* 
      * Format:
-     * 	 pass_cmd device_name device_size starting_offset data_limit pass_count
+     * 	 pass_cmd device_name device_size starting_offset data_limit pass_count thread_number
      */ 
-    (void)sprintf(cmd, "%s %s %u "FUF" "LUF" %lu",
+    (void)sprintf(cmd, "%s %s %u "FUF" "LUF" %lu %d",
 		  dip->di_pass_cmd,
 		  dip->di_dname, dip->di_dsize,
 		  dip->di_file_position, data_bytes,
-		  dip->di_pass_count);
+		  dip->di_pass_count, dip->di_thread_number);
 
-    status = ExecuteCommand(dip, cmd, True);
+    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 
     if (status || dip->di_debug_flag) {
 	Printf(dip, "pass cmd exited with status %d...\n", status);
@@ -2686,8 +2765,10 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		} else
 #endif /* defined(SCSI) */
 		{
-		    (void)sprintf(cmd, "spt dsf=%s op=bus_rest", dip->di_dname);
-		    status = ExecuteCommand(dip, cmd, True);
+		    (void)sprintf(cmd, "%s dsf=%s op=bus_rest",
+				  (dip->di_spt_path) ? dip->di_spt_path : spt_path,
+				  dip->di_dname);
+		    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		}
 		break;
 
@@ -2699,8 +2780,10 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		} else
 #endif /* defined(SCSI) */
 		{
-		    (void)sprintf(cmd, "spt dsf=%s op=target_rest", dip->di_dname);
-		    status = ExecuteCommand(dip, cmd, True);
+		    (void)sprintf(cmd, "%s dsf=%s op=target_rest",
+				  (dip->di_spt_path) ? dip->di_spt_path : spt_path,
+				  dip->di_dname);
+		    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		}
 		break;
 
@@ -2712,8 +2795,10 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		} else
 #endif /* defined(SCSI) */
 		{
-		    (void)sprintf(cmd, "spt dsf=%s op=lun_reset", dip->di_dname);
-		    status = ExecuteCommand(dip, cmd, True);
+		    (void)sprintf(cmd, "%s dsf=%s op=lun_reset",
+				  (dip->di_spt_path) ? dip->di_spt_path : spt_path,
+				  dip->di_dname);
+		    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		}
 		break;
 
@@ -2731,7 +2816,7 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		    /* Note: Need to implement seek in spt! */
 		    (void)sprintf(cmd, "scu -f %s seek lba " LUF,
 				  dip->di_dname, lba);
-		    status = ExecuteCommand(dip, cmd, True);
+		    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		}
 		break;
 	    }
@@ -2745,9 +2830,13 @@ ExecuteTrigger(struct dinfo *dip, ...)
 	    case TRIGGER_CDB: {
 #if defined(SCSI)
 		scsi_generic_t *sgp = dip->di_sgp;
-		Printf(dip, "Executing User Defined Trigger CDB...\n");
-		status = SendAnyCdb(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
-				    NULL, &sgp, sgp->timeout, dip->di_cdb, dip->di_cdb_size);
+		if (dip->di_scsi_flag) {
+		    Printf(dip, "Executing User Defined Trigger CDB...\n");
+		    status = SendAnyCdb(sgp->fd, sgp->dsf, dip->di_sDebugFlag, True/*dip->di_scsi_errors*/,
+					NULL, &sgp, sgp->timeout, dip->di_cdb, dip->di_cdb_size);
+		} else {
+		    Wprintf(dip, "SCSI device was NOT detected, so cannot send SCSI CDB!\n");
+		}
 #endif /* defined(SCSI) */
 		break;
 	    }
@@ -2760,7 +2849,8 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		op = va_arg(ap, char *);
 		va_end(ap);
 		/*
-		 * The tester has the option of disabling standard trigger args. Why?
+		 * The tester has the option of disabling standard trigger args, since 
+		 * the external command/script may not desire our default arguments. 
 		 */
 		if (dip->di_trigargs_flag) {
 		    Offset_t offset = getFileOffset(dip);
@@ -2768,15 +2858,14 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		    /*
 		     * Format: cmd dname op dsize offset bindex lba error noprogt
 		     */
-		    cmdp += sprintf(
-				   cmdp, "%s %s %s %u " FUF " %u " LUF " %d %u",
-				   tdp->td_trigger_cmd,
-				   dip->di_dname, op, dip->di_dsize,
-				   offset, dip->di_block_index,
-				   lba, dip->di_error,
-				   ( (dip->di_initiated_time)
-				     ? (unsigned)(dip->di_last_alarm_time - dip->di_initiated_time)
-				     : 0 ) );
+		    cmdp += sprintf(cmdp, "%s %s %s %u " FUF " %u " LUF " %d %u",
+				    tdp->td_trigger_cmd,
+				    dip->di_dname, op, dip->di_dsize,
+				    offset, dip->di_block_index,
+				    lba, dip->di_error,
+				    ( (dip->di_initiated_time)
+				      ? (unsigned)(dip->di_last_alarm_time - dip->di_initiated_time)
+				      : 0 ) );
 		} else {
 		    cmdp += sprintf(cmdp, "%s", tdp->td_trigger_cmd);
 		}
@@ -2786,7 +2875,7 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		if (tdp->td_trigger_args) {
 		    cmdp += sprintf(cmdp, " %s", tdp->td_trigger_args);
 		}
-		status = ExecuteCommand(dip, cmd, True);
+		status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		break;
 	    }
 

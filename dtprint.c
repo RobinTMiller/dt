@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2018			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,17 @@
  *	Various printing functions.
  *
  * Modification History:
+ * 
+ * May 19th, 2020 by Robin T. Miller
+ *      Remove check for the error file being open, when acquiring/releasing
+ * the global print lock (only use this when master log file is open).
+ * Reason: If other threads are waiting on job lock, we have two issues:
+ *     1) releasing wrong (print) mutex, thus the job lock is not released.
+ *     2) threads waiting on the job lock get stuck (hung) waiting on lock.
+ * Note: This happens when an error is logged while holding the job lock!
+ * 
+ * December 27th, 2019 by Robin T. Miller
+ *      Update report_record() to report physical LBA's, when available.
  * 
  * April 23rd, 2015 by Robin T. Miller
  * 	Updated report_record() to report proper partial block percentage.
@@ -108,20 +119,20 @@ ReportError(dinfo_t *dip, error_info_t *eip)
     
     if ( !(eip->ei_rpt_flags & RPT_WARNING) ) {
 	PrintDecimal(dip, "Error Number", dip->di_error_count, PNL);
-	PrintAscii(dip, "Time of Error", time_buffer, PNL);
+	PrintAscii(dip, "Time of Current Error", time_buffer, PNL);
     } else {
-	PrintAscii(dip, "Time of Warning", time_buffer, PNL);
+	PrintAscii(dip, "Time of Current Warning", time_buffer, PNL);
     }
     if ( (dip->di_mode == READ_MODE) && dip->di_read_pass_start) {
 	os_ctime(&dip->di_read_pass_start, time_buffer, sizeof(time_buffer));
-	PrintAscii(dip, "Read Start Time", time_buffer, PNL);
+	PrintAscii(dip, "Read Pass Start Time", time_buffer, PNL);
 	if ( (dip->di_ftype == OUTPUT_FILE) && dip->di_write_pass_start) {
 	    os_ctime(&dip->di_write_pass_start, time_buffer, sizeof(time_buffer));
-	    PrintAscii(dip, "Write Start Time", time_buffer, PNL);
+	    PrintAscii(dip, "Write Pass Start Time", time_buffer, PNL);
 	}
     } else if (dip->di_write_pass_start) {
 	os_ctime(&dip->di_write_pass_start, time_buffer, sizeof(time_buffer));
-	PrintAscii(dip, "Write Start Time", time_buffer, PNL);
+	PrintAscii(dip, "Write Pass Start Time", time_buffer, PNL);
     }
     if ( !(eip->ei_rpt_flags & RPT_NOERRORMSG) ) {
 	char *emsg = os_get_error_msg(error);
@@ -275,6 +286,7 @@ ReportErrorInfoX(dinfo_t *dip, error_info_t *eip, char *format, ...)
     va_list ap;
     FILE *fp;
     char *os_emsg;
+    hbool_t mismatch_flag = EQ(eip->ei_op, miscompare_op);
 
     /* If the file is not open, assume no valid device info to report. */
     if ( eip->ei_fd && (*eip->ei_fd == NoFd) ) {
@@ -329,7 +341,7 @@ ReportErrorInfoX(dinfo_t *dip, error_info_t *eip, char *format, ...)
     /* Note: We *must* report device information to set trigger values! */
     if ( !(eip->ei_rpt_flags & RPT_NODEVINFO) ) {
 	hbool_t eio_flag = os_isIoError(eip->ei_error);
-	ReportDeviceInfo(dip, eip->ei_bytes, 0, eio_flag);
+	ReportDeviceInfo(dip, eip->ei_bytes, 0, eio_flag, mismatch_flag);
     } else if (dip->di_extended_errors == False) {
 	report_device_information(dip);
     }
@@ -366,6 +378,7 @@ int
 ReportExtendedErrorInfo(dinfo_t *dip, error_info_t *eip, char *format, ...)
 {
     char time_buffer[TIME_BUFFER_SIZE];
+    HANDLE fd = (eip->ei_fd) ? *eip->ei_fd : dip->di_fd;
     hbool_t error_flag;
     
     if ( (eip->ei_log_level == logLevelCrit) ||
@@ -400,9 +413,7 @@ ReportExtendedErrorInfo(dinfo_t *dip, error_info_t *eip, char *format, ...)
     if ( isFileSystemFile(dip) ) {
 	os_ino_t fileID;
 	large_t filesize;
-	HANDLE fd = NoFd;
 	char *p;
-	if (eip->ei_fd) fd = *eip->ei_fd;
 	fileID = os_get_fileID(eip->ei_file, fd);
 	if (fileID != (os_ino_t)FAILURE) {
 	    char fileID_str[MEDIUM_BUFFER_SIZE];
@@ -428,14 +439,10 @@ ReportExtendedErrorInfo(dinfo_t *dip, error_info_t *eip, char *format, ...)
     }
     PrintAscii(dip, "Operation", eip->ei_op, PNL);
     if (eip->ei_bytes) {
-	if (dip->di_iobehavior == DT_IO) {
-	    uint64_t record;
-	    record = (eip->ei_optype == READ_OP) ? dip->di_records_read : dip->di_records_written;
-	    record++; /* zero based */
-	    PrintLongLong(dip, "Record Number", record, PNL);
-	}
-	/* Note: The request size is actually size_t (could be 64-bit unsigned long)! */
-	/* TODO: Create print function for size_t and ssize_t (current all unsigned). */
+	uint64_t record;
+	record = (eip->ei_optype == READ_OP) ? dip->di_records_read : dip->di_records_written;
+	record++; /* zero based */
+	PrintLongLong(dip, "Record Number", record, PNL);
 	PrintDecHex(dip, "Request Size", (unsigned)eip->ei_bytes, PNL);
 	PrintDecHex(dip, "Block Length", ((unsigned)eip->ei_bytes / dip->di_dsize), PNL);
     }
@@ -466,6 +473,15 @@ ReportExtendedErrorInfo(dinfo_t *dip, error_info_t *eip, char *format, ...)
 	eLflush(dip);
     } else {
 	Lflush(dip);
+    }
+
+    /*
+     * For miscompares, report the file offset maps to LBAs (if supported). 
+     * Note: Today, this reports ALL file LBA's, not just the miscompare range. 
+     */
+    if ( isFileSystemFile(dip) && dip->di_fsmap_flag && EQ(eip->ei_op, miscompare_op) ) {
+	Printf(dip, "\n");
+	(void)os_report_file_map(dip, fd, dip->di_dsize, eip->ei_offset, eip->ei_bytes);
     }
 
     /*
@@ -595,19 +611,29 @@ report_record(
     char *bp = msg;
     double start = 0, end = 0;
     large_t elba = 0;
+    uint32_t dsize = dip->di_dsize;
+    uint64_t splba = NO_LBA, eplba = NO_LBA;
 
     /*
      * Depending on data supplied, calculate ending block,
      * and block offsets (for file system testing).
      */
-    if ( (lba != NO_LBA) && dip->di_dsize) {
-        elba = ((lba + howmany(bytes, dip->di_dsize)) - 1);
+    if ( (lba != NO_LBA) && dsize) {
+        elba = ((lba + howmany(bytes, dsize)) - 1);
 	/* Note: For SAN (whole disk blocks), we report whole numbers! */
-	if (offset % dip->di_dsize) {
-	    start = ((double)offset / (double)dip->di_dsize);
+	if (offset % dsize) {
+	    start = ((double)offset / (double)dsize);
 	}
-	if ((offset + bytes) % dip->di_dsize) {
-	    end = ((double)(offset + bytes) / (double)dip->di_dsize);
+	if ((offset + bytes) % dsize) {
+	    end = ((double)(offset + bytes) / (double)dsize);
+	}
+        /* The file map won't reflect writes, unless doing overwrites. */
+        /* Also with read-after-write, we don't wish to refresh map on each I/O. */
+	if ( (mode == READ_MODE) && ((dip->di_raw_flag == False) || (dip->di_retrying == True)) )  {
+	    splba =  MapOffsetToLBA(dip, dip->di_fd, dsize, offset, MismatchedData);
+	    if (bytes) {
+		eplba =  MapOffsetToLBA(dip, dip->di_fd, dsize, (offset + bytes - 1), MismatchedData);
+	    }
 	}
     }
     if ( dip->di_multiple_files || (dip->di_dtype->dt_dtype == DT_TAPE) ) {
@@ -626,12 +652,12 @@ report_record(
 		      (mode == READ_MODE) ? "Read" : "Wrote",
 		      (unsigned int)bytes, (bytes > 1) ? "s" : "");
     }
-    if ( (lba != NO_LBA) && dip->di_dsize) {
-	if (bytes % dip->di_dsize) {
-	    float blocks = (float)bytes / (float)dip->di_dsize;
+    if ( (lba != NO_LBA) && dsize) {
+	if (bytes % dsize) {
+	    float blocks = (float)bytes / (float)dsize;
 	    bp += sprintf(bp, "(%.2f block%s) ", blocks, (blocks > 1) ? "s" : "");
 	} else {
-	    uint32_t blocks = (uint32_t)(bytes / dip->di_dsize);
+	    uint32_t blocks = (uint32_t)(bytes / dsize);
 	    bp += sprintf(bp, "(%u block%s) ", blocks, (blocks > 1) ? "s" : "");
 	}
     }
@@ -639,8 +665,17 @@ report_record(
 	bp += Sprintf(bp, "%s buffer "LLPXFMT", ",
 		 (mode == READ_MODE) ? "into" : "from",	(uint8_t *)buffer);
     }
-    if (lba != NO_LBA) {
-        bp += sprintf(bp, "lba%s ", (elba > lba) ? "'s" : "");
+    /* For file systems w/fsmap, report the physical LBA's. */
+    bp += sprintf(bp, "LBA%s ", (elba > lba) ? "'s" : "");
+    if ( (mode == READ_MODE) && dip->di_fsmap &&
+	 ((dip->di_raw_flag == False) || (dip->di_retrying == True)) )  {
+    	if (splba != eplba) {
+            /* For FS maps, report start and end LBA's. */
+	    bp += sprintf(bp, LDF ", " LDF, splba, eplba);
+	} else {
+	    bp += sprintf(bp, LDF, splba);
+	}
+    } else if (lba != NO_LBA) {
 	/* Block offsets only exist for file systems. */
         if (start && end) {
             bp += sprintf(bp, "%.2f - %.2f", start, end);
@@ -715,7 +750,7 @@ fmtmsg_prefix(dinfo_t *dip, char *bp, int flags, logLevel_t level)
         }
     }
     bp += sprintf(bp, "%s", log_prefix);
-    free(log_prefix);
+    FreeStr(dip, log_prefix);
 
     /*
      * Add an ERROR: prefix to clearly indicate error/critical issues.
@@ -788,7 +823,7 @@ AcquirePrintLock(dinfo_t *dip)
     hbool_t job_log_flag;
     int status = WARNING;
 
-    if (error_logfp || master_logfp) {
+    if (master_logfp) {
         status = acquire_print_lock();
 	return(status);
     }
@@ -816,7 +851,7 @@ ReleasePrintLock(dinfo_t *dip)
     hbool_t job_log_flag;
     int status = WARNING;
 
-    if (error_logfp || master_logfp) {
+    if (master_logfp) {
         status = release_print_lock();
 	return(status);
     }

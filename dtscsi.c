@@ -1,7 +1,7 @@
 #if defined(SCSI)
 /****************************************************************************
  *      								    *
- *      		  COPYRIGHT (c) 1988 - 2019     		    *
+ *      		  COPYRIGHT (c) 1988 - 2020     		    *
  *      		   This Software Provided       		    *
  *      			     By 				    *
  *      		  Robin's Nest Software Inc.    		    *
@@ -32,6 +32,10 @@
  *      dt's SCSI functions.
  * 
  * Modification History:
+ * 
+ * May 19th, 2020 by Robin T. Miller
+ *      For spt commands add "logprefix=" to disable the spt log prefix.
+ *      The ExecuteCommand() API was updated to apply dt's log prefix.
  * 
  * January 25th, 2019 by Robin T. Miller
  *      Add support for unmapping blocks via token based xcopy zero ROD method.
@@ -435,11 +439,11 @@ report_standard_scsi_information(dinfo_t *dip)
  */ 
 #if defined(WIN32)
 
-static char *spt_path = "X:\\bin\\spt.last";
+char *spt_path = "C:\\tools\\spt.exe";
 
 #else /* !defined(WIN32) */
 
-static char *spt_path = "/usr/local/bin/spt";
+char *spt_path = "/usr/local/bin/spt";
 
 #endif /* defined(WIN32) */
 
@@ -459,11 +463,9 @@ get_lba_status(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
 		  (starting_offset / block_length),
 		  (data_bytes / block_length) );
 
-    if (dip->di_sDebugFlag) {
-	strcat(cmd, " enable=Debug,xdebug,debug");
-    }
+    add_common_spt_options(dip, cmd);
 
-    status = ExecuteCommand(dip, cmd, True);
+    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 
     if (status || dip->di_debug_flag) {
 	Printf(dip, "spt exited with status %d...\n", status);
@@ -478,6 +480,7 @@ add_common_spt_options(dinfo_t *dip, char *cmd)
 	strcat(cmd, " ");
 	strcat(cmd, dip->di_spt_options);
     }
+    strcat(cmd, " logprefix=");
     if (dip->di_sDebugFlag) {
 	strcat(cmd, " enable=Debug,xdebug,debug");
     }
@@ -540,7 +543,7 @@ unmap_blocks(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
 
     add_common_spt_options(dip, cmd);
 
-    status = ExecuteCommand(dip, cmd, True);
+    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 
     if (status || dip->di_debug_flag) {
 	Printf(dip, "spt exited with status %d...\n", status);
@@ -568,7 +571,7 @@ write_same_unmap(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
 
     add_common_spt_options(dip, cmd);
 
-    status = ExecuteCommand(dip, cmd, True);
+    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 
     if (status || dip->di_debug_flag) {
 	Printf(dip, "spt exited with status %d...\n", status);
@@ -593,7 +596,7 @@ xcopy_zerorod(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes)
 
     add_common_spt_options(dip, cmd);
 
-    status = ExecuteCommand(dip, cmd, True);
+    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 
     if (status || dip->di_debug_flag) {
 	Printf(dip, "spt exited with status %d...\n", status);

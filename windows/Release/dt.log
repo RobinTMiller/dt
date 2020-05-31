@@ -1,5 +1,36 @@
 ﻿  dt.c
+  dtaio.c
+  dtbtag.c
+  dtfmt.c
+  dtfs.c
+  dtgen.c
+  dthist.c
+  dtinfo.c
+  dtiot.c
+  dtjobs.c
+  dtmem.c
+  dtmtrand64.c
+  dtprint.c
+  dtprocs.c
   dtread.c
-  dtwrite.c
+  dtscsi.c
+  dtstats.c
+  dtusage.c
+  dtutil.c
+  dtverify.c
   Generating Code...
-  dt.vcxproj -> C:\cygwin64\home\robin\GitHub\dt\windows\.\Release\dt.exe
+  Compiling...
+  dtwin.c
+c:\cygwin64\home\millerob\github\dt\windows\dtwin.c(1103): warning C4996: 'inet_ntoa': Use inet_ntop() or InetNtop() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+  c:\program files (x86)\windows kits\10\include\10.0.17134.0\um\winsock2.h(1848): note: see declaration of 'inet_ntoa'
+c:\cygwin64\home\millerob\github\dt\windows\dtwin.c(1144): warning C4996: 'WSAAddressToStringA': Use WSAAddressToStringW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+  c:\program files (x86)\windows kits\10\include\10.0.17134.0\um\winsock2.h(3506): note: see declaration of 'WSAAddressToStringA'
+c:\cygwin64\home\millerob\github\dt\windows\dtwin.c(1318): warning C4996: 'GetVersionExA': was declared deprecated
+  c:\program files (x86)\windows kits\10\include\10.0.17134.0\um\sysinfoapi.h(378): note: see declaration of 'GetVersionExA'
+  dtworkloads.c
+  dtwrite.c
+  libscsi.c
+  scsidata.c
+  scsilib.c
+  Generating Code...
+  dt.vcxproj -> C:\cygwin64\home\millerob\GitHub\dt\windows\.\Release\dt.exe

@@ -1,0 +1,1 @@
+make -f ../Makefile.solaris-x86 VPATH=.. OS=solaris

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -396,6 +396,10 @@ init_open_defaults(dinfo_t *dip)
 	    dip->di_records_read = (large_t) 0;
 	}
     }
+    /* Remember, during read retries we use this code path! */
+    if ( (dip->di_retrying == False) && dip->di_fsmap) {
+	os_free_file_map(dip);
+    }
     return;
 }
 
@@ -577,7 +581,7 @@ close_file(struct dinfo *dip)
 
     dip->di_fd = NoFd;
     dip->di_closing = False;
-    
+
     if (status == FAILURE) {
 	if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
 	     (dip->di_trigger_control == TRIGGER_ON_ERRORS) ) {

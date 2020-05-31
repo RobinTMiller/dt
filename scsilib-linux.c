@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2017			    *
+ *			  COPYRIGHT (c) 2006 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -32,6 +32,9 @@
  *
  * Modification History:
  *
+ * May 13th, 2020 by Robin T. Miller
+ *      Fix parameters for sending SG_SCSI_RESET_TARGET (device reset) ioctl().
+ * 
  * August 14th, 2012 by Robin T. Miller
  *	Added new host status codes introduced for multipathing.
  *
@@ -327,7 +330,7 @@ os_reset_device(scsi_generic_t *sgp)
     int arg = SG_SCSI_RESET_TARGET;
     int error;
 
-    if ( (error = ioctl(sgp->fd, SG_SCSI_RESET_TARGET, &arg)) < 0) {
+    if ( (error = ioctl(sgp->fd, SG_SCSI_RESET, &arg)) < 0) {
 	sgp->os_error = errno;
 	if (sgp->errlog == True) {
 	    os_perror(sgp->opaque, "SCSI reset device (SG_SCSI_RESET_TARGET) failed on %s!", sgp->dsf);

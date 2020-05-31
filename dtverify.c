@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -32,8 +32,29 @@
  *
  * Modification History:
  * 
+ * May 4th, 2020 by Robin T. Miller
+ *      Display the command to re-read all data including corrupted record.
+ * 
+ * April 26th, 2020 by Robin T. Miller
+ *      Add the job and thread ID's to corrupted files being saved, so it's
+ * easier to identify the job/thread that created them. While files often
+ * have this information, direct disk device names do not, so adding.
+ * 
+ * April 8th, 2020 by Robin T. Miller
+ *      When dumping block tags (btags), dump the buffer in hex bytes.
+ * 
+ * December 22nd, 2019 by Robin T. Miller
+ *      For file systems, report the physical LBA if we can translate.
+ * 
+ * December 16th, 2-19 by Robin T. Miller
+ *      When dumping buffers, for received data display the file offsets
+ * rather than memory addresses, which are more useful for troubleshooting.
+ * 
+ * December 14th, 2019 by Robin T. Miller
+ *      Provide more extended error information to help with troubleshooting.
+ * 
  * December 3rd, 2019 by Robin T. Miller
- *      Add writing corrupted and reread data to a file for latter analysis.
+ *      Add writing corrupted and reread data to a file for later analysis.
  *      This especially helps with "transient" (temporary) verification errors.
  * 
  * November 21st, 2019 by Robin T. Miller
@@ -58,7 +79,7 @@
  * 	Updated dumping buffers display all data if less than dump limit.
  *
  * April 25th, 2015 by Robin T. Miller
- * 	During verify retries, alwasy display the dt reread command line,
+ * 	During verify retries, always display the dt reread command line,
  * but disable compare if pattern options do not permit data verification.
  * 
  * April 21st, 2015 by Robin T. Miller
@@ -82,10 +103,17 @@
 /*
  * Forward References:
  */
+void dump_file_buffer (	dinfo_t		*dip,
+			char		*name,
+			uint8_t		*base,
+			uint8_t		*cptr,
+			size_t		dump_size,
+			size_t		bufr_size );
+
 int verify_prefix(struct dinfo *dip, u_char *buffer, size_t bcount, int bindex, size_t *pcount);
 
-static void report_reread_command(dinfo_t *dip, size_t request_size, Offset_t record_offset, uint32_t pattern);
-static int save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, hbool_t corrupt_flag);
+static void report_reread_corrupted(dinfo_t *dip, size_t request_size, Offset_t record_offset, uint32_t pattern);
+static void report_reread_data(dinfo_t *dip, size_t request_size, Offset_t record_offset);
 static int verify_data_with_btags(	struct dinfo	*dip,
 					uint8_t		*buffer,
 					size_t		bytes,
@@ -160,9 +188,28 @@ CalculateDumpSize(dinfo_t *dip, size_t size)
     return(dump_size);
 }
 
+void
+dump_buffer (	dinfo_t		*dip,
+		char		*name,
+		uint8_t		*base,
+		uint8_t		*cptr,
+		size_t		dump_size,
+		size_t		bufr_size,
+		hbool_t		expected )
+{
+    if (dip->di_random_access == False) {
+        dump_buffer_legacy(dip, name, base, cptr, dump_size, bufr_size, expected);
+    } else if (expected == True) {
+        dump_expected_buffer(dip, name, base, cptr, dump_size, bufr_size);
+    } else {
+        dump_received_buffer(dip, name, base, cptr, dump_size, bufr_size);
+    }
+    return;
+}
+
 /************************************************************************
  *									*
- * dump_buffer() Dump data buffer in hex bytes.				*
+ * dump_buffer_legacy() Dump data buffer legacy format.			*
  *									*
  * Inputs:							        * 
  * 	dip = The device infromation pointer.				*
@@ -178,13 +225,13 @@ CalculateDumpSize(dinfo_t *dip, size_t size)
  *									*
  ************************************************************************/
 void
-dump_buffer (	dinfo_t		*dip,
-		char		*name,
-		uint8_t		*base,
-		uint8_t		*ptr,
-		size_t		dump_size,
-		size_t		bufr_size,
-		hbool_t		expected )
+dump_buffer_legacy (	dinfo_t		*dip,
+			char		*name,
+			uint8_t		*base,
+			uint8_t		*ptr,
+			size_t		dump_size,
+			size_t		bufr_size,
+			hbool_t		expected )
 {
     size_t boff, coff, limit, offset;
     u_int field_width = 16;
@@ -196,7 +243,7 @@ dump_buffer (	dinfo_t		*dip,
 
     if ( (base == NULL) || (ptr == NULL) ) {
 	/* Avoid strange segmentation faults, making debug more difficult! */
-	Eprintf(dip, "BUG: The base "LLPX0FMT" and/or dump buffer"LLPX0FMT", are NULL!\n",
+	Eprintf(dip, "BUG: The base "LLPX0FMT" and/or dump buffer "LLPX0FMT", are NULL!\n",
 		base, ptr);
 	return;
     }
@@ -234,10 +281,8 @@ dump_buffer (	dinfo_t		*dip,
 							(expected) ? "" : "in", ptr);
     Lprintf(dip, "Dumping %s Buffer (base = "LLPXFMT", buffer offset = %u, limit = %u bytes):\n",
 							name, base, offset, limit);
-    /* Note: 64-bit look strange, but I'd rather not truncate the address below. */
-    /*       Generally, I prefer to compile for 32 bits, with 64 bits offsets. */
 #if defined(MACHINE_64BITS)
-    Lprintf(dip, "          Address / Offset\n");
+    Lprintf(dip, "   Memory Address / Offset\n");
 #else /* !defined(MACHINE_64BITS) */
     Lprintf(dip, "  Address / Offset\n");
 #endif /* defined(MACHINE_64BITS) */
@@ -249,8 +294,7 @@ dump_buffer (	dinfo_t		*dip,
     for (boff = 0; boff < limit; boff++, bptr++) {
 	if ((boff % field_width) == (size_t) 0) {
 	    if (boff) Lprintf(dip, " \"%s\"\n", abufp); abp = abufp;
-	    Lprintf(dip, LLPX0FMT"/%6d |",
-		   bptr, (boff + (offset - coff)));
+	    Lprintf(dip, LLPX0FMT"/%6u |", bptr, (boff + (offset - coff)));
 	}
 	data = *bptr;
 	Lprintf(dip, "%c%02x", (bptr == ptr) ? '*' : ' ', data);
@@ -264,6 +308,295 @@ dump_buffer (	dinfo_t		*dip,
     if (expected) {
 	Lprintf(dip, "\n");
     }
+    eLflush(dip);
+    return;
+}
+
+/************************************************************************
+ *									*
+ * dump_expected_buffer() Dump the expected data buffer.		*
+ *									*
+ * Inputs:							        * 
+ * 	dip = The device infromation pointer.				*
+ *	name = The buffer name being dumped.				*
+ *	base = Base pointer of buffer to dump.				*
+ *	cptr  = Pointer into buffer being dumped.			*
+ *	dump_size = The size of the buffer to dump.			*
+ *	bufr_size = The maximum size of this buffer.			*
+ *									*
+ * Return Value:							*
+ *		Void.							*
+ *									*
+ ************************************************************************/
+void
+dump_expected_buffer (	dinfo_t		*dip,
+			char		*name,
+			uint8_t		*base,
+			uint8_t		*cptr,
+			size_t		dump_size,
+			size_t		bufr_size )
+{
+    size_t bytes, coff, limit, mindex;
+    u_int field_width = 16;
+    uint8_t *bend, *bptr;
+    uint8_t data;
+    uint8_t *abufp, *abp;
+    size_t dindex;
+
+    if ( (base == NULL) || (cptr == NULL) ) {
+	/* Avoid strange segmentation faults, making debug more difficult! */
+	Eprintf(dip, "BUG: The base "LLPX0FMT" and/or dump buffer "LLPX0FMT", are NULL!\n",
+		base, cptr);
+	return;
+    }
+    bend = (base + bufr_size);
+    bptr = base;
+    dindex = (cptr - base);
+    abufp = abp = (u_char *)Malloc(dip, (field_width + 1) );
+    /*
+     * Since many requests do large transfers, limit data dumped.
+     */
+    limit = (dump_size < dip->di_dump_limit) ? dump_size : dip->di_dump_limit;
+
+    /*
+     * Now to provide context, attempt to dump data on both sides of
+     * the corrupted data, ensuring buffer limits are not exceeded.
+     * Note: Only adjust the dumping, if index is > dump limit!
+     */
+    mindex = (cptr - base);		/* Index to mismatch data. */
+    if (dindex >= limit) {
+	bptr = (cptr - (limit >> 1));
+	if (bptr < base) bptr = base;
+	if ( (bptr + limit) > bend) {
+	    limit = (bend - bptr);	/* Dump to end of buffer. */
+	}
+    }
+    coff = (cptr - bptr);		/* Corruption offset from dump start. */
+
+    Lprintf(dip, "The correct data starts at memory address "LLPX0FMT" (marked by asterisk '*')\n", cptr);
+    Lprintf(dip, "Dumping %s Buffer (base = "LLPXFMT", mismatch offset = %u, limit = %u bytes):\n",
+	    name, base, mindex, limit);
+    Lprintf(dip, "                  / Buffer\n");
+    Lprintf(dip, "   Memory Address / Index \n");
+
+    /*
+     * Note: This may be deprecated with new side by side comparision, but at 
+     * present it's needed for non-IOT patterns, and also provides context.
+     */
+    for (bytes = 0; bytes < limit; bytes++, bptr++) {
+	if ((bytes % field_width) == (size_t) 0) {
+	    if (bytes) Lprintf(dip, " \"%s\"\n", abufp); abp = abufp;
+	    Lprintf(dip, LLPX0FMT"/%6u |", bptr, (bytes + (mindex - coff)));
+	}
+	data = *bptr;
+	Lprintf(dip, "%c%02x", (bptr == cptr) ? '*' : ' ', data);
+        abp += Sprintf((char *)abp, "%c", isprint((int)data) ? data : ' ');
+    }
+    if (abp != abufp) {
+        while (bytes++ % field_width) Lprintf(dip, "   ");
+        Lprintf(dip, " \"%s\"\n", abufp);
+    }
+    Free(dip, abufp);
+    Lprintf(dip, "\n");
+    eLflush(dip);
+    return;
+}
+
+/************************************************************************
+ *									*
+ * dump_received_buffer() Dump the received data buffer.		*
+ *									*
+ * Inputs:							        * 
+ * 	dip = The device infromation pointer.				*
+ *	name = The buffer name being dumped.				*
+ *	base = Base pointer of buffer to dump.				*
+ *	cptr  = Pointer into buffer being dumped.			*
+ *	dump_size = The size of the buffer to dump.			*
+ *	bufr_size = The maximum size of this buffer.			*
+ *									*
+ * Return Value:							*
+ *		Void.							*
+ *									*
+ ************************************************************************/
+void
+dump_received_buffer (	dinfo_t		*dip,
+			char		*name,
+			uint8_t		*base,
+			uint8_t		*cptr,
+			size_t		dump_size,
+			size_t		bufr_size )
+{
+    size_t bytes, coff, limit, mindex;
+    u_int field_width = 16;
+    uint8_t *bend, *bptr;
+    uint8_t data;
+    uint8_t *abufp, *abp;
+    Offset_t fbase, fend, foff, fcptr, fptr;
+    size_t dindex;
+
+    if ( (base == NULL) || (cptr == NULL) ) {
+	/* Avoid strange segmentation faults, making debug more difficult! */
+	Eprintf(dip, "BUG: The base "LLPX0FMT" and/or dump buffer "LLPX0FMT", are NULL!\n",
+		base, cptr);
+	return;
+    }
+    bend = (base + bufr_size);
+    bptr = base;
+    dindex = (cptr - base);
+    fbase = fptr = getFileOffset(dip);
+    fend = (fbase + bufr_size);
+    abufp = abp = (u_char *)Malloc(dip, (field_width + 1) );
+    /*
+     * Since many requests do large transfers, limit data dumped.
+     */
+    limit = (dump_size < dip->di_dump_limit) ? dump_size : dip->di_dump_limit;
+
+    /*
+     * Now to provide context, attempt to dump data on both sides of
+     * the corrupted data, ensuring buffer limits are not exceeded.
+     * Note: Only adjust the dumping, if index is > dump limit!
+     */
+    mindex = (cptr - base);		/* Index to mismatch data. */
+    fcptr = (fbase + mindex);		/* File offset of corruption. */
+    if (dindex >= limit) {
+	fptr = (fcptr - (limit >> 1));
+	if (fptr < fbase) fptr = fbase;
+	bptr = (cptr - (limit >> 1));
+	if (bptr < base) bptr = base;
+	if ( (bptr + limit) > bend) {
+	    limit = (bend - bptr);	/* Dump to end of buffer. */
+	}
+    }
+    coff = (cptr - bptr);		/* Corruption offset from dump start. */
+    foff = (fcptr - fptr);		/* Note: This should match the above! */
+
+    Lprintf(dip, "The incorrect data starts at memory address "LLPX0FMT" (for Robin's debug! :)\n", cptr);
+    Lprintf(dip, "The incorrect data starts at file offset %018llu (marked by asterisk '*')\n", fcptr);
+    Lprintf(dip, "Dumping %s File offsets (base = "LUF", mismatch offset = %u, limit = %u bytes):\n",
+	    name, fbase, mindex, limit);
+    Lprintf(dip, "                  / Block\n");
+    Lprintf(dip, "      File Offset / Index \n");
+
+    /*
+     * Note: This may be deprecated with new side by side comparision, but at 
+     * present it's needed for non-IOT patterns, and also provides context.
+     */
+    for (bytes = 0; bytes < limit; bytes++, bptr++, fptr++) {
+	if ((bytes % field_width) == (size_t) 0) {
+	    if (bytes) Lprintf(dip, " \"%s\"\n", abufp); abp = abufp;
+	    uint32_t foffset = (uint32_t)(bytes + (mindex - foff));
+	    Lprintf(dip, "%018llu/%6u |", fptr, (uint32_t)(foffset % dip->di_device_size));
+	}
+	data = *bptr;
+	Lprintf(dip, "%c%02x", (bptr == cptr) ? '*' : ' ', data);
+        abp += Sprintf((char *)abp, "%c", isprint((int)data) ? data : ' ');
+    }
+    if (abp != abufp) {
+        while (bytes++ % field_width) Lprintf(dip, "   ");
+        Lprintf(dip, " \"%s\"\n", abufp);
+    }
+    Free(dip, abufp);
+    Lprintf(dip, "\n");
+    eLflush(dip);
+    return;
+}
+
+/************************************************************************
+ *									*
+ * dump_file_buffer() - Dump the received file buffer.			*
+ *									*
+ * Inputs:							        * 
+ * 	dip = The device infromation pointer.				*
+ *	name = The buffer name being dumped.				*
+ *	base = Base pointer of buffer to dump.				*
+ *	cptr  = Pointer into buffer being dumped.			*
+ *	dump_size = The size of the buffer to dump.			*
+ *      bufr_size = The maximum size of this buffer.    	        * 
+ *      							        * 
+ * 	Note: Mostly a clone of dump_receive_buffer().			* 
+ *									*
+ * Return Value:							*
+ *		Void.							*
+ *									*
+ ************************************************************************/
+void
+dump_file_buffer (	dinfo_t		*dip,
+			char		*name,
+			uint8_t		*base,
+			uint8_t		*cptr,
+			size_t		dump_size,
+			size_t		bufr_size )
+{
+    size_t bytes, coff, limit, mindex;
+    u_int field_width = 16;
+    uint8_t *bend, *bptr;
+    uint8_t data;
+    uint8_t *abufp, *abp;
+    Offset_t fbase, fend, foff, fcptr, fptr;
+    size_t dindex;
+
+    if (dip->di_dump_limit == 0) { return; }
+    if ((base == NULL) || (cptr == NULL)) {
+	/* Avoid strange segmentation faults, making debug more difficult! */
+	Eprintf(dip, "BUG: The base "LLPX0FMT" and/or dump buffer "LLPX0FMT", are NULL!\n",
+		base, cptr);
+	return;
+    }
+    bend = (base + bufr_size);
+    bptr = base;
+    dindex = (cptr - base);
+    fbase = fptr = getFileOffset(dip);
+    fend = (fbase + bufr_size);
+    abufp = abp = (u_char *)Malloc(dip, (field_width + 1) );
+    /*
+     * Since many requests do large transfers, limit data dumped.
+     */
+    limit = (dump_size < dip->di_dump_limit) ? dump_size : dip->di_dump_limit;
+
+    /*
+     * Now to provide context, attempt to dump data on both sides of
+     * the corrupted data, ensuring buffer limits are not exceeded.
+     * Note: Only adjust the dumping, if index is > dump limit!
+     */
+    mindex = (cptr - base);		/* Index to mismatch data. */
+    fcptr = (fbase + mindex);		/* File offset of corruption. */
+    if (dindex >= limit) {
+	fptr = (fcptr - (limit >> 1));
+	if (fptr < fbase) fptr = fbase;
+	bptr = (cptr - (limit >> 1));
+	if (bptr < base) bptr = base;
+	if ( (bptr + limit) > bend) {
+	    limit = (bend - bptr);	/* Dump to end of buffer. */
+	}
+    }
+    coff = (cptr - bptr);		/* Corruption offset from dump start. */
+    foff = (fcptr - fptr);		/* Note: This should match the above! */
+
+    Lprintf(dip, "Dumping %s File offsets (base offset = "LUF", limit = %u bytes):\n",
+	    name, fbase, limit);
+    Lprintf(dip, "                  / Block\n");
+    Lprintf(dip, "      File Offset / Index \n");
+
+    /*
+     * Note: This may be deprecated with new side by side comparision, but at 
+     * present it's needed for non-IOT patterns, and also provides context.
+     */
+    for (bytes = 0; bytes < limit; bytes++, bptr++, fptr++) {
+	if ((bytes % field_width) == (size_t) 0) {
+	    if (bytes) Lprintf(dip, " \"%s\"\n", abufp); abp = abufp;
+	    uint32_t foffset = (uint32_t)(bytes + (mindex - foff));
+	    Lprintf(dip, "%018llu/%6u |", fptr, (uint32_t)(foffset % dip->di_device_size));
+	}
+	data = *bptr;
+	Lprintf(dip, " %02x", data);
+        abp += Sprintf((char *)abp, "%c", isprint((int)data) ? data : ' ');
+    }
+    if (abp != abufp) {
+        while (bytes++ % field_width) Lprintf(dip, "   ");
+        Lprintf(dip, " \"%s\"\n", abufp);
+    }
+    Free(dip, abufp);
+    Lprintf(dip, "\n");
     eLflush(dip);
     return;
 }
@@ -314,7 +647,11 @@ verify_prefix( struct dinfo *dip, u_char *buffer, size_t bcount, int bindex, siz
 	    Fprintf(dip, "Mismatch of data pattern prefix: '%s' (%d bytes w/pad)\n",
 		    dip->di_fprefix_string, dip->di_fprefix_size);
 	    /* expected */
-	    dump_size = CalculateDumpSize(dip, dip->di_fprefix_size);
+	    dump_size = dip->di_fprefix_size;
+	    if (dump_size > dip->di_data_size) {
+		dump_size = dip->di_data_size;
+	    }
+	    //dump_size = CalculateDumpSize(dip, dip->di_fprefix_size);
 	    dump_buffer(dip, prefix_str, (u_char *)dip->di_fprefix_string,
 			pstr, dump_size, dip->di_fprefix_size, True);
 	    /* received */
@@ -323,12 +660,14 @@ verify_prefix( struct dinfo *dip, u_char *buffer, size_t bcount, int bindex, siz
                 display_timestamp(dip, buffer+count);
             }
 #endif /* defined(TIMESTAMP) */
-	    dump_size = CalculateDumpSize (dip, bcount);
-	    dump_buffer (dip, data_str, buffer, bptr, dump_size, bcount, False);
+	    dump_size = CalculateDumpSize(dip, bcount);
+	    dump_buffer(dip, data_str, buffer, bptr, dump_size, bcount, False);
 	    status = FAILURE;
-	    if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
-		 (dip->di_trigger_control == TRIGGER_ON_MISCOMPARE) ) {
-		(void)ExecuteTrigger(dip, miscompare_op);
+	    if ( (dip->di_retrying == False) && (dip->di_trigdelay_flag == False) ) {
+		if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
+		     (dip->di_trigger_control == TRIGGER_ON_MISCOMPARE) ) {
+		    (void)ExecuteTrigger(dip, miscompare_op);
+		}
 	    }
 	    break;
 	}
@@ -362,22 +701,27 @@ verify_buffers(	struct dinfo	*dip,
     u_char *dptr = dbuffer;
     u_char *vptr = vbuffer;
 
+    if (dip->di_verify_delay) {			/* Optional verify delay. (for debug) */
+	mySleep(dip, dip->di_verify_delay);
+    }
     for (i = 0; (i < count); i++, dptr++, vptr++) {
 	if (*dptr != *vptr) {
-	    size_t dump_size = CalculateDumpSize (dip, count);
-	    ReportCompareError (dip, count, i, *dptr, *vptr);
+	    size_t dump_size = CalculateDumpSize(dip, count);
+	    ReportCompareError(dip, count, i, *dptr, *vptr);
 	    /* expected */
-	    dump_buffer (dip, data_str, dbuffer, dptr, dump_size, count, True);
+	    dump_buffer(dip, data_str, dbuffer, dptr, dump_size, count, True);
 	    /* received */
 #if defined(TIMESTAMP)
             if (dip->di_timestamp_flag) {
                 display_timestamp(dip, vbuffer);
             }
 #endif /* defined(TIMESTAMP) */
-	    dump_buffer (dip, verify_str, vbuffer, vptr, dump_size, count, False);
-	    if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
-		 (dip->di_trigger_control == TRIGGER_ON_MISCOMPARE) ) {
-		(void)ExecuteTrigger(dip, miscompare_op);
+	    dump_buffer(dip, verify_str, vbuffer, vptr, dump_size, count, False);
+	    if ( (dip->di_retrying == False) && (dip->di_trigdelay_flag == False) ) {
+		if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
+		     (dip->di_trigger_control == TRIGGER_ON_MISCOMPARE) ) {
+		    (void)ExecuteTrigger(dip, miscompare_op);
+		}
 	    }
 	    return (FAILURE);
 	}
@@ -427,12 +771,12 @@ verify_lbdata(	struct dinfo	*dip,
 	    vlbn = (u_int32)stoh(vptr, sizeof(vlbn));
 	}
 	if (dlbn != vlbn) {
-	    size_t dump_size = CalculateDumpSize (dip, count);
+	    size_t dump_size = CalculateDumpSize(dip, count);
 	    ReportLbdataError(dip, *lba, (uint32_t)count, i, dlbn, vlbn);
 	    /* expected */
-	    dump_buffer (dip, data_str, dbuffer, dptr, dump_size, count, True);
+	    dump_buffer(dip, data_str, dbuffer, dptr, dump_size, count, True);
 	    /* received */
-	    dump_buffer (dip, verify_str, vbuffer, vptr, dump_size, count, False);
+	    dump_buffer(dip, verify_str, vbuffer, vptr, dump_size, count, False);
 	    status = FAILURE;
 	    break;
 	}
@@ -471,6 +815,9 @@ verify_data (	struct dinfo	*dip,
     hbool_t check_lba = (dip->di_iot_pattern || (dip->di_lbdata_flag && dip->di_lbdata_size));
     int status;
 
+    if (dip->di_verify_delay) {			/* Optional verify delay. (for debug) */
+	mySleep(dip, dip->di_verify_delay);
+    }
     if (dip->di_btag_flag == True) {
 	status = verify_data_with_btags(dip, buffer, count, pattern, lba, raw_flag);
     } else if ( (check_lba == False) && (dip->di_fprefix_string == NULL) ) {
@@ -480,22 +827,44 @@ verify_data (	struct dinfo	*dip,
     } else {
 	status = verify_data_with_lba(dip, buffer, count, pattern, lba, raw_flag);
     }
-    if ( (status != SUCCESS)   && dip->di_retryDC_flag &&
-	 dip->di_random_access && (dip->di_retrying == False)) {
+    if ( (status == SUCCESS) || (dip->di_retrying == True) ) {
+	return(status);
+    }
+    /*
+     * For random access devices, on verify errors, perform read retries.
+     */
+    if (dip->di_retryDC_flag && dip->di_random_access) {
 	(void)verify_reread(dip, buffer, count, pattern, lba);
+    }
+    /*
+     * To capture read retries, for triggers which stop I/O, we now allow 
+     * mismatch triggers to be delayed until *after* re-read retries. 
+     */
+    if (dip->di_trigdelay_flag == True) {
+	if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
+	     (dip->di_trigger_control == TRIGGER_ON_MISCOMPARE) ) {
+	    (void)ExecuteTrigger(dip, miscompare_op);
+	}
+    }
+    /* 
+     * The file system map gets allocated whenever file errors are reported. 
+     * Free the file system map if doing read-after-write, to force refresh.
+     */
+    if (raw_flag && dip->di_fsmap) {
+	os_free_file_map(dip);
     }
     return (status);
 }
 
 /*
- * verify_reread() - Verify Data after Rereading with DIO.
+ * verify_reread() - Verify Data after Rereading with Direct I/O.
  *
  * Description:
  *	If a pattern_buffer exists, then this data is used to compare
  * the buffer instead of the pattern specified.
  *
  * Inputs:
- *	cdip = The device information pointer.
+ *	cdip = The current device information pointer.
  *	buffer = Pointer to data to verify.
  *	count = The number of bytes to compare.
  *	pattern = Data pattern to compare against.
@@ -513,12 +882,12 @@ verify_reread(
     u_int32		pattern,
     u_int32		*lba )
 {
-    dinfo_t	*dip;
-    uint8_t	*reread_buffer;
+    dinfo_t	*dip = NULL;
+    uint8_t	*reread_buffer = NULL;
     Offset_t 	record_offset;
-    ssize_t 	count;
-    int		oflags;
-    int		retries = 0;
+    ssize_t 	reread_count;
+    int		oflags = OS_READONLY_MODE;
+    uint32_t    retries = 0;
     hbool_t	saved_aio_flag;
     hbool_t	saved_dio_flag;
     hbool_t	saved_rDebugFlag;
@@ -526,7 +895,11 @@ verify_reread(
 
     Fprintf(cdip, "\n");
     if (cdip->di_save_corrupted) {
-	(void)save_corrupted_data(cdip, cdip->di_dname, buffer, bcount, True);
+        if (cdip->di_iot_pattern == True) {
+	    void *pattern_buffer = (cdip->di_saved_pattern_ptr) ? cdip->di_saved_pattern_ptr : cdip->di_pattern_bufptr;
+            (void)save_corrupted_data(cdip, cdip->di_dname, pattern_buffer, bcount, CTYPE_EXPECTED);
+	}
+	(void)save_corrupted_data(cdip, cdip->di_dname, buffer, bcount, CTYPE_CORRUPTED);
     }
     /*
      * Please Note: For SAN disks, using a SCSI Read may be desirable?
@@ -548,9 +921,10 @@ verify_reread(
     reread_buffer = malloc_palign(cdip, bcount, 0);
     if (reread_buffer == NULL) goto cleanup_exit;
     *dip = *cdip;	 /* Copy current device information. */
+
+    /* Use the cloned device pointer for retries! */
     dip->di_fd = NoFd;
     record_offset = cdip->di_offset;
-    oflags = OS_READONLY_MODE;
 
     /*
      * Enable direct I/O for our reread (bypass buffer cache).
@@ -579,7 +953,7 @@ verify_reread(
 		;
 	    } else {
 		dip->di_dio_flag = False;
-		Wprintf(dip, "The I/O size or offset is NOT block aligned, so DIO is disabled!\n");
+		Wprintf(dip, "The I/O size or offset is NOT block aligned, so Direct I/O is disabled!\n");
 	    }
 	} else 
 #endif /* defined(__linux__) || defined(WIN32) */
@@ -612,7 +986,7 @@ verify_reread(
 	report_record(dip, (dip->di_files_read + 1), (dip->di_records_read + 1),
 			   (record_offset / dip->di_dsize), record_offset,
 			   READ_MODE, reread_buffer, bcount);
-	count = read_record(dip, reread_buffer, bcount, bcount, record_offset, &status);
+	reread_count = read_record(dip, reread_buffer, bcount, bcount, record_offset, &status);
 	if (status == FAILURE) goto cleanup_exit;
 
 	/*
@@ -623,18 +997,19 @@ verify_reread(
 	if (dip->di_saved_pattern_ptr) {
 	    dip->di_pattern_bufptr = dip->di_saved_pattern_ptr;	/* Messy, cleanup! */
 	}
-	if (memcmp(buffer, reread_buffer, count) == 0) {
+	if (memcmp(buffer, reread_buffer, reread_count) == 0) {
 	    Fprintf(dip, "Reread data matches previous data read, possible write failure!\n");
 	} else {
-	    status = (*dip->di_funcs->tf_verify_data)(dip, reread_buffer, count, pattern, lba, False);
+	    status = (*dip->di_funcs->tf_verify_data)(dip, reread_buffer, reread_count, pattern, lba, False);
 	    if (status == SUCCESS) {
 		Fprintf(dip, "Reread data matches the expected data, possible read failure!\n");
+		/* Consider stopping after match... but for now, do extra re-reads for data point! */
 	    } else {
 		Fprintf(dip, "Reread data does NOT match previous data or expected data!\n");
 	    }
 	}
 	if (cdip->di_save_corrupted) {
-	    (void)save_corrupted_data(cdip, cdip->di_dname, reread_buffer, count, False);
+	    (void)save_corrupted_data(cdip, cdip->di_dname, reread_buffer, reread_count, CTYPE_REREAD);
 	}
 	if ( (++retries < dip->di_retryDC_limit) || dip->di_loop_on_error) {
 
@@ -654,10 +1029,14 @@ verify_reread(
 
 cleanup_exit:
     cdip->di_retrying = False;
-    report_reread_command(dip, bcount, record_offset, pattern);
+    report_reread_corrupted(cdip, bcount, record_offset, pattern);
+    report_reread_data(cdip, bcount, record_offset);
 #if defined(DATA_CORRUPTION_URL)
     Fprintf(dip, "Note: For more information regarding data corruptions, please visit this link:\n");
-    Fprintf(dip, "    %s\n", DATA_CORRUPTION_URL);
+    Fprintf(dip, "      %s\n", DATA_CORRUPTION_URL);
+# if defined(DATA_CORRUPTION_URL1) 
+    Fprintf(dip, "      %s\n", DATA_CORRUPTION_URL1);
+# endif
     Fprintf(dip, "\n");
 #endif /* defined(DATA_CORRUPTION_URL) */
     /* Due to copy, don't really need this restore! */
@@ -666,18 +1045,23 @@ cleanup_exit:
     dip->di_rDebugFlag = saved_rDebugFlag;
     if (reread_buffer) {
 	free_palign(dip, reread_buffer);
+	reread_buffer = NULL;
     }
     if (dip) {
-	Free(cdip, dip); dip = NULL;
+	Free(cdip, dip);
+	dip = NULL;
     }
     return(status);
 }
 
+/*
+ * report_reread_corrupted() - Report command to re-read the corrupted record.
+ */
 static void
-report_reread_command(dinfo_t *dip, size_t request_size, Offset_t record_offset, uint32_t pattern)
+report_reread_corrupted(dinfo_t *dip, size_t request_size, Offset_t record_offset, uint32_t pattern)
 {
-    char	str[STRING_BUFFER_SIZE];
-    char	*sbp = str;
+    char str[STRING_BUFFER_SIZE];
+    char *sbp = str;
 
     /*
      * Display a re-read command line, required for "reference trace".
@@ -687,7 +1071,7 @@ report_reread_command(dinfo_t *dip, size_t request_size, Offset_t record_offset,
     if (dip->di_iobehavior == DTAPP_IO) {
 	sbp += Sprintf(sbp, " iobehavior=dtapp", dip->di_fprefix_string);
     }
-    sbp += Sprintf(sbp, " if=%s bs=%u count=1 position=" FUF ,
+    sbp += Sprintf(sbp, " if=%s bs=%u count=1 offset=" FUF,
 		   dip->di_dname, (uint32_t)request_size, record_offset);
     if (dip->di_fprefix_string) {
 	sbp += Sprintf(sbp, " prefix=\"%s\"", dip->di_fprefix_string);
@@ -727,6 +1111,12 @@ report_reread_command(dinfo_t *dip, size_t request_size, Offset_t record_offset,
     if (dip->di_btag) {
 	sbp += Sprintf(sbp, " enable=btags");
     }
+    /* When re-reading block tags, the step value is verified. */
+    if (dip->di_step_offset) {
+	sbp += Sprintf(sbp, " step="FUF, dip->di_step_offset);
+    }
+    /* The user can remove these to retry and save future corruptions. */
+    sbp += Sprintf(sbp, " disable=retryDC,savecorrupted");
     /*
      * We cannot compare the data for non-IOT pattern:
      * - pattern files (need to save pattern data for this record)
@@ -745,25 +1135,148 @@ report_reread_command(dinfo_t *dip, size_t request_size, Offset_t record_offset,
     return;
 }
 
-static int
-save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, hbool_t corrupt_flag)
+/*
+ * report_reread_data() - Report command to do re-read up to and including corrupted record. 
+ *  
+ * Note: The goal is to use this for re-reading data across all threads, e.g. power outage! 
+ */
+static void
+report_reread_data(dinfo_t *dip, size_t request_size, Offset_t record_offset)
+{
+    char str[STRING_BUFFER_SIZE];
+    char *sbp = str;
+    large_t data_limit = dip->di_data_limit;
+
+    /*
+     * Display a re-read command line, required for "reference trace".
+     */
+    Fprintf(dip, "Command line to re-read the corrupted file:\n");
+    sbp += Sprintf(str, "-> %s", dtpath);
+    if (dip->di_iobehavior == DTAPP_IO) {
+	sbp += Sprintf(sbp, " iobehavior=dtapp", dip->di_fprefix_string);
+    }
+    sbp += Sprintf(sbp, " if=%s", dip->di_dname);
+    if (dip->di_min_size && dip->di_max_size) {
+	sbp += Sprintf(sbp, " min="SDF" max="SDF, dip->di_min_size, dip->di_max_size);
+	if (dip->di_variable_flag) {
+	    sbp += Sprintf(sbp, " incr=vary");
+	} else {
+	    sbp += Sprintf(sbp, " incr="SDF, dip->di_incr_count);
+	}
+    } else {
+	sbp += Sprintf(sbp, " bs="SDF, dip->di_block_size);
+    }
+    if (dip->di_device_size) {
+	sbp += Sprintf(sbp, " dsize="SDF, dip->di_device_size);
+    }
+    if (dip->di_step_offset) {
+	sbp += Sprintf(sbp, " step="FUF, dip->di_step_offset);
+    }
+    if (dip->di_io_type == RANDOM_IO) {
+	sbp += Sprintf(sbp, " iotype=random");
+    } else {
+	sbp += Sprintf(sbp, " iotype=sequential");
+	if (dip->di_io_dir == FORWARD) {
+	    sbp += Sprintf(sbp, " iodir=forward");
+	} else {
+	    sbp += Sprintf(sbp, " iodir=reverse");
+	}
+    }
+    /* The bytes we've read up to the corruption. */
+    sbp += Sprintf(sbp, " limit="LUF, dip->di_dbytes_read);
+    /* The number of records read uo to the corruption. */
+    sbp += Sprintf(sbp, " records="LUF, (dip->di_full_reads + dip->di_partial_reads));
+    /* The starting file offset, if specified. */
+    if (dip->di_file_position) {
+	sbp += Sprintf(sbp, " offset="FUF, dip->di_file_position);
+    }
+    /* Random seed for this thread for random operations. */
+    if (dip->di_random_seed) {
+	sbp += Sprintf(sbp, " rseed="LXF, dip->di_random_seed);
+    }
+    /* A host of various options for pattern generation. */
+    if (dip->di_fprefix_string) {
+	sbp += Sprintf(sbp, " prefix=\"%s\"", dip->di_fprefix_string);
+    }
+    if (dip->di_iot_pattern) {
+	sbp += Sprintf(sbp, " pattern=iot");
+	if (dip->di_iot_seed_per_pass != IOT_SEED) {
+	    sbp += Sprintf(sbp, " iotseed=0x%08x", dip->di_iot_seed_per_pass);
+	}
+    } else if (dip->di_incr_pattern) {
+	sbp += Sprintf(sbp, " pattern=incr");
+    } else if (dip->di_pattern_file) {
+	sbp += Sprintf(sbp, " pf=%s", dip->di_pattern_file);
+    } else {
+	sbp += Sprintf(sbp, " pattern=0x%08x", dip->di_pattern);
+    }
+    if (dip->di_lbdata_flag && dip->di_timestamp_flag) {
+	sbp += Sprintf(sbp, " enable=lbdata,timestamp");
+    } else if (dip->di_lbdata_flag) {
+	sbp += Sprintf(sbp, " enable=lbdata");
+    } else if (dip->di_timestamp_flag) {
+	sbp += Sprintf(sbp, " enable=timestamp");
+    }
+    if (dip->di_btag) {
+	sbp += Sprintf(sbp, " enable=btags");
+    }
+    if ( ( (dip->di_dtype->dt_dtype == DT_REGULAR) ||
+	   (dip->di_dtype->dt_dtype == DT_BLOCK) ) && (dip->di_dio_flag == True) ) {
+	sbp += Sprintf(sbp, " flags=direct");
+    }
+    if (dip->di_dump_limit != BLOCK_SIZE) {
+	sbp += Sprintf(sbp, " dlimit=%u", dip->di_dump_limit);
+    }
+    if (dip->di_dsize != BLOCK_SIZE) {
+	sbp += Sprintf(sbp, " dsize=%u", dip->di_dsize);
+    }
+    if (dip->di_scsi_io_flag) {
+	sbp += Sprintf(sbp, " enable=scsi_io");
+    }
+    /* The user can remove these to retry and save future corruptions. */
+    sbp += Sprintf(sbp, " disable=retryDC,savecorrupted");
+    Fprintf(dip, "%s\n", str);
+    Fprintf(dip, "\n");
+    return;
+}
+
+int
+save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, corruption_type_t ctype)
 {
     HANDLE	fd = NoFd;
     char	corrupt_file[STRING_BUFFER_SIZE];
     char	*cbp, *dir = NULL, *file, *path, *p;
-    char	*postfix = (corrupt_flag) ? "CORRUPT" : "REREAD";
+    char	*filetype, *postfix;
     unsigned int corrupt_count = 0;
     ssize_t	count = 0;
     int		oflags = (O_CREAT|O_WRONLY);
     int		status = SUCCESS;
 
+    if (ctype == CTYPE_EXPECTED) {
+        filetype = "expected";
+        postfix = "EXPECT";
+    } else if (ctype == CTYPE_CORRUPTED) {
+        filetype = "corrupted";
+        postfix = "CORRUPT";
+    } else if (ctype == CTYPE_REREAD) {
+        filetype = "reread";
+        postfix = "REREAD";
+    } else {
+        filetype = "unknown";
+        postfix = "UNKNOWN"; /* Should not happen! */
+    }
+    /* Try to find a directory for the data corruptioin files. */
     if (dip->di_log_dir) {
-        dir = dip->di_log_dir;
+        dir = strdup(dip->di_log_dir);
     } else if ( (path = error_log) ||
 		(path = dip->di_job_log) ||
 		(path = dip->di_log_file) ) {
-	if (p = strrchr(path, dip->di_dir_sep)) {
-	    dir = ++p;
+        dir = strdup(path);
+	if (p = strrchr(dir, dip->di_dir_sep)) {
+	    *p = '\0';
+	} else { /* Assume just a file name, no directory. */
+            free(dir);
+            dir = NULL;
 	}
     }
     /* Find the basename of the file. */
@@ -774,23 +1287,26 @@ save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, 
     }
     /* Loop until we find a non-existent file, to avoid overwrites. */
     while (True) {
+        /* FYI: We recreate the file name on each each loop (suboptimal). */
 	cbp = corrupt_file;
 	if (dir) {
 	    cbp += sprintf(cbp, "%s%c", dir, dip->di_dir_sep);
 	}
-	cbp += sprintf(cbp, "%s-%s%u", file, postfix, corrupt_count);
+        /* Format is: File-Postfix-File#-Job#Thread# */
+	cbp += sprintf(cbp, "%s-%s%u-j%ut%u", file, postfix, corrupt_count,
+		       dip->di_job->ji_job_id, dip->di_thread_number);
 	if (os_file_exists(corrupt_file) == False) {
 	    break;
 	}
 	corrupt_count++;
     }
-    fd = dt_open_file(dip, corrupt_file, oflags, FILE_CREATE_MODE, NULL, NULL, False, False);
+    fd = dt_open_file(dip, corrupt_file, oflags, FILE_CREATE_MODE, NULL, NULL, True, False);
     if (fd == NoFd) {
 	status = FAILURE;
     } else {
 	if (dip->di_verbose_flag) {
-	    char *filetype = (corrupt_flag) ? "corrupted" : "reread";
-	    Fprintf(dip, "Writing %s data to file %s...\n", filetype, corrupt_file);
+	    Fprintf(dip, "Writing %s data to file %s, from buffer "LLPXFMT", %u bytes...\n",
+		    filetype, corrupt_file, buffer, (unsigned int)bufsize);
 	}
 	if ( (count = os_write_file(fd, buffer, bufsize)) != bufsize) {
 	    if ((ssize_t)count == FAILURE) {
@@ -803,7 +1319,10 @@ save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, 
 	}
 	(void)os_close_file(fd);
     }
-    return(status);
+    if (dir) {
+        free(dir);
+    }
+    return (status);
 }
 
 static int
@@ -856,11 +1375,14 @@ verify_data_with_btags(
 	}
 	if (dip->di_dump_btags == True) {
 	    report_btag(dip, NULL, rbtag, raw_flag);
+	    /* Dump the btag data as well. */
+	    /* Note: Use dump_limit (dlimit) option to control data dumped. */
+	    dump_file_buffer(dip, btag_str, (uint8_t *)rbtag, (uint8_t *)rbtag, dsize, bytes);
 	} else if (dip->di_btag_vflags) {
 	    /* Now verify the btag. */
 	    status = verify_btags(dip, ebtag, rbtag, &error_index, raw_flag);
 	    /* Compare the prefix string (if any) for higher data validation. */
-	    /* Note: Selectively controlled since this may impact performance! */
+	    /* Note: Selectively controlled since this impacts performance! */
 	    if ( (status == SUCCESS) && dip->di_fprefix_string &&
 		 dip->di_xcompare_flag && (dip->di_io_mode != MIRROR_MODE) ) {
 		status = verify_btag_prefix(dip, ebtag, rbtag, &error_index);
@@ -913,7 +1435,7 @@ verify_data_with_btags(
 	    /* received */
 	    dump_buffer(dip, data_str, rbuffer, rbufptr, rdump_size, rbuffer_size, False);
 	}
-	if (dip->di_retrying == False) {
+	if ( (dip->di_retrying == False) && (dip->di_trigdelay_flag == False) ) {
 	    if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
 		 (dip->di_trigger_control == TRIGGER_ON_MISCOMPARE) ) {
 		(void)ExecuteTrigger(dip, miscompare_op);
@@ -1014,7 +1536,7 @@ verify_data_normal(
 #endif /* defined(TIMESTAMP) */
 	    dump_buffer (dip, data_str, buffer, vptr, dump_size, count, False);
 	}
-	if (dip->di_retrying == False) {
+	if ( (dip->di_retrying == False) && (dip->di_trigdelay_flag == False) ) {
 	    if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
 		 (dip->di_trigger_control == TRIGGER_ON_MISCOMPARE) ) {
 		(void)ExecuteTrigger(dip, miscompare_op);
@@ -1104,7 +1626,7 @@ verify_data_prefix(
 #endif /* defined(TIMESTAMP) */
 	    dump_buffer(dip, data_str, buffer, vptr, dump_size, count, False);
 	}
-	if (dip->di_retrying == False) {
+	if ( (dip->di_retrying == False) && (dip->di_trigdelay_flag == False) ) {
 	    if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
 		 (dip->di_trigger_control == TRIGGER_ON_MISCOMPARE) ) {
 		(void)ExecuteTrigger(dip, miscompare_op);
@@ -1237,7 +1759,7 @@ verify_data_with_lba(
 #endif /* defined(TIMESTAMP) */
 	    dump_buffer(dip, data_str, buffer, vptr, dump_size, count, False);
 	}
-	if (dip->di_retrying == False) {
+	if ( (dip->di_retrying == False) && (dip->di_trigdelay_flag == False) ) {
 	    if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
 		 (dip->di_trigger_control == TRIGGER_ON_MISCOMPARE) ) {
 		(void)ExecuteTrigger(dip, miscompare_op);
@@ -1336,7 +1858,7 @@ dopad_verify (
 			    (inverted) ? "inverted" : "pad",
 			    (inverted) ? (offset + i) : i,
 			    (dip->di_records_read + 1));
-	    ReportDeviceInfo(dip, offset, (u_int)i, False);
+	    ReportDeviceInfo(dip, offset, (u_int)i, False, MismatchedData);
 	    Fprintf (dip, "Data expected = "LLPXFMT", data found = %#x, pattern = 0x%08x\n",
 		    p.pat[i & (sizeof(u_int32) - 1)], *vptr, pattern);
 	    if (dip->di_dump_flag) {
@@ -1434,7 +1956,7 @@ ReportCompareError (
 	       compare_error_str, byte_position, (dip->di_records_read + 1));
     }
 
-    ReportDeviceInfo(dip, byte_count, byte_position, False);
+    ReportDeviceInfo(dip, byte_count, byte_position, False, MismatchedData);
 
     LogMsg(dip, dip->di_efp, logLevelError, prt_flags,
 	   "Data expected = %#x, data found = %#x, byte count = %lu\n",
@@ -1487,7 +2009,7 @@ ReportLbdataError (
 	       compare_error_str, byte_position, (dip->di_records_read + 1));
     }
 
-    ReportDeviceInfo(dip, byte_count, byte_position, False);
+    ReportDeviceInfo(dip, byte_count, byte_position, False, MismatchedData);
 
     LogMsg(dip, dip->di_efp, logLevelError, prt_flags,
 	   "Block expected = %u (0x%08x), block found = %u (0x%08x), count = %u\n",
@@ -1522,7 +2044,8 @@ report_device_information(dinfo_t *dip)
  *	dip = The device information pointer.
  *	byte_count = The request byte count.
  *	buffer_index = Position of failure (DC).
- *	eio_error = Indicates if an EIO error occurred.
+ *      eio_error = Indicates if an EIO error occurred.
+ *      mismatch_flag = Indicates if this is a mismatch.
  *
  * Return Value:
  *	void
@@ -1535,7 +2058,8 @@ ReportDeviceInfo(
 	struct dinfo	*dip,
 	size_t		byte_count,
 	u_int		buffer_index,
-	hbool_t		eio_error )
+	hbool_t		eio_error,
+	hbool_t		mismatch_flag )
 {
     int flags = (PRT_NOLEVEL|PRT_SYSLOG);
 
@@ -1551,12 +2075,15 @@ ReportDeviceInfo(
      * For disk devices, also report the relative block address.
      */
     if (dip->di_random_access) {
-        large_t lba;
+	char str[STRING_BUFFER_SIZE];
+	char *strp = str;
+        uint64_t lba;
 	Offset_t current_offset;
 	Offset_t starting_offset;
 	u_int32 dsize = dip->di_dsize;
 	/* Note: This is position in block, not a file offset! */
 	u_int32 block_index = (buffer_index % dsize);
+	char *btype_str;
 
 	/* Note: This old crap is kept as a sanity check for the new, but will go! */
 #if defined(AIO)
@@ -1566,55 +2093,19 @@ ReportDeviceInfo(
 	if (dip->di_aio_flag) {
 	    starting_offset = dip->di_current_acb->aio_offset;
 	    current_offset = starting_offset;
-	} else if (dip->di_mmap_flag || dip->di_scsi_io_flag) {
+	} else {
+            /* This assumes MMAP, SCSI, and I/O behaviors are using pread/pwrite! */
 	    starting_offset = dip->di_offset;
 	    current_offset = starting_offset;
-	} else {
-	    /* Note: For non-EIO errors, file offset is updated! */
-	    /* TODO: Cleanup *after* switching to pread/pwrite! */
-	    if (dip->di_iobehavior == DT_IO) {
-#if 1
-		starting_offset = dip->di_offset;
-		current_offset = starting_offset;
-#else
-		current_offset = get_position (dip);
-		if (starting_offset = current_offset) {
-		    if (eio_error == False) {
-			starting_offset -= byte_count;
-		    }
-		}
-#endif
-	    } else {
-		/* Note: sio uses pread/write, but maintains offset! */
-		starting_offset = dip->di_offset;
-		current_offset = starting_offset;
-	    }
 	}
 #else /* !defined(AIO) */
-	if (dip->di_mmap_flag || dip->di_scsi_io_flag) {
-	    starting_offset = dip->di_offset;
-	    current_offset = starting_offset;
-	} else {
-#if 1
-	    starting_offset = dip->di_offset;
-	    current_offset = starting_offset;
-#else
-	    current_offset = get_position(dip);
-	    if (current_offset == (Offset_t)-1) {
-		current_offset = (Offset_t)0;
-	    }
-	    if (starting_offset = current_offset) {
-		if (eio_error == False) {
-		    starting_offset -= byte_count;
-		}
-	    }
-#endif
-	}
+	starting_offset = dip->di_offset;
+	current_offset = starting_offset;
 #endif /* defined(AIO) */
 
-	lba = WhichBlock((starting_offset + buffer_index), dsize);
-
-        dip->di_error_lba = lba;	/* Only used by trigger script! */
+	dip->di_error_offset = (starting_offset + buffer_index);
+	lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_dsize, dip->di_error_offset, mismatch_flag);
+        dip->di_error_lba = lba;
         /*
          * Only save the offset for AIO, since our normal read/write
          * functions maintain the file offset themselves.  If we do
@@ -1629,58 +2120,28 @@ ReportDeviceInfo(
         }
         dip->di_block_index = block_index;
 	dip->di_buffer_index = buffer_index;
-	dip->di_error_offset = (starting_offset + buffer_index);
 
+	if ( isDiskDevice(dip) || (isFileSystemFile(dip) && dip->di_fsmap) ) {
+	    btype_str = "Physical";
+	} else {
+	    btype_str = "Relative";
+	}
+
+	strp += sprintf(strp, "%s block number where the error occurred is ", btype_str);
+	if (lba == NO_LBA) {
+	    strp += sprintf(strp, "<not mapped>");
+	} else {
+	    strp += sprintf(strp, LUF, lba);
+	}
+	strp += sprintf(strp, ", offset "FUF, dip->di_error_offset);
 	/* The block index confuses some folks, so only display when non-zero! */
 	if (block_index) {
-	    LogMsg(dip, dip->di_efp, logLevelInfo, flags,
-		   "Relative block number where the error occurred is " LUF ","
-		   " offset " FUF " (index %u)\n",
-		   lba, dip->di_error_offset, block_index);
-	} else { /* No block index. */
-	    LogMsg(dip, dip->di_efp, logLevelInfo, flags,
-		   "Relative block number where the error occurred is " LUF ","
-		   " offset " FUF "\n",	lba, dip->di_error_offset);
+	    strp += sprintf(strp, " (index %u)", block_index);
 	}
-
-	/* -> Note: This does NOT really belong here (IMO). <- */
-	/* TODO: Revisit this, but removing since it screws up retrys! */
-#if 0
-	/*
-	 * Seek past the erroring block, so we can continue our I/O.
-	 * Note: This was added for disk copy to skip bad blocks!
-	 */
-	if (eio_error) {
-	    current_offset += dsize;
-	    if (dip->di_mode == READ_MODE) {
-		dip->di_fbytes_read += dsize;
-	    } else {
-		dip->di_fbytes_written += dsize;
-	    }
-	    (void)set_position(dip, current_offset, False);
-
-	    /*
-	     * When copying data, properly position the output device too.
-	     */
-	    if ( (dip->di_io_mode != TEST_MODE)		&&
-		 (dip != dip->di_output_dinfo)		&&
-		 dip->di_output_dinfo->di_random_access ) {
-		/*
-		 * Note: Output device could be at a different offset.
-		 */
-		struct dinfo *odip = dip->di_output_dinfo;
-		Offset_t output_offset = get_position(odip);
-		output_offset += dsize;
-		if (dip->di_mode == READ_MODE) {
-		    dip->di_fbytes_read += dsize;
-		} else {
-		    dip->di_fbytes_written += dsize;
-		}
-		(void)set_position(odip, output_offset, False);
-	    }
-	}
-#endif /* 0 */
+	strp += sprintf(strp, "\n");
+	LogMsg(dip, dip->di_efp, logLevelInfo, flags, str);
     }
+    return;
 }
 
 /* ------------------------------------------------------------------- */
@@ -1714,38 +2175,117 @@ report_device_informationX(dinfo_t *dip)
 void
 ReportDeviceInfoX(struct dinfo *dip, error_info_t *eip)
 {
-    Offset_t offset;
+    Offset_t offset, ending_offset;
     large_t starting_lba, ending_lba;
     hbool_t eio_flag = os_isIoError(eip->ei_error);
+    HANDLE fd = (eip->ei_fd) ? *eip->ei_fd : dip->di_fd;
+    hbool_t mismatch_flag = EQ(eip->ei_op, miscompare_op);
+    uint32_t dsize = dip->di_dsize;
 
-    set_device_info(dip, eip->ei_bytes, dip->di_buffer_index, eio_flag);
+    set_device_info(dip, eip->ei_bytes, dip->di_buffer_index, eio_flag, mismatch_flag);
     offset = eip->ei_offset;
-    starting_lba =  makeLBA(dip, offset);
-    ending_lba = makeLBA(dip, (offset + eip->ei_bytes));
-    if (ending_lba && (eip->ei_bytes > 0)) ending_lba--;
-    
-    PrintDecHex(dip, "Device Size", dip->di_dsize, PNL);
-    PrintLongDecHex(dip, "File Offset", offset, PNL);
-    PrintLongDecHex(dip, "Starting LBA", starting_lba, PNL);
-    PrintLongDecHex(dip, "Ending LBA", ending_lba, PNL);
+    starting_lba =  MapOffsetToLBA(dip, fd, dsize, offset, mismatch_flag);
+    ending_offset = (offset + eip->ei_bytes);
+    if (dip->di_fsmap) {
+	if (eip->ei_bytes == 0) {
+	    ending_lba = starting_lba;
+	} else {
+	    ending_lba = MapOffsetToLBA(dip, fd, dsize, (ending_offset - 1), mismatch_flag);
+	}
+    } else {
+	ending_lba = makeLBA(dip, ending_offset);
+	if (ending_lba && (eip->ei_bytes > dsize)) {
+	    ending_lba--;
+	}
+    }
+    PrintDecHex(dip, "Device Size", dsize, PNL);
+    PrintLongDecHex(dip, "Starting File Offset", offset, PNL);
+    if (starting_lba == NO_LBA) {
+	PrintAscii(dip, "Starting LBA", "<not mapped>", PNL);
+    } else {
+	PrintLongDecHex(dip, (dip->di_fsmap) ? "Starting Physical LBA" : "Starting LBA", starting_lba, PNL);
+    }
+    PrintLongDecHex(dip, "Ending File Offset", ending_offset, PNL);
+    if (ending_lba == NO_LBA) {
+	PrintAscii(dip, "Ending LBA", "<not mapped>", PNL);
+    } else {
+	PrintLongDecHex(dip, (dip->di_fsmap) ? "Ending Physical LBA" : "Ending LBA", ending_lba, PNL);
+    }
     /* Display the 512-byte LBA to match up with analyzers/traces. */
-    if ( offset && (dip->di_dsize > BLOCK_SIZE) ) {
+    if ( offset && (dsize > BLOCK_SIZE) ) {
 	PrintLongDecHex(dip, "512 byte LBA", (offset / BLOCK_SIZE), PNL);
     }
     /* Additional information for miscompares (data corruptions). */
-    if ( strstr(eip->ei_op, miscompare_op) ) {
+    if ( EQ(eip->ei_op, miscompare_op) ) {
 	/* Note: Always display, even if same as starting offset. */
 	PrintLongDecHex(dip, "Error File Offset", dip->di_error_offset, PNL);
-	PrintLongDecHex(dip, "Starting Error LBA", dip->di_error_lba, PNL);
-	if ( dip->di_error_lba && (dip->di_dsize > BLOCK_SIZE) ) {
-	    PrintLongDecHex(dip, "512 byte Error LBA", (dip->di_error_offset / BLOCK_SIZE), PNL);
+        /* Provide modulo corruption indexes.  */
+        PrintAscii(dip, "Error Offset Modulos", "", DNL);
+        Lprintf(dip, "%%8 = %d, %%512 = %d, %%4096 = %d\n",
+        	(unsigned int)(dip->di_error_offset % 8),
+        	(unsigned int)(dip->di_error_offset % 512),
+        	(unsigned int)(dip->di_error_offset % 4096));
+	if (dip->di_error_lba == NO_LBA) {
+	    PrintAscii(dip, "Starting Error LBA", "<not mapped>", PNL);
+	} else {
+	    PrintLongDecHex(dip, (dip->di_fsmap) ? "Starting Physical Error LBA" : "Starting Error LBA", dip->di_error_lba, PNL);
+	    if (dip->di_fsmap) {
+		PrintLongDecHex(dip, "Starting Physical LBA Offset", (dip->di_error_lba * dsize), PNL);
+	    }
+	}
+        /* Report 512 byte LBA or default array block size of 4k (may need to tune this!). */
+	if (dip->di_error_lba) {
+	    Offset_t error_offset;
+	    /* Note: The error LBA can be the physical LBA for files! */
+	    if (dip->di_error_lba == NO_LBA) {
+		error_offset = dip->di_error_offset;
+	    } else {
+		error_offset = (dip->di_error_lba * dip->di_device_size);
+	    }
+	    if (dsize > BLOCK_SIZE) {
+		PrintLongDecHex(dip, "512 byte Error LBA", (error_offset / BLOCK_SIZE), PNL);
+	    } else {
+		PrintLongDecHex(dip, "4096 byte Error LBA", (error_offset / 4096), PNL);
+	    }
 	}
 	PrintDecimal(dip, "Corruption Buffer Index", dip->di_buffer_index, DNL);
 	Lprintf(dip, " (byte index into read buffer)\n");
 	PrintDecimal(dip, "Corruption Block Index", dip->di_block_index, DNL);
 	Lprintf(dip, " (byte index in miscompare block)\n");
+	if (dip->di_fprefix_size) {
+	    char pstr[LARGE_BUFFER_SIZE];
+	    int aprefix_size = (int)strlen(dip->di_fprefix_string);
+	    PrintAscii(dip, "Prefix String", dip->di_fprefix_string, PNL);
+            (void)sprintf(pstr, "%d bytes (0x%x) plus %d zero bytes\n",
+			  dip->di_fprefix_size, dip->di_fprefix_size,
+			  dip->di_fprefix_size - aprefix_size);
+	    PrintAscii(dip, "Prefix Length", pstr, PNL);
+	}
     }
     return;
+}
+
+uint64_t
+MapOffsetToLBA(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset, hbool_t mismatch_flag)
+{
+    uint64_t lba = makeLBA(dip, offset);
+    uint64_t physical_lba;
+
+    /*
+     * We limit file system mapping only to mismatchs, to avoid hangs or errors.
+     */
+    if ( (dip->di_fsmap_flag == False) || (mismatch_flag == False)  ||
+	 (fd == NoFd) || (dip->di_dsize == 0) || !isFileSystemFile(dip) ) {
+	return(lba);
+    }
+
+    physical_lba = os_map_offset_to_lba(dip, fd, dsize, offset);
+    if (physical_lba != NO_LBA) {
+	lba = physical_lba;	/* Offset successfully mapped to an LBA. */
+    } else if (dip->di_fsmap) {
+	lba = physical_lba;	/* Offset not mappped, show that fact! */
+    }
+    return(lba);
 }
 
 /*
@@ -1755,7 +2295,8 @@ ReportDeviceInfoX(struct dinfo *dip, error_info_t *eip)
  *	dip = The device information pointer.
  *	iosize = The request I/O size.
  *	buffer_index = Buffer index of corruption.
- *	eio_error = Indicates if its' and I/O error.
+ *      eio_flag = Indicates if this is an I/O error.
+ *      mismatch_flag = Indicates if this is a mismatch.
  * 
  * Outputs:
  * 	dip is set with relavent device information.
@@ -1764,26 +2305,17 @@ ReportDeviceInfoX(struct dinfo *dip, error_info_t *eip)
  *	void
  */
 void
-set_device_info(dinfo_t *dip, size_t iosize, uint32_t buffer_index, hbool_t eio_error)
+set_device_info(dinfo_t *dip, size_t iosize, uint32_t buffer_index, hbool_t eio_flag, hbool_t mismatch_flag)
 {
-    large_t lba;
     Offset_t offset;
 
     if (dip->di_random_access == False) return;
 
     offset = getFileOffset(dip);
     dip->di_block_index = (buffer_index % dip->di_dsize);
-    
-    /* This is the LBA where the error/corruption occurred. */
-    lba = WhichBlock((offset + buffer_index), dip->di_dsize);
-    dip->di_error_lba = lba;
     dip->di_error_offset = (offset + buffer_index);
-
-# if 0
-    /* For AIO, save the file offset for retries/raw? */
-    if ( dip->di_aio_flag && (eio_error == True) ) {
-	dip->di_offset = offset;
-    }
-#endif /* 0 */
+    /* This is the LBA where the error/corruption occurred. */
+    dip->di_error_lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_dsize,
+				       dip->di_error_offset, mismatch_flag);
     return;
 }

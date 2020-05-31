@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2017			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,14 @@
  *	File system operations.
  *
  * Modification History:
+ * 
+ * May 11th, 2020 by Robin T. MIller
+ *      Add format strings for individual date and time fields for more
+ * flexible formatting and add support for date/time field separators.
+ * 
+ * May 9th, 2020 by Robin T. Miller
+ *      Use high resolution timer for more accurate I/O timing. This is
+ * implemented on Windows, but Unix systems still use gettimeofday() API.
  * 
  * Decmber 15th, 2015 by Robin T. Miller
  * 	Add %workload as valid format string.
@@ -822,6 +830,18 @@ FmtPrefix(struct dinfo *dip, char *prefix, int psize)
     return (SUCCESS);
 }
 
+/* This macro is specific to the next funtion only! */
+#define GetDateTime()				\
+    if (now == (time_t) 0) {			\
+	(void)time(&now);			\
+	if ( tmp && localtime_r(&now, tmp) ) {	\
+	    tmp->tm_year += 1900;		\
+	    tmp->tm_mon++;			\
+	} else {				\
+	    tmp = NULL;				\
+	}					\
+    }
+ 
 /*
  * FmtString() - Format a String Based on Control Strings.
  *
@@ -844,10 +864,17 @@ FmtPrefix(struct dinfo *dip, char *prefix, int psize)
  * 	%file = The file path. (base name)
  *	%iodir = The I/O direction.
  *	%iotype = The I/O type.
- * 	%iotune - The default I/O tune file path.
+ *      %iotune - The default I/O tune file path.
  *	%host = The host name.
- * 	%ymd = The year, month, day.
- * 	%hms = The hour, minute, second.
+ *      %ymd = The year, month, day.
+ *      %year = The year.
+ *      %month = The month.
+ *      %daye = The day.
+ *      %hms = The hour, minute, second.
+ *      %hour = The hour.
+ *      %minute = The minute.
+ *      %second = The second.
+ *      %nos = The Nimble OS date/time.
  *	%secs = Seconds since start.
  *	%seq = The sequence number.
  * 	%prog = Our program name.
@@ -876,6 +903,9 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
     char	*to = buffer;
     int		length = (int)strlen(format);
     int		ifs = dip->di_dir_sep;
+    struct tm	time_data;
+    struct tm	*tmp = &time_data;
+    time_t	now = 0;
 
     *to = '\0';
     while (length--) {
@@ -995,35 +1025,97 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
                 length -= 4;
                 from += 5;
                 continue;
+	    } else if (strncasecmp(key, "nos", 3) == 0) {
+		GetDateTime()
+		if (tmp) {
+		    /* Format: yyyy-mm-dd,hh:mm:ss */
+        	    /* Example: 2020-05-11,14:55:01 */
+		    to += sprintf(to, "%04d-%02d-%02d,%02d:%02d:%02d",
+				  tmp->tm_year, tmp->tm_mon, tmp->tm_mday,
+				  tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+		}
+		length -= 3;
+		from += 4;
+		continue;
 	    } else if (strncasecmp(key, "ymd", 3) == 0) {
-		struct tm time_data;
-		struct tm *tmp = &time_data;
-		time_t now;
-		(void)time(&now);
-		if ( localtime_r(&now, tmp) ) {
-		    tmp->tm_year += 1900;
-		    tmp->tm_mon++;
+		GetDateTime()
+		if (tmp) {
+		    char *fs;
 		    /* Format: yyyymmdd */
-		    to += sprintf(to, "%04d%02d%02d",
-				  tmp->tm_year, tmp->tm_mon, tmp->tm_mday);
+		    if (fs = dip->di_date_sep) {
+			to += sprintf(to, "%04d%s%02d%s%02d",
+				      tmp->tm_year, fs, tmp->tm_mon, fs, tmp->tm_mday);
+		    } else {
+			to += sprintf(to, "%04d%02d%02d",
+				      tmp->tm_year, tmp->tm_mon, tmp->tm_mday);
+		    }
+		}
+		length -= 3;
+		from += 4;
+		continue;
+	    } else if (strncasecmp(key, "year", 4) == 0) {
+		GetDateTime()
+		if (tmp) {
+		    to += sprintf(to, "%02d", tmp->tm_year);
+		}
+		length -= 4;
+		from += 5;
+		continue;
+	    } else if (strncasecmp(key, "month", 5) == 0) {
+		GetDateTime()
+		if (tmp) {
+		    to += sprintf(to, "%02d", tmp->tm_mon);
+		}
+		length -= 5;
+		from += 6;
+		continue;
+	    } else if (strncasecmp(key, "day", 3) == 0) {
+		GetDateTime()
+		if (tmp) {
+		    to += sprintf(to, "%02d", tmp->tm_mday);
 		}
 		length -= 3;
 		from += 4;
 		continue;
 	    } else if (strncasecmp(key, "hms", 3) == 0) {
-		struct tm time_data;
-		struct tm *tmp = &time_data;
-		time_t now;
-		(void)time(&now);
-		if ( localtime_r(&now, tmp) ) {
-		    tmp->tm_year += 1900;
-		    tmp->tm_mon++;
+		GetDateTime()
+		if (tmp) {
+        	    char *fs;
 		    /* Format: hhmmss */
-		    to += sprintf(to, "%02d%02d%02d",
-				  tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+		    if (fs = dip->di_time_sep) {
+			to += sprintf(to, "%02d%s%02d%s%02d",
+				      tmp->tm_hour, fs, tmp->tm_min, fs, tmp->tm_sec);
+		    } else {
+			to += sprintf(to, "%02d%02d%02d",
+				      tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+		    }
 		}
 		length -= 3;
 		from += 4;
+		continue;
+	    } else if (strncasecmp(key, "hour", 4) == 0) {
+		GetDateTime()
+		if (tmp) {
+		    to += sprintf(to, "%02d", tmp->tm_hour);
+		}
+		length -= 4;
+		from += 5;
+		continue;
+	    } else if (strncasecmp(key, "minute", 6) == 0) {
+		GetDateTime()
+		if (tmp) {
+		    to += sprintf(to, "%02d", tmp->tm_min);
+		}
+		length -= 6;
+		from += 7;
+		continue;
+	    } else if (strncasecmp(key, "second", 6) == 0) {
+		GetDateTime()
+		if (tmp) {
+		    to += sprintf(to, "%02d", tmp->tm_sec);
+		}
+		length -= 6;
+		from += 7;
 		continue;
 	    } else if (strncasecmp(key, "level", 5) == 0) {
 		to += Sprintf(to, "%d", dip->di_log_level);
@@ -1047,7 +1139,7 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
 		continue;
 	    } else if (strncasecmp(key, "tod", 3) == 0) {
 		*&dip->di_ptod = *&dip->di_gtod;
-		(void)gettimeofday(&dip->di_gtod, NULL);
+		(void)highresolutiontime(&dip->di_gtod, NULL);
 		to += Sprintf(to, "%d.%06d", dip->di_gtod.tv_sec, dip->di_gtod.tv_usec);
 		if (dip->di_ptod.tv_sec == 0) {
 		    *&dip->di_ptod = *&dip->di_gtod;

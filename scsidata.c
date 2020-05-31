@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2018			    *
+ *			  COPYRIGHT (c) 2006 - 2017			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -1153,6 +1153,20 @@ DumpSenseDescriptors(scsi_generic_t *sgp, scsi_sense_desc_t *ssdp, int sense_len
 		DumpBlockCommandSense(sgp, (block_command_desc_type_t *)bp);
 		break;
 
+#if defined(HGST)
+	    case HGST_UNIT_ERROR_CODE_DESC_TYPE:
+		if (dip->di_vendor_id && EQ(dip->di_vendor_id, "HGST") ) {
+		    DumpUnitErrorSense(sgp, (hgst_unit_error_desc_type_t *)bp);
+		}
+		break;
+
+	    case HGST_PHYSICAL_ERROR_RECORD_DESC_TYPE:
+		if (dip->di_vendor_id && EQ(dip->di_vendor_id, "HGST") ) {
+		    DumpPhysicalRecordErrorSense(sgp, (hgst_physical_error_record_desc_type_t *)bp);
+		}
+		break;
+
+#endif /* defined(HGST) */
 	    default:
 		Wprintf(sgp->opaque, "Unknown descriptor type %#x\n", sdhp->descriptor_type);
 		break;
@@ -1274,6 +1288,49 @@ DumpBlockCommandSense(scsi_generic_t *sgp, block_command_desc_type_t *bcp)
     PrintHex(sgp->opaque, "ili bit", bcp->ili, PNL);
     return;
 }
+
+#if defined(HGST)
+
+void
+DumpUnitErrorSense(scsi_generic_t *sgp, hgst_unit_error_desc_type_t *uep)
+{
+    uint16_t unit_error_code = (uint16_t)StoH(uep->unit_error_code);
+    /*
+     * This field gives detailed information about the error. It contains a
+     * unique code which describes where the error was detected and which piece
+     * of hardware or microcode detected the error depending on current operation. 
+     *  
+     * Note: I don't know where these error codes are documented! (Robin)
+     */
+    PrintHexDec(sgp->opaque, "Unit Error Code", unit_error_code, PNL); 
+    return;
+}
+
+void
+DumpPhysicalRecordErrorSense(scsi_generic_t *sgp, hgst_physical_error_record_desc_type_t *pep)
+{
+    scsi_sense_desc_t *ssdp = (scsi_sense_desc_t *)sgp->sense_data;
+    int i;
+
+    PrintAscii(sgp->opaque, "Physical Record Error", "", DNL);
+    for (i = 0; i < (int)sizeof(pep->physical_error_record); i++) {
+	Lprintf(sgp->opaque, "%02x ", pep->physical_error_record[i]);
+    }
+    Lprintf(sgp->opaque, "\n");
+    if ( (ssdp->sense_key == SKV_RECOVERED) ||
+	 (ssdp->sense_key == SKV_MEDIUM_ERROR) ||
+	 (ssdp->sense_key == SKV_HARDWARE_ERROR) ) {
+	hgst_physical_error_record_t *perp = (hgst_physical_error_record_t *)&pep->physical_error_record;
+	uint32_t cylinder = (uint32_t)StoH(perp->cylinder_number);
+	uint16_t sector = (uint16_t)StoH(perp->sector_number);
+	PrintDecimal(sgp->opaque, "Cylinder Number", cylinder, PNL);
+	PrintDecimal(sgp->opaque, "Head Number", perp->head_number, PNL);
+	PrintDecimal(sgp->opaque, "Sector Number", sector, PNL);
+    }
+    return;
+}
+
+#endif /* defined(HGST) */
 
 void
 DumpCdbData(scsi_generic_t *sgp)
