@@ -31,6 +31,12 @@
  * 
  * Modification History:
  * 
+ * June 5th, 2020 by Robin T. Miller
+ *      Update os_pread_file() to detecting overlapped I/O, then wait for
+ * accordingly for it to finish. When async I/O is enable, and read after
+ * write is enabled, currently reads are done synchonously. While this
+ * defeats the purpose of async I/O, we don't wish these reads to fail!
+ * 
  * May 5th, 2020 by Robin T. Miller
  *      Include the high resolution gettimeofday() as highresolutiontime(),
  * which will be used where more accurate timing is desired, such as history
@@ -845,7 +851,21 @@ os_pread_file(HANDLE handle, void *buffer, size_t size, Offset_t offset)
      */
     result = ReadFile(handle, buffer, (DWORD)size, (LPDWORD)&bytesRead, &overlap);
     if (result == False) {
-	bytesRead = FAILURE;
+        DWORD error = GetLastError();
+	if (error == ERROR_IO_PENDING) {
+            /* WTF? When setting wait parameter True, the wrong bytes read value is returned on disks! */
+	    while ( (result = GetOverlappedResult(handle, &overlap, (LPDWORD)&bytesRead, False)) == False) {
+        	error = GetLastError();
+		if (error == ERROR_IO_INCOMPLETE) {
+		    Sleep(10);
+		} else {
+        	    break;
+		}
+	    }
+	}
+	if (result == False) {
+	    bytesRead = FAILURE;
+	}
     }
     return( (ssize_t)(int)bytesRead );
 }
@@ -3171,7 +3191,15 @@ typedef struct {
 typedef void (*IterateAction)(dinfo_t *dip, LONGLONG vcn, LONGLONG lcn, LONGLONG clusters);
 
 /*
- * Forward References:
+ * Forward References: 
+ *  
+ * Good Reference: http://timr.probo.com/wd3/121503/luserland.htm 
+ *  
+ * Please Note: None of this works on compressed files or volumes or NTFS sparse allocated files. 
+
+ * Maybe someone more knowledge of Windows, can provide methods to overcome these limitations?
+ * FYI: I have found the inability to handle sparse files the biggest issue, since folks using
+ * random I/O or using slices or step options creates sparse files.
  */
 TRANSLATION *initFileTranslation(dinfo_t *dip, char *filename, HANDLE fileHandle, BOOL verify);
 void closeTranslation(dinfo_t *dip, TRANSLATION *translation);
@@ -3194,6 +3222,7 @@ BOOL validateTranslation( dinfo_t *dip,
 void printClusterMap(dinfo_t *dip, LONGLONG vcn, LONGLONG lcn, LONGLONG clusters);
 BOOL printAllClusters(dinfo_t *dip, PVOID translationToken);
 BOOL iterateAllClusters(dinfo_t *dip, HANDLE fileHandle, IterateAction callback);
+int get_fs_info(dinfo_t *dip, char *filename, HANDLE fileHandle, DWORD64 offset, DWORD64 fsize);
 
 /* --------------------------------------------------------------------------------------------------------- */
 
@@ -3862,6 +3891,58 @@ validateTranslation(
 
 /* --------------------------------------------------------------------------------------------------------- */
 
+int
+get_fs_info(dinfo_t *dip, char *filename, HANDLE fileHandle, DWORD64 offset, DWORD64 fsize)
+{
+    DWORD error = NO_ERROR;
+    TRANSLATION *translation;
+
+    translation = initFileTranslation(dip, filename, fileHandle, False);
+    if (translation == NULL) {
+	return(FAILURE);
+    }
+
+#if 0
+    char physicalDisk[MAX_PATH];
+    _snprintf(physicalDisk, sizeof(physicalDisk), "\\\\.\\PhysicalDrive%d",
+	      translation->volumeExtents.volExtents.Extents[0].DiskNumber);
+    if (dip->di_fDebugFlag) {
+	Printf(dip, "Physical disk is %s\n", physicalDisk);
+    }
+#endif /* 0 */
+
+    LONGLONG fileOffset = offset;
+    LONGLONG recordLength = fsize;
+
+    /* Loop on record length to report all LBA's in the range specified. */
+    while (recordLength > 0) {
+        LONGLONG startSectorLBA = 0;
+        LONGLONG runLength = 0;
+
+        BOOL result = getLBAandLengthByOffset(dip, translation,
+					      fileOffset, recordLength,
+					      &startSectorLBA, &runLength);
+        if (result == False) {
+            break;
+        }
+
+        Printf(dip, "File Offset: "FUF", Unit LBA "LDF" ("LXF"), VCN %d, LCN %d [cluster size: %d] on %s [%s]\n",
+	       fileOffset,
+	       startSectorLBA, startSectorLBA, translation->rpBuf.StartingVcn,
+	       translation->rpBuf.Extents[0].Lcn, translation->volumeData.BytesPerCluster,
+	       translation->fullVolName, translation->fileSystemName);
+
+	/* Adjust to handle records split across more than one physical run. */
+	fileOffset += runLength;
+	recordLength -= runLength;
+    }
+    //closeTranslation(dip, translation);
+    //translation = NULL;
+    return(SUCCESS);
+}
+
+/* --------------------------------------------------------------------------------------------------------- */
+
 /*
  * Note: We are using the translation record as our file system map.
  */
@@ -3896,7 +3977,7 @@ int
 os_report_file_map(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset, int64_t length)
 {
     TRANSLATION *translation;
-    LONGLONG fileOffset = offset;
+    LONGLONG fileOffset = (offset == NO_OFFSET) ? 0 : offset;
     LONGLONG recordLength = length;
     LONGLONG startSectorLBA = 0;
     LONGLONG runLength = 0;

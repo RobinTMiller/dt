@@ -608,7 +608,7 @@ write_data(struct dinfo *dip)
 		}
 	    } else {
 		dip->di_offset -= dip->di_step_offset;
-		if (dip->di_offset <= (Offset_t) dip->di_file_position) {
+		if (dip->di_offset <= (Offset_t)dip->di_file_position) {
 		    set_Eof(dip);
 		    dip->di_beginning_of_file = True;
 		    break;
@@ -1018,7 +1018,7 @@ write_data_iolock(struct dinfo *dip)
 		}
 	    } else { /* io_dir = REVERSE */
 		offset -= dip->di_step_offset;
-		if (offset <= (Offset_t) dip->di_file_position) {
+		if (offset <= (Offset_t)dip->di_file_position) {
 		    set_Eof(dip);
 		    dip->di_beginning_of_file = True;
 		    break;

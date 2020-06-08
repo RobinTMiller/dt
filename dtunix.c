@@ -31,6 +31,11 @@
  * 
  * Modification History:
  * 
+ * June 3rd, 2020 by Robin T. Miller
+ *      Update os_report_file_map() to use NO_OFFSET value to report all
+ * file extents, rather than failing to report extents of sparse files.
+ * Note: We would not report any extents if the offset specified was sparse.
+ * 
  * December 24th, 2019 by Robin T. Miller
  *      Added Linux support to map file offsets to physical LBA's.
  * 
@@ -1821,7 +1826,7 @@ os_report_file_map(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset, int
     unsigned int extents;
     struct fiemap *fmp;
     struct fiemap_extent *fep;
-    Offset_t fileOffset = offset;
+    Offset_t fileOffset = (offset == NO_OFFSET) ? 0 : offset;
     int64_t recordLength = length;
     hbool_t firstTime = True;
     hbool_t foundExtent = False;
@@ -1835,7 +1840,10 @@ os_report_file_map(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset, int
 
     for (extents = 0; (extents < fmp->fm_mapped_extents) && (recordLength > 0); extents++, fep++) {
 	__u64 ending_logical = (fep->fe_logical + fep->fe_length);
-	if ( (fileOffset >= fep->fe_logical) && (fileOffset < ending_logical) ) {
+        /* Note: This could be simplified like the Windows version. */
+        /* The idea here is to use offset as the starting point to report. */
+	if ( (offset == NO_OFFSET) ||
+	     (fileOffset >= fep->fe_logical) && (fileOffset < ending_logical) ) {
 	    if (firstTime) {
 		firstTime = False;
 		Printf(dip, "File: %s, LBA Size: %u bytes\n", dip->di_dname, dsize);
@@ -1846,10 +1854,12 @@ os_report_file_map(dinfo_t *dip, HANDLE fd, uint32_t dsize, Offset_t offset, int
 	    fileOffset += fep->fe_length;
 	    recordLength -= fep->fe_length;
 	    foundExtent = True;
-	} else if ( (foundExtent == True) && fileOffset < ending_logical) {
-	    if (sparseReported == False) {
-		Wprintf(dip, "File offset "FUF" was NOT found, possible sparse file!\n", fileOffset);
-		sparseReported = True;
+	} else if (fileOffset < ending_logical) {
+	    if ( (foundExtent == False) && (sparseReported == False) ) {
+		if (offset != NO_OFFSET) {
+		    Wprintf(dip, "File offset "FUF" was NOT found, possible sparse file!\n", fileOffset);
+		    sparseReported = True;
+		}
 	    }
 	    /* Handle sparse files by reporting subsequent extents within length specified! */
 	    report_file_extent(dip, fep, dsize);

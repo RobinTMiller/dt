@@ -129,12 +129,12 @@ workload_entry_t predefined_workloads[] =
     },
     {	"terabyte_lun",
 	"Terabyte LUN",
-	"slices=16 step=4g aios=4 bs=random align=rotate "
-	"pattern=iot prefix='%d@%h' iodir=reverse enable=pstats"
+	"slices=16 step=4g aios=4 bs=random "
+	"pattern=iot prefix='%d@%h' enable=pstats"
     },
     {	"terabyte_file",
 	"Single terabyte file",
-	"limit=15t slices=15 step=1g aios=4 bs=random align=rotate iodir=reverse "
+	"limit=15t slices=15 step=1g aios=4 bs=random "
 	"pattern=iot prefix='%d@%h' enable=pstats dispose=keep"
     },
     {	"sparse_files",

@@ -2600,7 +2600,8 @@ do_show_fsmap(dinfo_t *dip)
         return(status);
     }
     if (dip->di_fsmap_type == FSMAP_TYPE_MAP_EXTENTS) {
-	status = os_report_file_map(dip, dip->di_fd, dip->di_dsize, dip->di_file_position, dip->di_data_limit);
+        Offset_t offset = (dip->di_user_position) ? dip->di_file_position : NO_OFFSET;
+	status = os_report_file_map(dip, dip->di_fd, dip->di_dsize, offset, dip->di_data_limit);
     } else if (dip->di_fsmap_type == FSMAP_TYPE_LBA_RANGE) {
         Offset_t offset = dip->di_file_position;
         large_t data_limit = dip->di_data_limit;

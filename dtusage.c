@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: May 28th, 2020"VARIANT", Version: 23.10, Author: Robin T. Miller";
+char *version_str = "Date: June r65th, 2020"VARIANT", Version: 23.12, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -373,6 +373,8 @@ dthelp(dinfo_t *dip)
     P (dip, "\taio              POSIX Asynchronous I/O.    (Default: %s)\n",
 				(dip->di_aio_flag) ? enabled_str : disabled_str);
 #endif /* defined(AIO) */
+    P (dip, "\tasync            Asynchronous job control.  (Default: %s)\n",
+				(dip->di_async_job) ? enabled_str : disabled_str);
     P (dip, "\tbtags            Block tag control flag.    (Default: %s)\n",
     				(dip->di_btag_flag) ? enabled_str : disabled_str);
     //P (dip, "\tcerrors          Report close errors.       (Default: %s)\n",

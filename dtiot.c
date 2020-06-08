@@ -32,6 +32,10 @@
  *
  * Modification History:
  *
+ * June 1st, 2020 by Robin T. Miller
+ *      Report the record buffer index to make it easier to display data in
+ * saved corruption files for use with "showbtags offset=value" command.
+ * 
  * January 9th, 2020 by Robin T. Miller
  *      When displaying block tags, do *not* overwrite the write time or CRC,
  * if we are doing immediate read-after-write, since the expected block tag is
@@ -412,8 +416,8 @@ is_iot_data(dinfo_t *dip, uint8_t *rptr, size_t rsize, int rprefix_size, int *io
 
 void
 display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
-		  uint8_t *pptr, uint8_t *vptr, size_t bsize,
-		  hbool_t good_data, hbool_t raw_flag)
+		  uint8_t *pptr, uint8_t *vptr, uint32_t vindex,
+		  size_t bsize, hbool_t good_data, hbool_t raw_flag)
 {
     char str[LARGE_BUFFER_SIZE];
     char astr[PATH_BUFFER_SIZE];	/* Prefix strings can be rather long! */
@@ -461,6 +465,7 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
 	Fprintf(dip, DT_FIELD_WIDTH FUF " (LBA "FUF")\n", "Record Block Offset",
 		block_offset, lba);
     }
+    Fprintf(dip, DT_FIELD_WIDTH "%u (0x%x)\n", "Record Buffer Index", vindex, vindex);
 
     /* 
      * Verify and display the prefix string (if any).
@@ -838,6 +843,7 @@ display_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
     unsigned int bad_blocks = 0, good_blocks = 0;
     Offset_t block_offset, record_offset, ending_offset;
     large_t starting_lba, ending_lba;
+    uint32_t vindex = 0;
 
     /* Note: Use dt's offset rather than the OS fd offset (for now)! */
     block_offset = record_offset = getFileOffset(dip);
@@ -902,13 +908,13 @@ display_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
 		}
 	    }
 	    if ( (dip->di_dumpall_flag == True) || (context_flag == True) ) {
-		display_iot_block(dip, block, block_offset, pptr, vptr,
+		display_iot_block(dip, block, block_offset, pptr, vptr, vindex,
 				  dsize, True, raw_flag);
 	    }
 	} else {
 	    if ( (dip->di_dumpall_flag == True) ||
 		 (dip->di_max_bad_blocks && (bad_blocks < dip->di_max_bad_blocks) )) {
-		display_iot_block(dip, block, block_offset, pptr, vptr,
+		display_iot_block(dip, block, block_offset, pptr, vptr, vindex,
 				  dsize, False, raw_flag);
 	    }
 	    bad_blocks++;
@@ -917,6 +923,7 @@ display_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
 	blocks--;
 	pptr += dsize;
 	vptr += dsize;
+        vindex += dsize;
 	block_offset += dsize;
     }
     /*

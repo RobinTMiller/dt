@@ -425,6 +425,7 @@ typedef unsigned int iotlba_t;
 #define FALSE		0			/* Boolean FALSE value.	*/
 //#define UNINITIALIZED	255			/* Uninitialized flag.	*/
 #define NO_LBA		0xFFFFFFFFFFFFFFFFULL	/* No LBA vlaue.	*/
+#define NO_OFFSET       (Offset_t)(~0ULL)       /* No offset value.     */
 
 #define BLOCK_SIZE		512		/* Bytes in block.	*/
 #define KBYTE_SIZE		1024		/* Kilobytes value.	*/

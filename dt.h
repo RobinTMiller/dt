@@ -247,10 +247,10 @@ typedef enum corruption_type {
 } corruption_type_t;
 
 /*
- * Default random block sizes (match up with sio).
+ * Default Random Block Sizes:
  */
 #define MIN_RANDOM_SIZE		512		/* Minimum random size.	*/
-#define MAX_RANDOM_SIZE		(256*KBYTE_SIZE)/* Maximum random size.	*/
+#define MAX_RANDOM_SIZE		MBYTE_SIZE      /* Maximum random size.	*/
 
 /*
  * IOPS Measurement Types:
@@ -1901,7 +1901,7 @@ extern void process_iot_data(dinfo_t *dip, u_char *pbuffer, u_char *vbuffer, siz
 extern void analyze_iot_data(dinfo_t *dip, u_char *pbuffer, u_char *vbuffer, size_t bcount, hbool_t raw_flag);
 extern void display_iot_data(dinfo_t *dip, u_char *pbuffer, u_char *vbuffer, size_t bcount, hbool_t raw_flag);
 extern void display_iot_block(dinfo_t *dip, int block, Offset_t record_index, u_char *pptr, u_char *vptr,
-			      size_t bsize, hbool_t good_data, hbool_t raw_flag);
+			      uint32_t vindex, size_t bsize, hbool_t good_data, hbool_t raw_flag);
 extern void report_bad_sequence(dinfo_t *dip, int start, int length, Offset_t offset);
 extern void report_good_sequence(dinfo_t *dip, int start, int length, Offset_t offset);
 

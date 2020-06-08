@@ -32,6 +32,12 @@
  *
  * Modification History:
  * 
+ * June 5th, 2020 by Robin T. Miller
+ *      Fix a case with slices and step option where we went past end of slice,
+ * which caused a false data corruption (sigh). Depending on options specifed,
+ * we may not set EOF when completing previous request, so the next partial
+ * write was set based on the dta limit, *not* the end of the slice offset!
+ * 
  * February 11th, 2016 by Robin T. Miller
  * 	When prefilling read buffers, rather than using the inverted pattern,
  * switch to 1) user defined fill pattern, or 2) the thread number. This helps
@@ -896,8 +902,8 @@ dtaio_read_data(struct dinfo *dip)
 	    if (dip->di_step_offset) {
 		if (dip->di_io_dir == FORWARD) {
 		    dip->di_aio_offset += dip->di_step_offset;
-		} else if ((dip->di_aio_offset -= dip->di_step_offset) <= (Offset_t) dip->di_file_position) {
-		    dip->di_aio_offset = (Offset_t) dip->di_file_position;
+		} else if ((dip->di_aio_offset -= dip->di_step_offset) <= (Offset_t)dip->di_file_position) {
+		    dip->di_aio_offset = (Offset_t)dip->di_file_position;
 		}
 	    }
 
@@ -921,11 +927,12 @@ dtaio_read_data(struct dinfo *dip)
 	    /*
 	     * Special handling of step option:
 	     */
-	    if ( (dip->di_io_dir == FORWARD)       &&
+	    if ( (dip->di_io_dir == FORWARD)	       &&
 		 dip->di_step_offset && dip->di_slices &&
 		 ((dip->di_aio_offset + (Offset_t)dsize) >= dip->di_end_position) ) {
+		dsize = (size_t)(dip->di_end_position - dip->di_aio_offset);
 		break;
-	    } else if ( (dip->di_io_dir == REVERSE) && (dip->di_aio_offset == (Offset_t) dip->di_file_position) ) {
+	    } else if ( (dip->di_io_dir == REVERSE) && (dip->di_aio_offset == (Offset_t)dip->di_file_position) ) {
 		break;
 	    }
 	    acbp = &dip->di_acbs[dip->di_aio_index];
@@ -1163,13 +1170,13 @@ retry:
     /*
      * Special handling of step option:
      */
-    if ( (dip->di_io_dir == FORWARD)       &&
+    if ( (dip->di_io_dir == FORWARD)  	       &&
 	 dip->di_step_offset && dip->di_slices &&
 	 ((acbp->aio_offset + dip->di_step_offset + (Offset_t)dsize) >= dip->di_end_position) ) {
 	set_Eof(dip);
     } else if (dip->di_io_dir == REVERSE) {
 	if ( (acbp->aio_offset == (Offset_t) dip->di_file_position) ||
-	     (dip->di_step_offset && ((acbp->aio_offset - dip->di_step_offset) <= (Offset_t) dip->di_file_position)) ) {
+	     (dip->di_step_offset && ((acbp->aio_offset - dip->di_step_offset) <= (Offset_t)dip->di_file_position)) ) {
 	    set_Eof(dip);
 	    dip->di_beginning_of_file = True;
 	}
@@ -1404,7 +1411,7 @@ dtaio_write_data(struct dinfo *dip)
 		if (dip->di_io_dir == FORWARD) {
 		    dip->di_aio_offset += dip->di_step_offset;
 		} else if ((dip->di_aio_offset -= dip->di_step_offset) <= (Offset_t) dip->di_file_position) {
-		    dip->di_aio_offset = (Offset_t) dip->di_file_position;
+		    dip->di_aio_offset = (Offset_t)dip->di_file_position;
 		}
 	    }
 
@@ -1428,11 +1435,12 @@ dtaio_write_data(struct dinfo *dip)
 	    /*
 	     * Special handling of step option:
 	     */
-	    if ( (dip->di_io_dir == FORWARD)       &&
+	    if ( (dip->di_io_dir == FORWARD)	       &&
 		 dip->di_step_offset && dip->di_slices &&
 		 ((dip->di_aio_offset + (Offset_t)dsize) >= dip->di_end_position) ) {
+        	dsize = (size_t)(dip->di_end_position - dip->di_aio_offset);
 		break;
-	    } else if ( (dip->di_io_dir == REVERSE) && (dip->di_aio_offset == (Offset_t) dip->di_file_position) ) {
+	    } else if ( (dip->di_io_dir == REVERSE) && (dip->di_aio_offset == (Offset_t)dip->di_file_position) ) {
 		break;
 	    }
 	    acbp = &dip->di_acbs[dip->di_aio_index];
@@ -1683,7 +1691,7 @@ retry:
     /*
      * Special handling of step option:
      */
-    if ( (dip->di_io_dir == FORWARD)       &&
+    if ( (dip->di_io_dir == FORWARD)           &&
 	 dip->di_step_offset && dip->di_slices &&
 	 ((acbp->aio_offset + dip->di_step_offset + (Offset_t)dsize) >= dip->di_end_position) ) {
 	set_Eof(dip);
