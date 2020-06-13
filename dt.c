@@ -4229,6 +4229,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if (match(&string, "poison")) {
 		dip->di_poison_buffer = True;
+		dip->di_prefill_buffer = True;
 		goto eloop;
 	    }
 	    if (match(&string, "prefill")) {
@@ -5466,6 +5467,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	}
 	if ( match(&string, "ppattern") || match(&string, "prefill_pattern=") ) {
 	    dip->di_prefill_pattern = (uint32_t)number(dip, string, HEX_RADIX, &status, True);
+	    dip->di_prefill_buffer = True;
 	    continue;
 	}
 	if (match (&string, "pattern=")) {	/* TODO: This is overloaded! */

@@ -32,6 +32,10 @@
  *
  * Modification History:
  * 
+ * June 12th, 2020 by Robin T. Miller
+ *      Fix improper limit calculation when dumping expected/received buffers.
+ * The limit was going negative, which caused a segmentation fault when hit!
+ * 
  * May 4th, 2020 by Robin T. Miller
  *      Display the command to re-read all data including corrupted record.
  * 
@@ -366,7 +370,9 @@ dump_expected_buffer (	dinfo_t		*dip,
     mindex = (cptr - base);		/* Index to mismatch data. */
     if (dindex >= limit) {
 	bptr = (cptr - (limit >> 1));
-	if (bptr < base) bptr = base;
+	if ( (bptr < base) || (bptr < bend) ) {
+	    bptr = base;
+	}
 	if ( (bptr + limit) > bend) {
 	    limit = (bend - bptr);	/* Dump to end of buffer. */
 	}
@@ -374,7 +380,7 @@ dump_expected_buffer (	dinfo_t		*dip,
     coff = (cptr - bptr);		/* Corruption offset from dump start. */
 
     Lprintf(dip, "The correct data starts at memory address "LLPX0FMT" (marked by asterisk '*')\n", cptr);
-    Lprintf(dip, "Dumping %s Buffer (base = "LLPXFMT", mismatch offset = %u, limit = %u bytes):\n",
+    Lprintf(dip, "Dumping %s Buffer (base = "LLPXFMT", mismatch offset = "SDF", limit = "SDF" bytes):\n",
 	    name, base, mindex, limit);
     Lprintf(dip, "                  / Buffer\n");
     Lprintf(dip, "   Memory Address / Index \n");
@@ -383,7 +389,7 @@ dump_expected_buffer (	dinfo_t		*dip,
      * Note: This may be deprecated with new side by side comparision, but at 
      * present it's needed for non-IOT patterns, and also provides context.
      */
-    for (bytes = 0; bytes < limit; bytes++, bptr++) {
+    for (bytes = 0; (bytes < limit) && (bptr < bend); bytes++, bptr++) {
 	if ((bytes % field_width) == (size_t) 0) {
 	    if (bytes) Lprintf(dip, " \"%s\"\n", abufp); abp = abufp;
 	    Lprintf(dip, LLPX0FMT"/%6u |", bptr, (bytes + (mindex - coff)));
@@ -459,10 +465,15 @@ dump_received_buffer (	dinfo_t		*dip,
     mindex = (cptr - base);		/* Index to mismatch data. */
     fcptr = (fbase + mindex);		/* File offset of corruption. */
     if (dindex >= limit) {
-	fptr = (fcptr - (limit >> 1));
-	if (fptr < fbase) fptr = fbase;
-	bptr = (cptr - (limit >> 1));
-	if (bptr < base) bptr = base;
+        size_t context = (limit >> 1);
+	fptr = (fcptr - context);
+	if (fptr < fbase) {
+	    fptr = fbase;
+	}
+	bptr = (cptr - context);
+	if ( (bptr < base) || (bptr > bend) ) {
+	     bptr = base;
+	}
 	if ( (bptr + limit) > bend) {
 	    limit = (bend - bptr);	/* Dump to end of buffer. */
 	}
@@ -472,7 +483,7 @@ dump_received_buffer (	dinfo_t		*dip,
 
     Lprintf(dip, "The incorrect data starts at memory address "LLPX0FMT" (for Robin's debug! :)\n", cptr);
     Lprintf(dip, "The incorrect data starts at file offset %018llu (marked by asterisk '*')\n", fcptr);
-    Lprintf(dip, "Dumping %s File offsets (base = "LUF", mismatch offset = %u, limit = %u bytes):\n",
+    Lprintf(dip, "Dumping %s File offsets (base = "LUF", mismatch offset = "SDF", limit = "SDF" bytes):\n",
 	    name, fbase, mindex, limit);
     Lprintf(dip, "                  / Block\n");
     Lprintf(dip, "      File Offset / Index \n");
@@ -481,7 +492,7 @@ dump_received_buffer (	dinfo_t		*dip,
      * Note: This may be deprecated with new side by side comparision, but at 
      * present it's needed for non-IOT patterns, and also provides context.
      */
-    for (bytes = 0; bytes < limit; bytes++, bptr++, fptr++) {
+    for (bytes = 0; (bytes < limit) && (bptr < bend); bytes++, bptr++, fptr++) {
 	if ((bytes % field_width) == (size_t) 0) {
 	    if (bytes) Lprintf(dip, " \"%s\"\n", abufp); abp = abufp;
 	    uint32_t foffset = (uint32_t)(bytes + (mindex - foff));

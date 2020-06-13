@@ -32,6 +32,15 @@
  *
  * Modification History:
  * 
+ * June 12th, 2020 by Robin T. Miller
+ *      In validate_opts(), do NOT disable file ssytem align flag for NFS
+ * if direct I/O is enabled. This flag must stay set for block tags (btags),
+ * otherwise partial block requests cause a false data corruption when
+ * the request size if NOT modulo the disk block size. (e.g. CRC errors)
+ *      Note: I can't remember why I disabled this, but I think NFS allows
+ * direct I/O on non-block aligned offsets. As I recall, direct I/O simply
+ * bypasses the client side NFS cache. Well, that's my recollection! :-)
+ * 
  * June 10th, 2019 by Robin T. Miller
  *      Fix the substring search for 'xfs' to be an exact string match, so
  * 'vxfs' is *not* mistaken for XFS file system (sigh, too much cut/paste).
@@ -1191,7 +1200,9 @@ validate_opts(struct dinfo *dip)
 	if ( EQS(dip->di_filesystem_type, "nfs") ) {
 	    dio_sanity_checks = False;
 	    if (dip->di_dio_flag) {
-		dip->di_fsalign_flag = False;
+        	/* Dah, can't do this with block tags! */
+        	/* Note: This controls I/O size rounding to disk size. */
+		; // dip->di_fsalign_flag = False;
 	    }
 	} else if ( EQS(dip->di_filesystem_type, "tmpfs") ) {
 	    if (dio_sanity_checks == True) {
