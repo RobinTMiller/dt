@@ -31,6 +31,9 @@
  * 
  * Modification History:
  * 
+ * July 9th, 2020 by Robin T. Miller (on behalf of dcb314)
+ * 	Fix incorrect comparision of maxdata written in iolock function.
+ * 	
  * May 5th, 2020 by Robin T. Miller
  *      Use high resolution timer for more accurate I/O timing. This is
  * implemented on Windows, but Unix systems still use gettimeofday() API.
@@ -874,7 +877,7 @@ write_data_iolock(struct dinfo *dip)
 	    }
 	}
 
-	if ( dip->di_max_data && (dip->di_max_data >= dip->di_max_data) ) {
+	if ( dip->di_max_data && (dip->di_maxdata_written >= dip->di_max_data) ) {
 	    dip->di_maxdata_reached = True;
 	    break;
 	}
