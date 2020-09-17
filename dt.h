@@ -1256,7 +1256,6 @@ typedef struct dinfo {
 	char	*di_pass_cmd;		/* The per pass command.	*/
 	char	*di_pattern_file;	/* Pointer to pattern file name	*/
 	char	*di_stop_on_file;	/* Stop on file existance.	*/
-	uint64_t di_random_seed;	/* Seed for random # generator.	*/
 	hbool_t	di_image_copy;		/* Sanity check image copies.	*/
 	hbool_t	di_max_capacity;	/* Use max capacity from IOCTL.	*/
 	large_t	di_user_capacity;	/* The user set drive capacity.	*/
@@ -1265,11 +1264,13 @@ typedef struct dinfo {
 	 */
 	hbool_t	di_multi_flag;		/* Multi-volume media flag.	*/
 	v_int	di_multi_volume;	/* Multi-volume media count.	*/
+	hbool_t	di_volumes_flag;	/* Flags the volumes option.	*/
+        /* Random/Variable Parameters: */
+	uint64_t di_random_seed;	/* Seed for random # generator.	*/
 	hbool_t	di_variable_flag;	/* Variable block size flag.	*/
 	hbool_t	di_variable_limit;	/* Variable data limit flag.	*/
 	hbool_t	di_vary_iodir;		/* Vary sequential direction.	*/
 	hbool_t	di_vary_iotype;		/* Vary the I/O type flag.	*/
-	hbool_t	di_volumes_flag;	/* Flags the volumes option.	*/
 	/*
 	 * Fill Pattern/File Definitions: 
 	 */
@@ -1322,6 +1323,7 @@ typedef struct dinfo {
 	int	di_procs_active;	/* Number of active processes.	*/
 	int	di_slices;		/* Number of slices to create.	*/
 	int	di_slice_number;	/* Slice number to operate on.	*/
+        Offset_t di_slice_offset;       /* The starting slice offset.   */
 	/*
 	 * Thread Related Information:
 	 */ 
@@ -1722,6 +1724,7 @@ extern large_t do_free_space_wait(dinfo_t *dip, int retries);
 
 extern int initialize_prefix(dinfo_t *dip);
 extern void initialize_pattern(dinfo_t *dip);
+extern void setup_random_seeds(dinfo_t *dip);
 extern void do_prepass_processing(dinfo_t *dip);
 extern int do_postwrite_processing(dinfo_t *dip);
 extern int do_deleteperpass(dinfo_t *dip);
@@ -2128,7 +2131,7 @@ extern void gather_totals(struct dinfo *dip);
 extern void init_stats(struct dinfo *dip);
 extern void report_pass(struct dinfo *dip, enum stats stats_type);
 extern void report_stats(struct dinfo *dip, enum stats stats_type);
-extern void report_file_system_information(dinfo_t *dip, hbool_t print_header);
+extern void report_file_system_information(dinfo_t *dip, hbool_t print_header, hbool_t report_free_space);
 extern void report_os_information(dinfo_t *dip, hbool_t print_header);
 extern void report_scsi_summary(dinfo_t *dip, hbool_t print_header);
 extern void dt_job_finish(dinfo_t *dip, job_info_t *job);

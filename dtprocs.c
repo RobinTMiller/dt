@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,7 +31,12 @@
  *	Functions to handle multiple processes for 'dt' program.
  *
  * Modification History:
- *
+ * 
+ * September 5th, 2020 by Robin T. Miller
+ *      When initializing a slice, ensure the min/max limit sizes do NOT
+ * exceed the data/slice limits. Otherwise, overwrites occur and thus cause
+ * false corruptions!
+ * 
  * March 7th, 2015 by Robin T. Miller
  * 	When using slices, always set the random data limit, since variable
  * options such as iodir=vary and/or iotype=vary may be specified, plus it
@@ -835,7 +840,6 @@ init_slice(struct dinfo *dip, int slice)
     }
     sip->slice = slice;
     setup_slice(dip, sip);
-
     /*
      * Initialize the starting data pattern for each slice.
      * 
@@ -884,6 +888,13 @@ setup_slice(struct dinfo *dip, slice_info_t *sip)
      * Restrict data limit to slice length or user set limit.
      */
     dip->di_data_limit = MIN(dip->di_data_limit, sip->slice_length);
+    /* BEWARE: These override the data limit, when specified! */
+    if (dip->di_min_limit > dip->di_data_limit) {
+        dip->di_min_limit = dip->di_data_limit;
+    }
+    if (dip->di_max_limit > dip->di_data_limit) {
+        dip->di_max_limit = dip->di_data_limit;
+    }
     if (dip->di_step_offset) {
 	dip->di_end_position = (dip->di_file_position + dip->di_data_limit);
     }

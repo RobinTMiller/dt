@@ -31,6 +31,11 @@
  * 
  * Modification History:
  * 
+ * September 6th, 2020 by Robin T. Miller
+ *      For disk devices, when multiple threads are chosen, convert threads
+ * to slices to avoid *false* data corruptions, due to thread overwrites.
+ * This is happening due to folks selecting FS workloads instead of disk!
+ * 
  * May 20th, 2020 by Robin T. Miller
  *      Update API's using popen to capture stderr along with stdout!
  * 

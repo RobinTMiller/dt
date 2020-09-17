@@ -32,6 +32,14 @@
  *
  * Modification History:
  * 
+ * September 4th, 2020 by Robin T. Miller
+ *      Set the seed for rand() random number generator, used for random I/O
+ * direction, random I/O type, or random unmap types, to vary the starting
+ * type chosen. Otherwise, each thread/slice uses the same starting type.
+ * 
+ * August 5th, 2020 by Robin T. Miller
+ *      Add support for starting slice offset.
+ * 
  * June 12th, 2020 by Robin T. Miller
  *      In validate_opts(), do NOT disable file ssytem align flag for NFS
  * if direct I/O is enabled. This flag must stay set for block tags (btags),
@@ -660,6 +668,15 @@ init_file(struct dinfo *dip)
      */
     if (dip->di_file_position) {
 	dip->di_last_position = set_position(dip, dip->di_file_position, False);
+	if (dip->di_last_position == (Offset_t)FAILURE) return(FAILURE);
+    }
+    if (dip->di_slice_number && dip->di_slice_offset) {
+        Offset_t starting_slice_offset = (dip->di_last_position + dip->di_slice_offset);
+        Offset_t ending_slice_offset = (dip->di_file_position + dip->di_data_limit);
+	if (starting_slice_offset < ending_slice_offset) {
+	    dip->di_last_position = set_position(dip, starting_slice_offset, False);
+	    if (dip->di_last_position == (Offset_t)FAILURE) return(FAILURE);
+	}
     }
 
     /*
@@ -1193,6 +1210,21 @@ validate_opts(struct dinfo *dip)
     /* If DIO or buffer modes are enabled, do various DIO sanity checks! */
     /* Note: These sanity checks are required for SAN, but not NFS/CIFS! */
     dio_sanity_checks = ( dip->di_dio_flag || (dip->di_bufmode_count != 0) );
+
+    if ( isDiskDevice(dip) ) {
+	/*
+	 * Multiple threads to a disk are only allowed with I/O lock synchronization!
+	 */
+	if ( (dip->di_threads > 1 ) && (dip->di_slices == 0) && (dip->di_iolock == False) ) {
+	    /* 
+	     * Too many folks are selecting file system workloads with threads, so
+	     * convert this to slices here to avoid overwrites and *false* corruptions!
+	     */
+	    Wprintf(dip, "Converting multiple threads to slices to avoid false corruptions!\n");
+	    dip->di_slices = dip->di_threads;
+	    /* Note: May switch to I/O Lock later, after verifying re-reads work properly! */
+	}
+    }
 
     /* TODO: Move to OS specific files! */
 

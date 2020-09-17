@@ -305,7 +305,8 @@ report_pass(dinfo_t *dip, stats_t stats_type)
 void
 report_stats(struct dinfo *dip, enum stats stats_type)
 {
-    double bytes_sec, kbytes_sec, ios_sec, secs_io, msecs_io, Kbytes, Mbytes, Gbytes;
+    double bytes_sec, kbytes_sec, ios_sec, secs_io, msecs_io;
+    double Kbytes, Mbytes, Gbytes;
     large_t xfer_bytes, xfer_records;
     large_t bytes_read, bytes_written;
     large_t records_read, records_written;
@@ -352,11 +353,11 @@ report_stats(struct dinfo *dip, enum stats stats_type)
 
     if ( (stats_type == JOB_STATS) || (stats_type == TOTAL_STATS) ) {
 	report_os_information(dip, True);
-    	report_file_system_information(dip, True);
+    	report_file_system_information(dip, True, False);
 	report_file_lock_statistics(dip, True);
 	report_scsi_summary(dip, True);
 	if (dip->di_output_dinfo) {
-	    report_file_system_information(dip->di_output_dinfo, True);
+	    report_file_system_information(dip->di_output_dinfo, True, False);
 	    report_scsi_summary(dip->di_output_dinfo, True);
 	}
     }
@@ -588,6 +589,26 @@ report_stats(struct dinfo *dip, enum stats stats_type)
 		     dip->di_output_dinfo->di_dname);
 	}
     } /* end 'if (dip->di_io_mode == TEST_MDOE)' */
+
+    if (stats_type != JOB_STATS) {
+	/*
+	 * Report the capacity or max data percentage calculated, if specified.
+	 */
+	if (dip->di_capacity_percentage && dip->di_user_capacity) {
+	    large_t data_bytes = dip->di_user_capacity;
+	    Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
+	    Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
+	    Lprintf (dip, DT_FIELD_WIDTH LUF " (%.3f Mbytes, %.3f Gbytes)\n",
+		     "Data capacity calculated", data_bytes, Mbytes, Gbytes);
+	}
+	if (dip->di_max_data_percentage && dip->di_max_data) {
+	    large_t data_bytes = dip->di_max_data;
+	    Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
+	    Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
+	    Lprintf (dip, DT_FIELD_WIDTH LUF " (%.3f Mbytes, %.3f Gbytes)\n",
+		     "Maximum data calculated", data_bytes, Mbytes, Gbytes);
+	}
+    }
 
     /*
      * Report reads/writes when percentage is specified.
@@ -872,8 +893,10 @@ report_os_information(dinfo_t *dip, hbool_t print_header)
 }
 
 void
-report_file_system_information(dinfo_t *dip, hbool_t print_header)
+report_file_system_information(dinfo_t *dip, hbool_t print_header, hbool_t report_free_space)
 {
+    double Mbytes, Gbytes, Tbytes;
+
 #if defined(WIN32)
     if ( (print_header == True) &&
 	 (dip->di_volume_name || dip->di_universal_name || dip->di_filesystem_type ||
@@ -900,6 +923,24 @@ report_file_system_information(dinfo_t *dip, hbool_t print_header)
     if (dip->di_fs_block_size) {
 	Lprintf(dip, DT_FIELD_WIDTH "%u\n",
 		"Filesystem block size", dip->di_fs_block_size);
+    }
+    /* Note: Free space is not updated for total statistics. */
+    /* Why? If we've stopped I/O on the array, we cannot get it! */
+    if (report_free_space && dip->di_fs_space_free) {
+        large_t data_bytes = dip->di_fs_space_free;
+	Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
+	Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
+	Tbytes = (double) ( (double)data_bytes / (double)TBYTE_SIZE);
+	Lprintf(dip, DT_FIELD_WIDTH "%u (%.3f Mbytes, %.3f Gbytes, %.3f Tbytes)\n",
+		"Filesystem free space", data_bytes, Mbytes, Gbytes, Tbytes);
+    }
+    if (dip->di_fs_total_space) {
+        large_t data_bytes = dip->di_fs_total_space;
+	Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
+	Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
+	Tbytes = (double) ( (double)data_bytes / (double)TBYTE_SIZE);
+	Lprintf(dip, DT_FIELD_WIDTH "%u (%.3f Mbytes, %.3f Gbytes, %.3f Tbytes)\n",
+		"Filesystem total space", data_bytes, Mbytes, Gbytes, Tbytes);
     }
     if (dip->di_volume_path_name) {
 	Lprintf(dip, DT_FIELD_WIDTH "%s\n",
@@ -938,6 +979,16 @@ report_file_system_information(dinfo_t *dip, hbool_t print_header)
     if (dip->di_fs_block_size) {
 	Lprintf(dip, DT_FIELD_WIDTH "%u\n",
 		"Filesystem block size", dip->di_fs_block_size);
+    }
+    /* Note: Free space is not updated for total statistics. */
+    /* Why? If we've stopped I/O on the array, we cannot get it! */
+    if (report_free_space && dip->di_fs_space_free) {
+	Lprintf(dip, DT_FIELD_WIDTH "%u\n",
+		"Filesystem free space", dip->di_fs_space_free);
+    }
+    if (dip->di_fs_total_space) {
+	Lprintf(dip, DT_FIELD_WIDTH "%u\n",
+		"Filesystem total space", dip->di_fs_total_space);
     }
 #endif /* defined(WIN32) */
     return;

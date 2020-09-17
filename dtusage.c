@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: June 12th, 2020"VARIANT", Version: 23.13, Author: Robin T. Miller";
+char *version_str = "Date: September 16th, 2020"VARIANT", Version: 23.20, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -201,8 +201,9 @@ dthelp(dinfo_t *dip)
     P (dip, "\twrandp=value          Percentage of write accesses that are random. Range [0,100].\n");
     P (dip, "\truntime=time          The number of seconds to execute.\n");
     P (dip, "\tscript=filename       The script file name to execute.\n");
-    P (dip, "\tslice=value           The specific disk slice to test.\n");
-    P (dip, "\tslices=value          The number of disk slices to test.\n");
+    P (dip, "\tslices=value          The number of disk slices.\n");
+    P (dip, "\tslice=value           Choose a specific disk slice.\n");
+    P (dip, "\tsoffset=value         The starting slice offset.\n");
     P (dip, "\tskip=value            The number of records to skip past.\n");
     P (dip, "\tseek=value            The number of records to seek past.\n");
     P (dip, "\tstep=value            The number of bytes seeked after I/O.\n");

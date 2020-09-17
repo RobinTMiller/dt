@@ -408,11 +408,12 @@ report_standard_scsi_information(dinfo_t *dip)
 		 dip->di_inquiry->inq_tpgs, alua_str);
     }
     if (dip->di_device_capacity) {
-	Lprintf (dip, DT_FIELD_WIDTH "%u\n",
-		 "Block Length", dip->di_block_length);
-	Lprintf (dip, DT_FIELD_WIDTH LUF " (%.3f Mbytes)\n",
-		 "Maximum Capacity", dip->di_device_capacity,
-		 (double)(dip->di_device_capacity * dip->di_block_length) / (double)MBYTE_SIZE );
+        large_t data_bytes = (dip->di_device_capacity * dip->di_block_length);
+	double Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
+	double Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
+	Lprintf (dip, DT_FIELD_WIDTH "%u\n", "Block Length", dip->di_block_length);
+	Lprintf (dip, DT_FIELD_WIDTH LUF " (%.3f Mbytes, %.3f Gbytes)\n",
+		 "Maximum Capacity", dip->di_device_capacity, Mbytes, Gbytes);
 	/* Note: This information comes from Read Capacity(16). */
 	if (dip->di_lbpmgmt_valid == True) {
 	    Lprintf (dip, DT_FIELD_WIDTH "%s Provisioned\n",

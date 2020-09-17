@@ -31,6 +31,13 @@
  *
  * Modification History:
  * 
+ * August 5th, 2020 by Robin T. Miller
+ *      Add support for starting slice offset.
+ * 
+ * July 8th, 2020 by Robin T. Miller
+ *      When looking up alternate tool I/O behavior names, do string compare
+ * with length, to avoid issues with Windows ".exe" file extension.
+ * 
  * May 11th, 2020 by Robin T. MIller
  *      Add options for date and time field separator used when formatting
  * the log prefix format strings (e.g. "%ymd", "%hms").
@@ -712,11 +719,12 @@ find_iobehavior(dinfo_t *dip, char *name)
     iobehavior_funcs_t *iobf;
 
     while ( iobf = *iobtp++ ) {
-	if ( EQ(iobf->iob_name, name) ) {
+        /* Switched to compare with length due to Windows .exe! */
+	if ( EQL(iobf->iob_name, name, strlen(iobf->iob_name)) ) {
 	    return(iobf);
 	}
 	/* We now support a tool to dt mapping function. */
-	if ( iobf->iob_maptodt_name && EQ(iobf->iob_maptodt_name, name) ) {
+	if ( iobf->iob_maptodt_name && EQL(iobf->iob_maptodt_name, name, strlen(iobf->iob_maptodt_name)) ) {
 	    return(iobf);
 	}
     }
@@ -1477,10 +1485,10 @@ do_common_startup_logging(dinfo_t *dip)
 		 (dip->di_iobehavior == DTAPP_IO) && (dip->di_device_number == 0) ) {
 		report_os_information(dip, True);
 	    }
-	    report_file_system_information(dip, True);
+	    report_file_system_information(dip, True, True);
 	}
 	if (odip) {
-	    report_file_system_information(odip, True);
+	    report_file_system_information(odip, True, True);
 	}
 #if defined(SCSI)
 	/* Display SCSI information. */
@@ -2374,6 +2382,23 @@ initialize_pattern(dinfo_t *dip)
 }
 
 void
+setup_random_seeds(dinfo_t *dip)
+{
+    /* 
+     * Set a random seed, for random I/O or variable block sizes. 
+     */
+    if (dip->di_user_rseed == False) {
+	dip->di_random_seed = os_create_random_seed();
+    }
+    set_rseed(dip, dip->di_random_seed);
+    /* Note: rand() is used for these, to keep write/read random sequences the same! */
+    if (dip->di_vary_iodir || dip->di_vary_iotype || (dip->di_unmap_type == UNMAP_TYPE_RANDOM)) {
+	srand((unsigned int)dip->di_random_seed);
+    }
+    return;
+}
+
+void
 do_prepass_processing(dinfo_t *dip)
 {
     /*
@@ -2381,6 +2406,9 @@ do_prepass_processing(dinfo_t *dip)
      */
     initialize_pattern(dip);
 
+    if ( UseRandomSeed(dip) ) {
+	setup_random_seeds(dip);
+    }
     /* 
      * Vary the I/O Type (if requested)
      */
@@ -2415,15 +2443,6 @@ do_prepass_processing(dinfo_t *dip)
 		dip->di_io_type = SEQUENTIAL_IO;
 		break;
 	}
-    }
-    /* 
-     * Set a random seed, for random I/O or variable block sizes. 
-     */
-    if ( UseRandomSeed(dip) ) {
-	if (dip->di_user_rseed == False) {
-	    dip->di_random_seed = os_create_random_seed();
-	}
-	set_rseed(dip, dip->di_random_seed);
     }
     return;
 }
@@ -3867,6 +3886,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		return ( HandleExit(dip, status) );
 	    }
 	    dip->di_user_limit = dip->di_data_limit;
+	    /* Override the max limit as well, if previously specified! */
+	    if (dip->di_max_limit) {
+		dip->di_max_limit = dip->di_data_limit;
+	    }
 	    if (dip->di_record_limit == 0) {
 		dip->di_record_limit = INFINITY; /* Don't stop on record limit. */
 	    }
@@ -5551,6 +5574,13 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		return ( HandleExit(dip, status) );
 	    }
 	    dip->di_user_position = True;
+	    continue;
+	}
+	if ( match(&string, "soffset=") ) {
+	    dip->di_slice_offset = (Offset_t)large_number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
 	    continue;
 	}
 	/* Note: For copy/mirror/verify, allow an alternate output offset! */
@@ -9225,7 +9255,7 @@ do_datatest_validate(dinfo_t *dip)
     if (dip->di_slices && !dip->di_slice_number) {
 	if (dip->di_threads > 1) {
 	    Wprintf(dip, "The slices option (%d) overrides the threads (%d) specified!\n",
-		   dip->di_slices, dip->di_threads);
+		    dip->di_slices, dip->di_threads);
 	}
 	dip->di_iolock = False;
 	dip->di_threads = dip->di_slices;
@@ -9416,7 +9446,9 @@ do_common_copy_setup(dinfo_t *idip, dinfo_t *odip)
  * Therefore, to bypass certain dt sanity checks, a data limit must be setup.
  * 
  * Note: Clearly, this function is overloaded, and replaced with an I/O behavior
- * specific function. Still a fair amount of cleanup required, but when? (sigh)
+ * specific function. Still a fair amount of cleanup required, but when? (sigh) 
+ *  
+ * Note: This function is invoked before I/O Behavior validate function. 
  */
 int
 do_common_device_setup(dinfo_t *dip)
@@ -9425,32 +9457,16 @@ do_common_device_setup(dinfo_t *dip)
     int status;
 
     /*
+     * Please Note: I/O Behavior specific checks belong in their validate function!
+     */
+
+    /*
      * When doing random I/O, enable file system alignments, to help
      * prevent false corruptions.  This only affects regular files,
      * and only when read-after-write (raw) is disabled.  When raw
      * is enabled, we don't have to worry about data overwrites,
      * unless POSIX Async I/O (AIO) is enabled.
      */
-    /*
-     * Note: The device type may not get setup until device is open'ed below!
-     */
-    if ( dip->di_dtype &&
-	 ((dip->di_dtype->dt_dtype == DT_DISK)  ||
-	  (dip->di_dtype->dt_dtype == DT_BLOCK) ||
-	  (dip->di_dtype->dt_dtype == DT_CHARACTER)) ) {
-	/* 
-	 * IOT pattern changes with each pass, so disable this uniqueness
-	 * if user selects multiple threads with multiple passes, otherwise
-	 * false data corruptions may occur when threads on different passes.
-	 */
-	if ( dip->di_iot_pattern && dip->di_unique_pattern &&
-	    ( (dip->di_threads > 1 ) && (dip->di_slices == 0) ) &&
-	    ( dip->di_runtime || (dip->di_pass_limit > 1) ) ) {
-	    Wprintf(dip, "Disabling unique IOT patterns with multiple threads!\n");
-	    Printf(dip, "Please consider using slices= option instead of threads= option.\n");
-	    dip->di_unique_pattern = False;
-	}
-    }
     /*
      * Special file system handling.
      */
