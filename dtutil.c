@@ -31,6 +31,9 @@
  * 
  * Modification History:
  * 
+ * October 27th, 2020 by Robin T. Miller
+ *      Add functions in support for additional trigger functionality.
+ * 
  * September 6th, 2020 by Robin T. Miller
  *      For disk devices, when multiple threads are chosen, convert threads
  * to slices to avoid *false* data corruptions, due to thread overwrites.
@@ -2475,43 +2478,106 @@ htos(unsigned char *bp, large_t value, size_t size)
     return;
 }
 
-enum trigger_control
-check_trigger_control(dinfo_t *dip, char *str)
+trigger_control_t
+parse_trigger_control(dinfo_t *dip, char *control)
 {
-    if (strcmp(str, "all") == 0) {
-	return(TRIGGER_ON_ALL);
-    } else if (strcmp(str, "errors") == 0) {
-	return(TRIGGER_ON_ERRORS);
-    } else if ( (strcmp(str, "miscompare") == 0) || strcmp(str, "corruption") == 0) {
-	return(TRIGGER_ON_MISCOMPARE);
-    } else if (strcmp(str, "noprogs") == 0) {
-	return(TRIGGER_ON_NOPROGS);
+    trigger_control_t trigger_control;
+
+    if (strcmp(control, "all") == 0) {
+	trigger_control = TRIGGER_ON_ALL;
+    } else if (strcmp(control, "errors") == 0) {
+	trigger_control = TRIGGER_ON_ERRORS;
+    } else if ( (strcmp(control, "miscompare") == 0) || strcmp(control, "corruption") == 0) {
+	trigger_control = TRIGGER_ON_MISCOMPARE;
+    } else if (strcmp(control, "noprogs") == 0) {
+	trigger_control = TRIGGER_ON_NOPROGS;
     } else {
 	Eprintf(dip, "Valid trigger controls: all, errors, miscompare, or noprogs\n");
-	return(TRIGGER_ON_INVALID);
+	trigger_control = TRIGGER_ON_INVALID;
     }
+    return(trigger_control);
 }
 
-enum trigger_type
-check_trigger_type(dinfo_t *dip, char *str)
+int
+add_trigger_type(dinfo_t *dip, char *trigger)
+{
+    trigger_data_t *tdp = &dip->di_triggers[dip->di_num_triggers];
+
+    if (dip->di_num_triggers == NUM_TRIGGERS) {
+	Eprintf(dip, "Maximum number of triggers is %d.\n", NUM_TRIGGERS);
+	return (FAILURE);
+    }
+    if ((tdp->td_trigger = parse_trigger_type(dip, trigger)) == TRIGGER_INVALID) {
+	return (FAILURE);
+    }
+    dip->di_num_triggers++;
+    return (SUCCESS);
+}
+
+int
+add_default_triggers(dinfo_t *dip)
+{
+    int status = SUCCESS;
+    return (status);
+}
+
+void
+remove_triggers(dinfo_t *dip)
+{
+    int i;
+    /*
+     * Trigger scripts and arguments:
+     */ 
+    for (i = 0; (i < dip->di_num_triggers); i++) {
+	dip->di_triggers[i].td_trigger = TRIGGER_NONE;
+	if (dip->di_triggers[i].td_trigger_cmd) {
+	    FreeStr(dip, dip->di_triggers[i].td_trigger_cmd);
+	    dip->di_triggers[i].td_trigger_cmd = NULL;
+	}
+	if (dip->di_triggers[i].td_trigger_args) {
+	    FreeStr(dip, dip->di_triggers[i].td_trigger_args);
+	    dip->di_triggers[i].td_trigger_args = NULL;
+	}
+    }
+    dip->di_num_triggers = 0;
+    dip->di_trigger_control = TRIGGER_ON_ALL;
+    return;
+}
+
+hbool_t
+trigger_type_exist(dinfo_t *dip, trigger_type_t trigger_type)
+{
+    trigger_data_t *tdp = &dip->di_triggers[dip->di_num_triggers];
+    int triggers;
+
+    for (triggers = 0; (triggers < dip->di_num_triggers); tdp++, triggers++) {
+	if (tdp->td_trigger == trigger_type) {
+	    return (True);
+	}
+    }
+    return (False);
+}
+
+trigger_type_t
+parse_trigger_type(dinfo_t *dip, char *trigger)
 {
     trigger_data_t *tdp = &dip->di_triggers[dip->di_num_triggers];
     trigger_type_t trigger_type = TRIGGER_INVALID;
 
-    if (strcmp(str, "br") == 0) {
+    if (strcmp(trigger, "br") == 0) {
 	trigger_type = TRIGGER_BR;
-    } else if (strcmp(str, "bdr") == 0) {
+    } else if (strcmp(trigger, "bdr") == 0) {
 	trigger_type = TRIGGER_BDR;
-    } else if (strcmp(str, "lr") == 0) {
+    } else if (strcmp(trigger, "lr") == 0) {
 	trigger_type = TRIGGER_LR;
-    } else if (strcmp(str, "seek") == 0) {
+    } else if (strcmp(trigger, "seek") == 0) {
 	trigger_type = TRIGGER_SEEK;
 #if defined(SCSI)
-    } else if (strncmp(str, "cdb:", 4) == 0) {
+    } else if (strncmp(trigger, "cdb:", 4) == 0) {
 	uint32_t value;
 	char *token, *saveptr;
 	char *sep = " ";
-	char *cdbp = strdup(&str[4]);
+	char *cdbp = strdup(&trigger[4]);
 
 	trigger_type = TRIGGER_CDB;
 	if (strchr(cdbp, ',')) {
@@ -2541,9 +2607,9 @@ check_trigger_type(dinfo_t *dip, char *str)
 	}
 	Free(dip, cdbp);
 #endif /* defined(SCSI) */
-    } else if (strncmp(str, "cmd:", 4) == 0) {
+    } else if (strncmp(trigger, "cmd:", 4) == 0) {
 	char *strp;
-	tdp->td_trigger_cmd = strdup(&str[4]);
+	tdp->td_trigger_cmd = strdup(&trigger[4]);
 	strp = strstr(tdp->td_trigger_cmd, " ");
 	/*
 	 * Extra args get appended after our trigger arguments.
@@ -2553,7 +2619,7 @@ check_trigger_type(dinfo_t *dip, char *str)
 	    tdp->td_trigger_args = strdup(strp);
 	}
 	trigger_type = TRIGGER_CMD;
-    } else if (strcmp(str, "triage") == 0) {
+    } else if (strcmp(trigger, "triage") == 0) {
 #if defined(SCSI)
 	trigger_type = TRIGGER_TRIAGE;
 #else /* !defined(SCSI) */
@@ -2878,7 +2944,9 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		 * Append extra trigger arguments, if requested by the user.
 		 */
 		if (tdp->td_trigger_args) {
-		    cmdp += sprintf(cmdp, " %s", tdp->td_trigger_args);
+        	    char *trigger_args = FmtString(dip, tdp->td_trigger_args, False);
+		    cmdp += sprintf(cmdp, " %s", trigger_args);
+        	    Free(dip, trigger_args);
 		}
 		status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		break;

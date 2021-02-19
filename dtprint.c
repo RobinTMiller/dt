@@ -32,6 +32,9 @@
  *
  * Modification History:
  * 
+ * November 30th, 2020 by Robin T. Miller
+ *      When reporting records, add Physical/Relative for file system LBAs.
+ * 
  * May 19th, 2020 by Robin T. Miller
  *      Remove check for the error file being open, when acquiring/releasing
  * the global print lock (only use this when master log file is open).
@@ -476,11 +479,15 @@ ReportExtendedErrorInfo(dinfo_t *dip, error_info_t *eip, char *format, ...)
     }
 
     /*
-     * For miscompares, report the file offset maps to LBAs (if supported). 
-     * Note: Today, this reports ALL file LBA's, not just the miscompare range. 
+     * For miscompares, report the file offset map to LBAs (if supported). 
      */
     if ( isFileSystemFile(dip) && dip->di_fsmap_flag && EQ(eip->ei_op, miscompare_op) ) {
 	Printf(dip, "\n");
+	if (dip->di_fsmap) {
+	    Printf(dip, "Note: Reporting file map for current record only!"
+		   " Please use 'showfsmap' for full file extent map.\n");
+	    Printf(dip, "\n");
+	}
 	(void)os_report_file_map(dip, fd, dip->di_dsize, eip->ei_offset, eip->ei_bytes);
     }
 
@@ -587,7 +594,7 @@ report_io(dinfo_t *dip, test_mode_t io_mode, void *buffer, size_t bytes, Offset_
  *	dip = The device information pointer.
  *	files = The file number (limited to tapes at present).
  *	records = The record number.
- *	lba = The logical block number (NO_LBA if none).
+ *	lba = The logical block address (NO_LBA if none).
  *	offset = The file offset.
  *	mode = The test mode (READ_MODE or WRITE_MODE).
  *	buffer = The data buffer.
@@ -666,9 +673,9 @@ report_record(
 		 (mode == READ_MODE) ? "into" : "from",	(uint8_t *)buffer);
     }
     /* For file systems w/fsmap, report the physical LBA's. */
-    bp += sprintf(bp, "LBA%s ", (elba > lba) ? "'s" : "");
     if ( (mode == READ_MODE) && dip->di_fsmap &&
 	 ((dip->di_raw_flag == False) || (dip->di_retrying == True)) )  {
+	bp += sprintf(bp, "Physical LBA%s ", (elba > lba) ? "'s" : "");
     	if (splba != eplba) {
             /* For FS maps, report start and end LBA's. */
 	    bp += sprintf(bp, LDF ", " LDF, splba, eplba);
@@ -676,6 +683,11 @@ report_record(
 	    bp += sprintf(bp, LDF, splba);
 	}
     } else if (lba != NO_LBA) {
+	if ( isFileSystemFile(dip) ) {
+	    bp += sprintf(bp, "Relative LBA%s ", (elba > lba) ? "'s" : "");
+	} else {
+	    bp += sprintf(bp, "LBA%s ", (elba > lba) ? "'s" : "");
+	}
 	/* Block offsets only exist for file systems. */
         if (start && end) {
             bp += sprintf(bp, "%.2f - %.2f", start, end);

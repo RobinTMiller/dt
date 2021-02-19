@@ -909,7 +909,7 @@ setup_slice(struct dinfo *dip, slice_info_t *sip)
 
 	lba = (large_t)((dip->di_file_position + sip->slice_length) / dip->di_dsize);
 	Lprintf(dip, DT_FIELD_WIDTH FUF " (lba " LUF ")\n", "Ending offset",
-		(dip->di_file_position + sip->slice_length), lba);
+		(dip->di_file_position + sip->slice_length), (lba - 1));
 
 	blocks = (large_t)(sip->slice_length / dip->di_dsize);
 	Lprintf(dip, DT_FIELD_WIDTH FUF " bytes (" LUF " block%s)\n", "Slice length",

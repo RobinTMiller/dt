@@ -32,6 +32,9 @@
  *
  * Modification History:
  * 
+ * October 9th, 2020 by Robin T. Miller
+ *      Augment the disk threads to slices sanity check to handle single slice.
+ * 
  * September 4th, 2020 by Robin T. Miller
  *      Set the seed for rand() random number generator, used for random I/O
  * direction, random I/O type, or random unmap types, to vary the starting
@@ -1218,10 +1221,21 @@ validate_opts(struct dinfo *dip)
 	if ( (dip->di_threads > 1 ) && (dip->di_slices == 0) && (dip->di_iolock == False) ) {
 	    /* 
 	     * Too many folks are selecting file system workloads with threads, so
-	     * convert this to slices here to avoid overwrites and *false* corruptions!
+	     * convert this to slices here to avoid overwrites and *false* corruptions! 
+	     * Note: Some tools start with threads then convert to slices (as required). 
 	     */
-	    Wprintf(dip, "Converting multiple threads to slices to avoid false corruptions!\n");
+	    if (dip->di_iobehavior == DT_IO) {
+		Wprintf(dip, "Converting multiple threads to slices to avoid false corruptions!\n");
+	    }
 	    dip->di_slices = dip->di_threads;
+	    if (dip->di_slice_number) {
+		dip->di_threads = 1;
+		if (dip->di_slice_number > dip->di_slices) {
+		    Eprintf(dip, "Please specify slice (%d) <= max slices (%d)\n",
+			    dip->di_slice_number, dip->di_slices);
+		    return(FAILURE);
+		}
+	    }
 	    /* Note: May switch to I/O Lock later, after verifying re-reads work properly! */
 	}
     }

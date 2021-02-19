@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2020			    *
+ *			  COPYRIGHT (c) 2006 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -27,7 +27,7 @@
  * Author:	Robin T. Miller
  *
  * Description:
- *	This module contains *unix OS specific functions.
+ *	This module contains Windows OS specific functions.
  * 
  * Modification History:
  * 
@@ -729,7 +729,6 @@ dt_open_file(dinfo_t *dip, char *file, int flags, int perm,
 	Printf(dip, "File %s successfully opened, handle = %d\n", file, handle);
     }
     return( handle );
-
 }
 
 HANDLE

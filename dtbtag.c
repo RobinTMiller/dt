@@ -258,6 +258,7 @@ static char *incorrect_str = "incorrect";
 static char *expected_str = "Expected";
 static char *received_str = "Received";
 static char *physical_str = "Physical LBA";
+static char *relative_str = "Relative LBA";
 static char *notmapped_str = "<not mapped or not a valid offset>";
 
 /*
@@ -344,6 +345,8 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 		} else {
 		    Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", physical_str, lba, lba);
 		}
+        	lba = (offset / dip->di_dsize);
+		Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", relative_str, lba, lba);
 	    }
 	    /* Received */
 	    offset = LtoH64(rbtag->btag_offset);
@@ -355,6 +358,8 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 		} else {
 		    Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", physical_str, lba, lba);
 		}
+        	lba = (offset / dip->di_dsize);
+		Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", relative_str, lba, lba);
 	    }
 	    btag_errors++;
 	} else {
@@ -801,6 +806,9 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 	    Fprintf(dip, DT_FIELD_WIDTH "0x%08x\n",
 		    received_str, LtoH32(rbtag->btag_crc32) );
 	    btag_errors++;
+	} else {
+	    Fprintf(dip, DT_BTAG_FIELD "0x%08x\n",
+		    "CRC-32", btag_index, LtoH32(rbtag->btag_crc32) );
 	}
 	if (raw_flag == False) {
 	    /* Copy received CRC to expected since we don't have a valid one! */
@@ -1284,7 +1292,7 @@ verify_btags(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, uint32_t *eindex, hbool
 	    btag_errors++;
 	}
 	if (raw_flag == False) {
-	    /* REVISIT: Why am I doing this? */
+	    /* During reads, we don't know the expected CRC, so copy to expected. */
 	    ebtag->btag_crc32 = HtoL32(rcrc32);
 	}
     }

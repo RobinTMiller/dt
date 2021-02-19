@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2019			    *
+ *			  COPYRIGHT (c) 2006 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -98,6 +98,7 @@
 #define INVALID_HANDLE_VALUE	-1
 
 #define DIRSEP		'/'
+#define DIRSEP_STR	"/"
 #define DEV_PREFIX	"/dev/"		/* Physical device name prefix.	*/
 #define DEV_LEN		5		/* Length of device name prefix.*/
 
@@ -112,13 +113,15 @@
 #  define DEV_RDIR_LEN		(sizeof(DEV_RDIR_PREFIX) - 1)
 #endif /* defined(__hpux) || defined(SOLARIS) */
 
-#define PATTERN_FILE_DIR	"/usr/software/test/noarch/dtdata/"
-
-#define TEMP_DIR		"/var/tmp/"
+#define TEMP_DIR		"/var/tmp"
 #define TEMP_DIR_NAME		TEMP_DIR
 #define TEMP_DIR_LEN		(sizeof(TEMP_DIR_NAME) - 1)
 
-#define TRIGGER_SCRIPT		"/auto/share/IOGenerationTools/Dt/Scripts/dt_noprog_script.ksh"
+#define TOOLS_DIR               "/usr/software/test/noarch"
+#define PATTERN_DIR		TOOLS_DIR"/dtdata"
+#define DEDUP_PATTERN_FILE	PATTERN_DIR"/pattern_dedup"
+#define TRIGGER_SCRIPT		TOOLS_DIR"/dt_noprog_script.ksh"
+#define STOPON_FILE		TEMP_DIR"/stopit"
 
 /*
  * Define POSIX Mode for Creating Files & Directories:

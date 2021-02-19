@@ -48,7 +48,11 @@
  * TODO: Plese consider defining the serial number size at compile time! 
  */
 #if !defined(SERIAL_SIZE) 
-#define SERIAL_SIZE	16		/* SAN LUN serial number size.	*/
+# if defined(Nimble)
+#  define SERIAL_SIZE	34		/* Nimble uses VPD device ID.	*/
+# else /* !defined(Nimble) */
+#  define SERIAL_SIZE	16		/* SAN LUN serial number size.	*/
+# endif /* defined(Nimble) */
 #endif /* !defined(SERIAL_SIZE) */
 
 /* 
@@ -112,7 +116,7 @@
  * but the btag may be stale or from a different device. 
  *  
  * FYI: I am omitting the "Record Size" check, to avoid *false* failures
- * when file system full conditions occur, and to avoid messey handling.
+ * when file system full conditions occur, and to avoid messy handling.
  * During the write, the btag has the full record size attempted, but
  * during the read the expected size is shorter due to bytes written.
  * Therefore, the expected btag has a different, but correct record size.
@@ -209,6 +213,7 @@
 /*
  * Block Tag (btag) Definition:
  * Note: Pack carefully to avoid wasted space due to alignment. 
+ * BEWARE: The offsets are NOT correct for Nimble w/larger serial number! 
  */
 typedef struct btag {                                             /* Offset */
     union {                         /*                                  0 */

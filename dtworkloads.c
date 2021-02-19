@@ -77,17 +77,17 @@ workload_entry_t predefined_workloads[] =
 	"enable=deleteperpass,fsincr,timestamp,aio "
 	"dirp=DT_ sdirs=8 files=6 depth=4 "
 	"bufmodes=cachereads,buffered,unbuffered,cachewrites "
-	"runtime=24h stopon="TEMP_DIR"stopit.dt "
-	"trigger=cmd:"TRIGGER_SCRIPT" "
+	"runtime=24h stopon="STOPON_FILE" "
+	"trigger=cmd:\""TRIGGER_SCRIPT"\" "
 	"keepalivet=300"
     },
     {	"dt_dedup",
 	"Deduplication Pattern",
 	"min=8k max=256k incr=4k limit=1g maxdatap=75 "
-	"pf="PATTERN_FILE_DIR"pattern_dedup "
 	"enable=syslog history=5 enable=htiming "
 	"bufmodes=cachereads,buffered,unbuffered,cachewrites "
-	"disable=pstats keepalivet=5m threads=4"
+	"disable=pstats keepalivet=5m threads=4 "
+	"pf="DEDUP_PATTERN_FILE
     },
     {	"dt_hammer",
 	"dt Hammer File System Workload (requires ~6.20g space)",
@@ -183,46 +183,6 @@ workload_entry_t predefined_workloads[] =
 	"Video on Demand (VOD) Workload",
 	"bs=512k readp=0 randp=100 disable=verify flags=direct"
     },
-    {	"longevity_common",
-	"Longevity Common Options (template)",
-	"min=8k max=1m incr=vary "
-	"enable=raw,reread enable=syslog "
-	"history=5 history_data=128 enable=history_timing "
-	"logprefix='%seq %nos %et %prog (j:%job t:%thread): ' "
-	"keepalivet=5m runtime=-1 "
-	"onerr=abort noprogt=30s noprogtt=5m"
-    },
-    {	"longevity_file_dedup",
-	"Longevity File System w/Dedup Workload",
-	"workload=longevity_common "
-	"min_limit=1m max_limit=2g "
-	"flags=direct notime=close,fsync oflags=trunc "
-	"pf="PATTERN_FILE_DIR"pattern_dedup "
-	"maxdatap=75 threads=4"
-    },
-    {	"longevity_disk_dedup",
-	"Longevity Direct Disk w/Dedup Workload",
-	"workload=longevity_common "
-	"pf="PATTERN_FILE_DIR"pattern_dedup "
-	"capacityp=75 slices=4"
-    },
-    {	"longevity_file_system",
-	"Longevity File System Workload",
-	"workload=longevity_common workload=high_validation "
-	"min_limit=1m max_limit=2g incr_limit=vary "
-	"flags=direct notime=close,fsync oflags=trunc "
-	"maxdatap=75 threads=4"
-    },
-    {	"longevity_disk_unmap",
-	"Longevity Direct Disk w/SCSI UNMAP Workload",
-	"workload=longevity_common workload=high_validation "
-	"capacityp=75 slices=4 unmap=unmap"
-    },
-    {	"longevity_disk",
-	"Longevity Direct Disk Workload",
-	"workload=longevity_common workload=high_validation "
-	"capacityp=75 slices=4"
-    },
     {	"san_file_system",
 	"SAN File System Workload",
 	"bs=random limit=2g dispose=keeponerror "
@@ -232,7 +192,7 @@ workload_entry_t predefined_workloads[] =
 	"notime=close,fsync oflags=trunc threads=4 "
 	"enable=noprog noprogt=15s noprogtt=130s alarm=3s "
 	"history=5 hdsize=128 enable=htiming "
-	"enable=syslog runtime=12h stopon="TEMP_DIR"stopit.dt "
+	"enable=syslog runtime=12h stopon="STOPON_FILE" "
 	"bufmodes=buffered,cachereads,cachewrites,unbuffered"
     },
     {	"san_disk",
@@ -244,7 +204,7 @@ workload_entry_t predefined_workloads[] =
 	"noprogt=15s noprogtt=130s alarm=3s "
 	"history=5 hdsize=128 enable=htiming "
 	"enable=syslog runtime=12h "
-	"enable=stopimmed stopon="TEMP_DIR"stopit.dt"
+	"enable=stopimmed stopon="STOPON_FILE" "
     },
     {	"keepalive",
 	"Keepalive Message (template)",
@@ -267,9 +227,9 @@ workload_entry_t predefined_workloads[] =
     {	"disk_dedup",
 	"Direct Disk Deduplication",
 	"min=8k max=256k incr=4k "
-	"pf="PATTERN_FILE_DIR"pattern_dedup "
 	"enable=syslog history=5 enable=htiming "
-	"disable=pstats keepalivet=5m threads=4"
+	"disable=pstats keepalivet=5m threads=4 "
+	"pf="DEDUP_PATTERN_FILE
     },
     {	"disk_unmaps",
 	"Direct Disk with Unmaps",
@@ -277,7 +237,11 @@ workload_entry_t predefined_workloads[] =
     },
     {	"disk_write_only",
 	"Direct Disk Write Only",
-	"workload=san_disk disable=verify"
+	"workload=san_disk disable=raw,reread,verify"
+    },
+    {	"file_system_write_only",
+	"File System Write Only",
+	"workload=san_file_system disable=raw,reread,verify"
     },
     {	"high_validation",
 	"Define Highest Data Validation Options (template)",

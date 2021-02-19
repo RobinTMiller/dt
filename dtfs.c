@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2019			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -1139,7 +1139,8 @@ dt_close_file(dinfo_t *dip, char *file, HANDLE *handle,
  * Return Value:
  *	Returns SUCCESS/FAILURE/WARNING:
  *	  SUCCESS = Directory created.
- *	  FAILURE = Directory create failed.
+ *        FAILURE = Directory create failed.
+ *        WARNING = Windows drive letter.
  */
 int
 dt_create_directory(dinfo_t *dip, char *dir,
@@ -1151,6 +1152,12 @@ dt_create_directory(dinfo_t *dip, char *dir,
 
     if (isDiskFull) *isDiskFull = False;
     if (isFileExists) *isFileExists = False;
+
+#if defined(WIN32)
+    if ( IsDriveLetter(dir) ) {
+        return(status);		/* Cannot create a directory on drive letter only! */
+    }
+#endif /* defined(WIN32) */
     /*
      * Ensure user specified a directory, or create as necessary.
      */
@@ -1788,9 +1795,8 @@ do_file_trim(dinfo_t *dip)
 	}
     } while ( (status == FAILURE) && (rc == RETRYABLE) );
 
-    status = os_file_trim(handle, offset, data_bytes);
     if (status == WARNING) {
-	Printf(dip, "Warning: This OS does NOT support file trim operations, disabling!\n");
+	Wprintf(dip, "This OS or FS does NOT support file trim operations, disabling!\n");
 	dip->di_fstrim_flag = False;
 	status = SUCCESS;
     }

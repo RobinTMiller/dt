@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -38,8 +38,8 @@
 #define _THREAD_SAFE 1
 
 /* Vendor Control Flags: */
-#define HGST	1
-//#define Nimble	1
+#define HGST	0
+#define Nimble	0
 
 #if defined(AIX_WORKAROUND)
 # include "aix_workaround.h"
@@ -141,9 +141,9 @@
 
 #define DEFAULT_GTOD_LOG_PREFIX		"%tod (%etod) %prog (j:%job t:%thread): " 
 
-//#define DATA_CORRUPTION_URL	"";
-//#define DATA_CORRUPTION_URL1	"";
-//#define NO_PROGRESS_URL		"";
+#  //define DATA_CORRUPTION_URL	"";
+#  //define DATA_CORRUPTION_URL1"";
+#  //define NO_PROGRESS_URL		"";
 
 #if !defined(MAXHOSTNAMELEN)
 #    define MAXHOSTNAMELEN	256
@@ -312,11 +312,13 @@ typedef enum {
 #define isRandomIO(dip)		( (dip->di_io_type == RANDOM_IO) || \
 				  (dip->di_variable_flag == True) )
 
+/* TODO: Too many reasons to enable random generator, need to simplify! */
 #define UseRandomSeed(dip)	\
   ( isRandomIO(dip) || (dip->di_lock_files == True) || \
     (dip->di_read_percentage || dip->di_random_percentage) || \
     (dip->di_random_rpercentage || dip->di_random_wpercentage) || \
-    (dip->di_iobehavior == DTAPP_IO) || (dip->di_variable_limit == True) )
+    dip->di_vary_iodir || dip->di_vary_iotype || (dip->di_unmap_type == UNMAP_TYPE_RANDOM) || \
+    (dip->di_iobehavior == DTAPP_IO) || (dip->di_iobehavior == THUMPER_IO) || (dip->di_variable_limit == True) )
 
 #if defined(AIO)
 # define getFileOffset(dip) \
@@ -420,7 +422,7 @@ typedef enum dispose {DELETE_FILE, KEEP_FILE, KEEP_ON_ERROR} dispose_t;
 typedef enum file_type {INPUT_FILE, OUTPUT_FILE} file_type_t;
 typedef enum test_mode {READ_MODE, WRITE_MODE} test_mode_t;
 typedef enum onerrors {ONERR_ABORT, ONERR_CONTINUE, ONERR_PAUSE} onerrors_t;
-typedef enum iobehavior { DT_IO, DTAPP_IO } iobehavior_t;
+typedef enum iobehavior { DT_IO, DTAPP_IO, THUMPER_IO } iobehavior_t;
 typedef enum iodir {FORWARD, REVERSE, NUM_IODIRS = 2} iodir_t;
 typedef enum iomode {COPY_MODE, MIRROR_MODE, TEST_MODE, VERIFY_MODE} iomode_t;
 typedef enum iotype {SEQUENTIAL_IO, RANDOM_IO, NUM_IOTYPES = 2} iotype_t;
@@ -722,6 +724,7 @@ typedef struct dinfo {
 	hbool_t	di_shared_file;		/* File shared amongst threads.	*/
 	//int	di_flags;		/* The file control flags.	*/
 	int	di_oflags;		/* The last file open flags.	*/
+        char    *di_array;              /* The array name for scripts.  */
 	char	*di_bname;		/* The base file name.		*/
 	char	*di_dname;		/* The /dev device name.	*/
 	char	*di_device;		/* The real device name.	*/
@@ -922,9 +925,11 @@ typedef struct dinfo {
 	 * Information for Error Reporting / Triggers:
 	 * Note: These are set when reporting device information.
          */
-        Offset_t di_offset;		/* Device/file offset at error.	*/
-        large_t di_error_lba;		/* The calculated erroring LBA.	*/
+        Offset_t di_offset;		/* Device/file offset (@error).	*/
+        size_t di_xfer_size;            /* The transfer size (@error).  */
+        large_t di_start_lba;		/* The starting (mapped) LBA.   */
         Offset_t di_error_offset;	/* Corruption error offset.	*/
+        large_t di_error_lba;		/* The error (mapped) LBA.      */
 	uint32_t di_buffer_index;	/* Corruption buffer index.	*/
         uint32_t di_block_index;	/* Corruption block byte index.	*/
 	v_int	di_error;		/* The last error encountered.	*/
@@ -1007,7 +1012,7 @@ typedef struct dinfo {
 	int	di_prefix_size;		/* The prefix string size.	*/
 	char	*di_fprefix_string;	/* The formatted prefix string.	*/
 	int	di_fprefix_size;	/* The formatted prefix size.	*/
-	hbool_t	di_uuid_dashes;		/* Flag to control UUI dashes.	*/
+	hbool_t	di_uuid_dashes;		/* Flag to control UUID dashes.	*/
 	char	*di_uuid_string;	/* The UUID string (if OS has).	*/
 
 	/*
@@ -1290,6 +1295,7 @@ typedef struct dinfo {
 	 * Trigger Definitions: 
 	 */
 	hbool_t	di_trigargs_flag;	/* Trigger arguments flag.	*/
+        hbool_t di_trigdefaults_flag;   /* Automatic trigger defaults.  */
 	hbool_t	di_trigdelay_flag;	/* Delay mismatch triggers.	*/
 	vbool_t	di_trigger_active;	/* The trigger active flag.	*/
 	int	di_num_triggers;	/* The number of triggers.	*/
@@ -1708,6 +1714,7 @@ extern int MakeArgList(char **argv, char *s);
 
 extern pthread_attr_t *tdattrp, *tjattrp;
 extern pthread_mutex_t print_lock;
+extern int create_master_log(dinfo_t *dip, char *log_name);
 extern int create_detached_thread(dinfo_t *dip, void *(*func)(void *));
 extern int do_monitor_processing(dinfo_t *mdip, dinfo_t *dip);
 extern void do_setup_keepalive_msgs(dinfo_t *dip);
@@ -2342,8 +2349,12 @@ extern int StrCopy(void *to_buffer, void *from_buffer, size_t length);
 extern large_t stoh(u_char *bp, size_t size);
 extern void htos(u_char *bp, large_t value, size_t size);
 extern void LogDiagMsg(dinfo_t *dip, char *msg);
-extern enum trigger_control check_trigger_control(dinfo_t *dip, char *str);
-extern enum trigger_type check_trigger_type(dinfo_t *dip, char *str);
+extern trigger_control_t parse_trigger_control(dinfo_t *dip, char *control);
+extern int add_trigger_type(dinfo_t *dip, char *trigger);
+extern int add_default_triggers(dinfo_t *dip);
+extern void remove_triggers(dinfo_t *dip);
+extern hbool_t trigger_type_exist(dinfo_t *dip, trigger_type_t trigger_type);
+extern trigger_type_t parse_trigger_type(dinfo_t *dip, char *trigger);
 extern int DoSystemCommand(dinfo_t *dip, char *cmdline);
 extern int StartupShell(dinfo_t *dip, char *shell);
 extern int ExecuteCommand(dinfo_t *dip, char *cmd, hbool_t prefix, hbool_t verbose);
@@ -2558,6 +2569,12 @@ extern void dump_received_buffer(dinfo_t	*dip,
 				u_char		*ptr,
 				size_t		dump_size,
 				size_t		bufr_size );
+extern void dump_file_buffer(	dinfo_t		*dip,
+                                char		*name,
+                                uint8_t		*base,
+                                uint8_t		*cptr,
+                                size_t		dump_size,
+                                size_t		bufr_size );
 extern int verify_buffers(	struct dinfo	*dip,
 				u_char		*dbuffer,
 				u_char		*vbuffer,
@@ -2682,3 +2699,5 @@ extern void show_workloads(dinfo_t *dip, char *workload_name);
 /*
  * Other I/O Behaviors:
  */
+extern void dtapp_set_iobehavior_funcs(dinfo_t *dip);
+extern void thumper_set_iobehavior_funcs(dinfo_t *dip);

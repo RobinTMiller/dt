@@ -33,6 +33,10 @@
  * 
  * Modification History:
  * 
+ * October 28th, 2020 by Robin T. Miller
+ *      When setting up SCSI information, only update user capacity for disks.
+ *      The user capacity must only be setup for disk devices, not files!
+ * 
  * May 19th, 2020 by Robin T. Miller
  *      For spt commands add "logprefix=" to disable the spt log prefix.
  *      The ExecuteCommand() API was updated to apply dt's log prefix.
@@ -256,14 +260,16 @@ int
 init_scsi_info(dinfo_t *dip)
 {
     scsi_generic_t *sgp;
-    int error;
+    int status;
     
     if ( (sgp = dip->di_sgp) == NULL) {
-	error = init_sg_info(dip);
-	if (error == FAILURE) return(error);
+	status = init_sg_info(dip);
+	if (status == FAILURE) {
+	    return(status);
+	}
 	sgp = dip->di_sgp;
     }
-    error = get_standard_scsi_information(dip, sgp);
+    status = get_standard_scsi_information(dip, sgp);
 
     /* Note: We leave the SCSI device open on purpose, for faster triggers, etc. */
     //(void)os_close_device(sgp);
@@ -276,7 +282,7 @@ init_scsi_info(dinfo_t *dip)
 	//sgp->warn_on_error = False;
 	dip->di_scsi_errors = True;
     }
-    return(error);
+    return(status);
 }
 
 int
@@ -314,7 +320,7 @@ get_standard_scsi_information(dinfo_t *dip, scsi_generic_t *sgp)
 
     error = GetCapacity(sgp, &dip->di_block_length, &dip->di_device_capacity,
 			&dip->di_lbpme_flag, NULL, &dip->di_lbpmgmt_valid);
-    if ( (error == SUCCESS) && (dip->di_user_capacity == 0) ) {
+    if ( (error == SUCCESS) && isDiskDevice(dip) && (dip->di_user_capacity == 0) ) {
 	/* Note: This is for FindCapacity() for slices and random I/O! */
 	dip->di_user_capacity = (large_t)(dip->di_block_length * dip->di_device_capacity);
     }

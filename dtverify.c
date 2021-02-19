@@ -32,6 +32,14 @@
  *
  * Modification History:
  * 
+ * November 30th, 2020 by Robin T. Miller
+ *      When reporting extended error information, clarify the LBA type.
+ * 
+ * July 9th, 2020 by Robin T. Miller
+ *      For Windows, when saving corrupted data files, check for both the
+ * native directory separator '\' and the POSIX directory separator '/',
+ * since we don't know which was setup during startup.
+ * 
  * June 12th, 2020 by Robin T. Miller
  *      Fix improper limit calculation when dumping expected/received buffers.
  * The limit was going negative, which caused a segmentation fault when hit!
@@ -107,13 +115,6 @@
 /*
  * Forward References:
  */
-void dump_file_buffer (	dinfo_t		*dip,
-			char		*name,
-			uint8_t		*base,
-			uint8_t		*cptr,
-			size_t		dump_size,
-			size_t		bufr_size );
-
 int verify_prefix(struct dinfo *dip, u_char *buffer, size_t bcount, int bindex, size_t *pcount);
 
 static void report_reread_corrupted(dinfo_t *dip, size_t request_size, Offset_t record_offset, uint32_t pattern);
@@ -1127,7 +1128,7 @@ report_reread_corrupted(dinfo_t *dip, size_t request_size, Offset_t record_offse
 	sbp += Sprintf(sbp, " step="FUF, dip->di_step_offset);
     }
     /* The user can remove these to retry and save future corruptions. */
-    sbp += Sprintf(sbp, " disable=retryDC,savecorrupted");
+    sbp += Sprintf(sbp, " disable=retryDC,savecorrupted,trigdefaults");
     /*
      * We cannot compare the data for non-IOT pattern:
      * - pattern files (need to save pattern data for this record)
@@ -1195,7 +1196,7 @@ report_reread_data(dinfo_t *dip, size_t request_size, Offset_t record_offset)
     }
     /* The bytes we've read up to the corruption. */
     sbp += Sprintf(sbp, " limit="LUF, dip->di_dbytes_read);
-    /* The number of records read uo to the corruption. */
+    /* The number of records read up to the corruption. */
     sbp += Sprintf(sbp, " records="LUF, (dip->di_full_reads + dip->di_partial_reads));
     /* The starting file offset, if specified. */
     if (dip->di_file_position) {
@@ -1245,7 +1246,7 @@ report_reread_data(dinfo_t *dip, size_t request_size, Offset_t record_offset)
 	sbp += Sprintf(sbp, " enable=scsi_io");
     }
     /* The user can remove these to retry and save future corruptions. */
-    sbp += Sprintf(sbp, " disable=retryDC,savecorrupted");
+    sbp += Sprintf(sbp, " disable=retryDC,savecorrupted,trigdefaults");
     Fprintf(dip, "%s\n", str);
     Fprintf(dip, "\n");
     return;
@@ -1276,7 +1277,7 @@ save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, 
         filetype = "unknown";
         postfix = "UNKNOWN"; /* Should not happen! */
     }
-    /* Try to find a directory for the data corruptioin files. */
+    /* Try to find a directory for the data corruption files. */
     if (dip->di_log_dir) {
         dir = strdup(dip->di_log_dir);
     } else if ( (path = error_log) ||
@@ -1292,6 +1293,10 @@ save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, 
     }
     /* Find the basename of the file. */
     if (p = strrchr(filepath, dip->di_dir_sep)) {
+        file = ++p;
+    } else if (p = strrchr(filepath, DIRSEP)) {
+        file = ++p;
+    } else if (p = strrchr(filepath, POSIX_DIRSEP)) {
         file = ++p;
     } else {
         file = filepath;
@@ -2196,6 +2201,8 @@ ReportDeviceInfoX(struct dinfo *dip, error_info_t *eip)
     set_device_info(dip, eip->ei_bytes, dip->di_buffer_index, eio_flag, mismatch_flag);
     offset = eip->ei_offset;
     starting_lba =  MapOffsetToLBA(dip, fd, dsize, offset, mismatch_flag);
+    dip->di_start_lba = starting_lba;
+    dip->di_xfer_size = eip->ei_bytes;
     ending_offset = (offset + eip->ei_bytes);
     if (dip->di_fsmap) {
 	if (eip->ei_bytes == 0) {
@@ -2228,6 +2235,12 @@ ReportDeviceInfoX(struct dinfo *dip, error_info_t *eip)
     }
     /* Additional information for miscompares (data corruptions). */
     if ( EQ(eip->ei_op, miscompare_op) ) {
+	Offset_t error_offset;
+	if (dip->di_error_lba == NO_LBA) {
+	    error_offset = dip->di_error_offset;
+	} else {
+	    error_offset = (dip->di_error_lba * dip->di_device_size);
+	}
 	/* Note: Always display, even if same as starting offset. */
 	PrintLongDecHex(dip, "Error File Offset", dip->di_error_offset, PNL);
         /* Provide modulo corruption indexes.  */
@@ -2236,27 +2249,37 @@ ReportDeviceInfoX(struct dinfo *dip, error_info_t *eip)
         	(unsigned int)(dip->di_error_offset % 8),
         	(unsigned int)(dip->di_error_offset % 512),
         	(unsigned int)(dip->di_error_offset % 4096));
+	/*
+	 * Clearly indicate the type of LBA we are reporting to avoid confusion!
+	 */
 	if (dip->di_error_lba == NO_LBA) {
-	    PrintAscii(dip, "Starting Error LBA", "<not mapped>", PNL);
-	} else {
-	    PrintLongDecHex(dip, (dip->di_fsmap) ? "Starting Physical Error LBA" : "Starting Error LBA", dip->di_error_lba, PNL);
-	    if (dip->di_fsmap) {
-		PrintLongDecHex(dip, "Starting Physical LBA Offset", (dip->di_error_lba * dsize), PNL);
+	    PrintAscii(dip, "Starting Physical Error LBA", "<not mapped>", PNL);
+	} else if (dip->di_fsmap) {
+	    uint64_t rlba = makeLBA(dip, dip->di_error_offset);
+	    PrintLongDecHex(dip, "Starting Relative Error LBA", rlba, PNL);
+	    PrintLongDecHex(dip, "Starting Physical Error LBA", dip->di_error_lba, PNL);
+	    PrintLongDecHex(dip, "Physical Error LBA Offset", (dip->di_error_lba * dsize), PNL);
+	    if (dsize > BLOCK_SIZE) { 
+		PrintLongDecHex(dip, "Physical 512 byte Error LBA", (error_offset / BLOCK_SIZE), PNL);
+	    } else {
+		PrintLongDecHex(dip, "Physical 4096 byte Error LBA", (error_offset / 4096), PNL);
 	    }
 	}
-        /* Report 512 byte LBA or default array block size of 4k (may need to tune this!). */
-	if (dip->di_error_lba) {
-	    Offset_t error_offset;
-	    /* Note: The error LBA can be the physical LBA for files! */
-	    if (dip->di_error_lba == NO_LBA) {
-		error_offset = dip->di_error_offset;
-	    } else {
-		error_offset = (dip->di_error_lba * dip->di_device_size);
-	    }
-	    if (dsize > BLOCK_SIZE) {
-		PrintLongDecHex(dip, "512 byte Error LBA", (error_offset / BLOCK_SIZE), PNL);
-	    } else {
-		PrintLongDecHex(dip, "4096 byte Error LBA", (error_offset / 4096), PNL);
+	if (dip->di_fsmap == NULL) {
+	    if (isFileSystemFile(dip)) {
+		PrintLongDecHex(dip, "Starting Relative Error LBA", dip->di_error_lba, PNL);
+		if (dsize > BLOCK_SIZE) { /* Handle larger block sizes to report 512 byte blocks! */
+		    PrintLongDecHex(dip, "Relative 512 byte Error LBA", (error_offset / BLOCK_SIZE), PNL);
+		} else {
+		    PrintLongDecHex(dip, "Relative 4096 byte Error LBA", (error_offset / 4096), PNL);
+		}
+	    } else { /* Direct Disks */
+		PrintLongDecHex(dip, "Starting Error LBA", dip->di_error_lba, PNL);
+		if (dsize > BLOCK_SIZE) { /* Handle larger block sizes to report 512 byte blocks! */
+		    PrintLongDecHex(dip, "512 byte Error LBA", (error_offset / BLOCK_SIZE), PNL);
+		} else {
+		    PrintLongDecHex(dip, "4096 byte Error LBA", (error_offset / 4096), PNL);
+		}
 	    }
 	}
 	PrintDecimal(dip, "Corruption Buffer Index", dip->di_buffer_index, DNL);

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: September 16th, 2020"VARIANT", Version: 23.20, Author: Robin T. Miller";
+char *version_str = "Date: February 11th, 2021"VARIANT", Version: 23.26, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -93,13 +93,13 @@ dthelp(dinfo_t *dip)
     P (dip, "\tbs=random             Random size between 512 and 256k.\n");
     P (dip, "\tibs=value             The read block size. (overrides bs=)\n");
     P (dip, "\tobs=value             The write block size. (overrides bs=)\n");
-    P (dip, "\tjob_log=filename      The job log file name.\n");
+    P (dip, "\tjob_log=filename      The job log file name. (alias: jlog=)\n");
     P (dip, "\tlogdir=filename       The log directory name.\n");
-    P (dip, "\tlog[atu]=filename     The log file name to write.\n");
+    P (dip, "\tlog[atu]=filename     The thread log file name to write.\n");
     P (dip, "\t                      a=append, t=truncate, u=unique (w/tid)\n");
     P (dip, "\tlogprefix=string      The per line logging prefix.\n");
-    P (dip, "\terror_log=filename    The error log file name.\n");
-    P (dip, "\tmaster_log=filename   The master log file name.\n");
+    P (dip, "\terror_log=filename    The error log file name. (alias: elog=)\n");
+    P (dip, "\tmaster_log=filename   The master log file name. (alias: mlog=)\n");
 #if defined(AIO)
     P (dip, "\taios=value            Set number of AIO's to queue.\n");
 #endif /* defined(AIO) */
@@ -212,7 +212,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\tsleep=time            The sleep time (in seconds).\n");
     P (dip, "\tmsleep=value          The msleep time (in milliseconds).\n");
     P (dip, "\tusleep=value          The usleep time (in microseconds).\n");
-    P (dip, "\tshowbtags             Show block tags and btag data.\n");
+    P (dip, "\tshowbtags opts...     Show block tags and btag data.\n");
     P (dip, "\tshowfslba             Show file system offset to physical LBA.\n");
     P (dip, "\tshowfsmap             Show file system map extent information.\n");
     P (dip, "\tshowtime=value        Show time value in ctime() format.\n");
@@ -236,10 +236,11 @@ dthelp(dinfo_t *dip)
     P (dip, "\tversion               Display the version information.\n");
 
     P (dip, "\n    I/O Behaviors:\n");
-    P (dip, "\tiobehavior=type       Specify the I/O behavior to use.\n");
+    P (dip, "\tiobehavior=type       Specify the I/O behavior. (alias: iob=)\n");
     P (dip, "\t  Where type is:\n");
     P (dip, "\t    dt                The dt I/O behavior (default).\n");
     P (dip, "\t    dtapp             The dtapp I/O behavior.\n");
+    P (dip, "\t    thumper           The thumper I/O behavior.\n");
     P (dip, "\n    For help on each I/O behavior use: \"iobehavior=type help\"\n");
 
     P (dip, "\n    Block Tag Verify Flags: (prefix with ~ to clear flag)\n");
@@ -564,6 +565,8 @@ dthelp(dinfo_t *dip)
 #endif /* defined(TIMESTAMP) */
     P (dip, "\ttrigargs         Trigger cmd arguments.     (Default: %s)\n",
 				(dip->di_trigargs_flag) ? enabled_str : disabled_str);
+    P (dip, "\ttrigdefaults     Automatic trigger defaults.(Default: %s)\n",
+				(dip->di_trigdefaults_flag) ? enabled_str : disabled_str);
     P (dip, "\ttrigdelay        Delay mismatch triggers.   (Default: %s)\n",
 				(dip->di_trigdelay_flag) ? enabled_str : disabled_str);
     P (dip, "\tunique           Unique pattern.            (Default: %s)\n",
@@ -705,6 +708,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\n    I/O Keywords:\n");
     P (dip, "\t    %%iodir = The I/O direction.       %%iotype = The I/O type.\n");
     P (dip, "\t    %%lba = The current logical block. %%offset = The current file offset.\n");
+    P (dip, "\t    %%elba = The error logical block.  %%eoffset = The error file offset.\n");
     P (dip, "\t    %%bufmode = The file buffer mode.  %%status = The thread exit status.\n");
     P (dip, "\n    Job Control Keywords:\n");
     P (dip, "\t    %%job  = The job ID.               %%tag    = The job tag.\n");
@@ -717,12 +721,14 @@ dthelp(dinfo_t *dip)
     P (dip, "\t    pkeepalive=\"%s\"\n", keepalive1);
 
     P (dip, "\n    Log File/Log Prefix Format Keywords:\n");
+    P (dip, "\t    %%array   = The array name or management IP.\n");
     P (dip, "\t    %%bufmode = The file buffer mode.  %%dfs    = The directory separator ('%c')\n",
 						       dip->di_dir_sep);
     P (dip, "\t    %%dsf     = The device name.       %%device = The device path.\n");
     P (dip, "\t    %%file    = The file name.         %%devnum = The device number.\n");
     P (dip, "\t    %%host    = The host name.         %%user   = The user name.\n");
     P (dip, "\t    %%job     = The job ID.            %%tag    = The job tag.\n");
+    P (dip, "\t    %%jlog    = The job log.           %%tlog   = The Thread log.\n");
     P (dip, "\t    %%tid     = The thread ID.         %%thread = The thread number.\n");
     P (dip, "\t    %%pid     = The process ID.        %%prog   = The program name.\n");
     P (dip, "\t    %%ymd     = The year,month,day.    %%hms    = The hour,day,seconds.\n");

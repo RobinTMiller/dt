@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2019			    *
+ *			  COPYRIGHT (c) 2006 - 2020			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -365,7 +365,7 @@ struct tms {
  
 /* Note: We may wish to make default DIRSEP the same as POSIX (Unix). */
 #define DIRSEP		'\\'
-#define WIN_DIRSEP	'\\'
+#define DIRSEP_STR	"\\"
 #define DEV_PREFIX	"\\\\.\\"	/* Native Windows device dir.	*/
 #define DEV_LEN		4		/* That's for "\\.\" prefix.	*/
 #define ADEV_PREFIX	"//./"		/* Windows hidden device dir.	*/
@@ -375,16 +375,15 @@ struct tms {
 #define DEV_DIR_LEN		(sizeof(DEV_DIR_PREFIX) - 1)
 #define DEV_DEVICE_LEN		64
 
-/* Note: Windows supports forward slash now! */
-#define PATTERN_FILE_DIR	"x:\\noarch\\dtdata\\"
-
-/* Note: We can use the environment variable, once we expand them! */
-//#define TEMP_DIR		"${TEMP}"
-#define TEMP_DIR		"C:\\temp\\"
+#define TEMP_DIR		"C:\\temp"
 #define TEMP_DIR_NAME		TEMP_DIR
 #define TEMP_DIR_LEN		(sizeof(TEMP_DIR_NAME) - 1)
 
-#define TRIGGER_SCRIPT		"c:\\tools\\scripts\\dt_noprog_script.bat"
+#define TOOLS_DIR               "C:\\tools"
+#define PATTERN_DIR	        "x:\\noarch\\dtdata"
+#define DEDUP_PATTERN_FILE	PATTERN_DIR"\\pattern_dedup"
+#define TRIGGER_SCRIPT		TOOLS_DIR"\\dt_noprog_script.bat"
+#define STOPON_FILE		TEMP_DIR"\\stopit"
 
 #define OS_READONLY_MODE	GENERIC_READ
 #define OS_WRITEONLY_MODE	GENERIC_WRITE

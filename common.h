@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2017			    *
+ *			  COPYRIGHT (c) 2006 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -519,8 +519,15 @@ typedef enum open_mode {
 #  define NDEV_LEN	5		/* Native device prefix length.	*/
 #endif /* defined(_NT_SOURCE) */
 
-#define CONSOLE_NAME	"console"	/* The console device name.	*/
-#define CONSOLE_LEN	7		/* Length of console name.	*/
+/* Define terminal device names for console logging option. */
+#if defined(WIN32)
+#  define CONSOLE_NAME	"con:"  	/* The console device name.	*/
+#  define CONSOLE_LEN	4		/* Length of console name.	*/
+#else /* !defined(WIN32) */
+/* Note: On Unix, the real console is /dev/console. */
+#  define CONSOLE_NAME	"/dev/tty"	/* The console device name.	*/
+#  define CONSOLE_LEN	8		/* Length of console name.	*/
+#endif /* defined(WIN32) */
 
 #if defined(_QNX_SOURCE)
 #  define CDROM_NAME	"cd"		/* Start of CD-ROM device name.	*/

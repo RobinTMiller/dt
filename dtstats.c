@@ -31,6 +31,9 @@
  *
  * Modification History:
  * 
+ * October 10th, 2020 by Robin T. Miller
+ *      Add megabytes/second to Average Transfer Rates output.
+ * 
  * December 3rd, 2016 by Robin T. Miller
  *      Expanding job statistics to include the total read/write bytes, and
  * adding Gigabyte since we are using very large and very fast disks nowadays!
@@ -305,7 +308,7 @@ report_pass(dinfo_t *dip, stats_t stats_type)
 void
 report_stats(struct dinfo *dip, enum stats stats_type)
 {
-    double bytes_sec, kbytes_sec, ios_sec, secs_io, msecs_io;
+    double bytes_sec, kbytes_sec, mbytes_sec, ios_sec, secs_io, msecs_io;
     double Kbytes, Mbytes, Gbytes;
     large_t xfer_bytes, xfer_records;
     large_t bytes_read, bytes_written;
@@ -703,9 +706,10 @@ report_stats(struct dinfo *dip, enum stats stats_type)
 	bytes_sec = 0.0;
     }
     kbytes_sec = (double) ( (double) bytes_sec / (double) KBYTE_SIZE);
-    Lprintf (dip, DT_FIELD_WIDTH "%.0f bytes/sec, %.3f Kbytes/sec\n",
+    mbytes_sec = (double) ( (double) bytes_sec / (double) MBYTE_SIZE);
+    Lprintf (dip, DT_FIELD_WIDTH "%.0f bytes/sec, %.3f Kbytes/sec, %.3f Mbytes/sec\n",
 	     "Average transfer rates",
-	     bytes_sec, kbytes_sec);
+	     bytes_sec, kbytes_sec, mbytes_sec);
 #if defined(AIO)
     if ( (stats_type == JOB_STATS) || (stats_type == TOTAL_STATS) ) {
 	if (dip->di_aio_flag) {

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,25 @@
  *	Main line code for generic data test program 'dt'.
  *
  * Modification History:
+ * 
+ * February 11th, 2021 by Robin T. Miller
+ *      Create master log creation function for use by other tool parsers.
+ * 
+ * October 28th, 2020 by Robin T. Miller
+ *      Add support for comma separated workload[s]= option.
+ * 
+ * October 27th, 2020 by Robin T. Miller
+ *      When "trigger=" is specified, no parameters, then remove triggers.
+ *      This empty check is consistent with other options, like prefix=, etc.
+ * 
+ * October 21st, 2020 by Robin T. Miller
+ * 	Add array=string option, esp. for external trigger scripts.
+ *      Add --trigger= and --workload= parsing for I/O behavior options.
+ * 
+ * September 24th, 2020 by Robin T. Miller
+ *      Updated signal handler to avoid exiting with FAILURE on SIGINT (2) or
+ * SIGTERM (15), esp. for the latter since automation often sends this signal
+ * to kill tools. SIGINT and SIGTERM will now exit with SUCCESS.
  * 
  * August 5th, 2020 by Robin T. Miller
  *      Add support for starting slice offset.
@@ -351,7 +370,8 @@ os_tid_t MonitorThreadId;		/* The monitoring thread ID.	*/
 # define MonitorThreadId	MonitorThread       
 #endif /* defined(WIN32) */
 
-/* Note: No extra I/O behaviors in the open source dt! */
+extern iobehavior_funcs_t dtapp_iobehavior_funcs;
+
 iobehavior_funcs_t *iobehavior_funcs_table[] = {
     NULL
 };
@@ -490,6 +510,8 @@ FILE	*master_logfp;			/* The master log file pointer.	*/
 dinfo_t	*master_dinfo;			/* The parents' information.	*/
 dinfo_t *iotune_dinfo;			/* The I/O device information.	*/
 
+char	*tools_directory;		/* The default tools directory.	*/
+
 hbool_t DeleteErrorLogFlag = True;	/* Controls error log deleting.	*/
 hbool_t	ExitFlag = False;		/* In pipe mode, exit flag.	*/
 hbool_t	InteractiveFlag = False;	/* Stay in interactive mode.	*/
@@ -504,11 +526,24 @@ int max_open_files = 0;			/* The maximum open files.	*/
 /*
  * Default alarm message is per pass statistics, user can override. 
  */
+/* Note: To remain backwards compatable, I am not changing the default. */
+#if defined(Nimble)
+
+char    *keepalive0 = "%d Stats: mode %i, blocks %l, %m Mbytes,"
+		      " MB/sec: %mbps, IO/sec: %iops, pass %p/%P,"
+                      " elapsed %t";
+char    *keepalive1 = "%d Stats: mode %i, blocks %L, %M Mbytes,"
+		      " MB/sec: %mbps, IO/sec: %iops, pass %p/%P,"
+                      " elapsed %T";
+                                        /* Default keepalive messages.  */
+#else /* !defined(Nimble) */
 char    *keepalive0 = "%d Stats: mode %i, blocks %l, %m Mbytes, pass %p/%P,"
                       " elapsed %t";
 char    *keepalive1 = "%d Stats: mode %i, blocks %L, %M Mbytes, pass %p/%P,"
                       " elapsed %T";
                                         /* Default keepalive messages.  */
+#endif /* defined(Nimble) */
+
 /*
  * When stats is set to brief, these message strings get used:
  * Remember: The stats type is automatically prepended: "End of TYPE"
@@ -781,7 +816,7 @@ main(int argc, char **argv)
     if ((max_open_files < DEFAULT_MAX_OPEN_FILES) || getenv(MAXFILES_ENVNAME)) {
         char *p;
 	if (p = getenv(MAXFILES_ENVNAME)) {
-	    int maxfiles = number(dip, p, ANY_RADIX, &status, ANY_RADIX);
+	    int maxfiles = number(dip, p, ANY_RADIX, &status, False);
 	    if (status == SUCCESS) {
 		max_open_files = maxfiles;
 	    }
@@ -830,6 +865,10 @@ main(int argc, char **argv)
     initialize_workloads_data();
 
     status = ProcessStartupScripts(dip);
+
+    //if (tools_directory = NULL) {
+    //	tools_directory = strdup(TOOLS_DIR);
+    //}
 
     if (argc == 0) {
 	/* This must be done *after* processing startup files. */
@@ -2547,7 +2586,53 @@ do_delete_files(dinfo_t *dip)
 }
 
 /*
- * create_thread_log() - Create of append to the thread log file.
+ * create_master_log() - Create the master log file.
+ *  
+ * Inputs: 
+ *      dip = The device information pointer.
+ *	log_name = The log file name.
+ *  
+ * Description: 
+ *      If the file name contains a format control string '%', then the
+ * log file will be expanded via those control strings before open'ing.
+ * 
+ * Return: 
+ * 	SUCCESS / FAILURE - log file open'ed or open failed 
+ */
+int
+create_master_log(dinfo_t *dip, char *log_name)
+{
+    char logfmt[STRING_BUFFER_SIZE];
+    char *path = logfmt;
+    char *logpath = NULL;
+    int status = SUCCESS;
+
+    if (master_log) {
+	(void)CloseFile(dip, &master_logfp);
+	FreeStr(dip, master_log);
+	master_log = NULL;
+    }
+    /* Note to self: The log file path is returned in "path". */
+    /* TODO: I'm not sure why I wrote it this way, unclear! ;( */
+    (void)setup_log_directory(dip, path, dip->di_log_dir, log_name);
+
+    /* Handle log prefix strings. */
+    if ( strstr(path, "%") ) {
+	logpath = FmtLogFile(dip, path, True);
+    } else {
+	logpath = strdup(log_name);
+    }
+    status = OpenOutputFile(dip, &master_logfp, logpath, "w", EnableErrors);
+    if (status == SUCCESS) {
+	master_log = logpath;
+    } else {
+	FreeStr(dip, logpath);
+    }
+    return(status);
+}
+
+/*
+ * create_thread_log() - Create the thread log file.
  *  
  * Inputs: 
  *      dip = The device information pointer.
@@ -3215,6 +3300,15 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 
     for (i = 0; i < argc; i++) {
 	string = argv[i];
+	/* 
+         * Note: Skip these characters, which are used by other I/O tool parsers.
+	 * For example: Tool parsers map common options to: --threads=value 
+	 * If this poses a problem, we can control this by tool I/O behavior. 
+	 * BTW: I am not removing the existing "--" options below at this time! 
+	 */ 
+	if (match(&string, "--") || match(&string, "-")) {  /* Optional (skip). */
+	    ;
+	}
 	if (dip->di_iobf && dip->di_iobf->iob_parser) {
 	    status = (*dip->di_iobf->iob_parser)(dip, string);
 	    if (status == STOP_PARSING) { /* Stop parsing, "help", etc */
@@ -3392,6 +3486,11 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    if (status == FAILURE) {
 		return ( HandleExit(dip, status) );
 	    }
+	    continue;
+	}
+	if (match (&string, "array=")) {
+	    if (dip->di_array) free(dip->di_array);
+	    dip->di_array = strdup(string);
 	    continue;
 	}
 	if (match (&string, "bs=")) {
@@ -4027,6 +4126,9 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    if (match(&string, "deleteerrorlog")) {
 		DeleteErrorLogFlag = True;
 		if (error_log) {
+		    if (error_logfp) {
+			(void)CloseFile(dip, &error_logfp);
+		    }
 		    /* Delete existing error log. */
 		    (void)os_delete_file(error_log);
 		}
@@ -4419,6 +4521,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if (match(&string, "trigdelay")) {
 		dip->di_trigdelay_flag = True;
+		goto eloop;
+	    }
+	    if (match(&string, "trigdefaults")) {
+        	dip->di_trigdefaults_flag = True;
 		goto eloop;
 	    }
 	    if (match(&string, "unique")) {
@@ -4853,6 +4959,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_trigdelay_flag = False;
 		goto dloop;
 	    }
+	    if (match(&string, "trigdefaults")) {
+        	dip->di_trigdefaults_flag = False;
+		goto dloop;
+	    }
 	    if (match(&string, "unique")) {
 		dip->di_unique_pattern = False;
 		goto dloop;
@@ -4921,6 +5031,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    continue;
 	}
 	if (match (&string, "dirp=")) {
+	    if (dip->di_dirprefix) free(dip->di_dirprefix);
 	    dip->di_dirprefix = strdup(string);
 	    continue;
 	}
@@ -5160,36 +5271,20 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    continue;
 	}
 	if ( match(&string, "mlog=") || match(&string, "master_log=") ) {
-	    char logfmt[STRING_BUFFER_SIZE];
-	    char *path = logfmt;
-            char *logpath = NULL;
-	    if (master_log) {
-		(void)CloseFile(dip, &master_logfp);
-		FreeStr(dip, master_log);
-		master_log = NULL;
+            char *log_name = string;
+	    if (strlen(log_name) == 0) continue;
+	    status = create_master_log(dip, log_name);
+	    if (status == FAILURE) {
+		return (HandleExit(dip, status));
 	    }
-	    if (strlen(string) == 0) continue;
-            (void)setup_log_directory(dip, path, dip->di_log_dir, string);
-	    if ( strstr(path, "%") ) {
-		logpath = FmtLogFile(dip, path, True);
-	    } else {
-		logpath = strdup(path);
-	    }
-	    status = OpenOutputFile(dip, &master_logfp, logpath, "w", EnableErrors);
-	    if (status == SUCCESS) {
-		master_log = logpath;
-	    } else {
-		FreeStr(dip, logpath);
-		return ( HandleExit(dip, FAILURE) );
-	    }
-	    continue;
+            continue;
 	}
 	if ( match(&string, "iob=") || match(&string, "iobehavior=") ) {
 	    if ( match(&string, "dt") ) {
 		dip->di_iobehavior = DT_IO;
 		continue;
-	   } else {
-		Eprintf(dip, "Valid I/O behaviors are: dt\n");
+	    } else {
+		Eprintf(dip, "Valid I/O behaviors are: dt only (at present)\n");
 		return ( HandleExit(dip, FAILURE) );
 	    }
 	    status = (*dip->di_iobf->iob_initialize)(dip);
@@ -5793,7 +5888,14 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 #endif /* defined(__unix) */
 	    continue;
 	}
-	if (match (&string, "dtype=")) {
+	if (match (&string, "tools=")) {
+	    if (tools_directory) {
+        	FreeStr(dip, tools_directory);
+	    }
+            tools_directory = strdup(string);
+            continue;
+	}
+	if (match(&string, "dtype=")) {
 	    struct dtype *dtp;
 	    if ((dtp = setup_device_type (string)) == NULL) {
 		return ( HandleExit(dip, FAILURE) );
@@ -5878,16 +5980,19 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    continue;
 	}
-	if (match (&string, "trigger=")) {
+	if ( match(&string, "trigger=") || match(&string, "--trigger=") ) {
 	    trigger_data_t *tdp = &dip->di_triggers[dip->di_num_triggers];
-	    if (dip->di_num_triggers == NUM_TRIGGERS) {
-		Eprintf(dip, "Maximum number of triggers is %d.\n", NUM_TRIGGERS);
-		return ( HandleExit(dip, FAILURE) );
+            /* No trigger specified, so cleanup existing! */
+	    if (*string == '\0') {
+		remove_triggers(dip);
+        	continue;
 	    }
-	    if ((tdp->td_trigger = check_trigger_type(dip, string)) == TRIGGER_INVALID) {
-		return ( HandleExit(dip, FAILURE) );
+	    status = add_trigger_type(dip, string);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
 	    }
-	    dip->di_num_triggers++;
+            /* User specified triggers overrides trigger defaults. */
+	    dip->di_trigdefaults_flag = False;
 	    continue;
 	}
 	if (match (&string, "trigger_action=")) {
@@ -5898,7 +6003,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    continue;
 	}
 	if (match (&string, "trigger_on=")) {
-	    if ((dip->di_trigger_control = check_trigger_control(dip, string)) == TRIGGER_ON_INVALID) {
+	    if ((dip->di_trigger_control = parse_trigger_control(dip, string)) == TRIGGER_ON_INVALID) {
 		return ( HandleExit(dip, FAILURE) );
 	    }
 	    continue;
@@ -5948,7 +6053,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    dip->di_get_lba_status_flag = True;
 	    continue;
 	}
-#endif /*i defined(SCSI) */
+#endif /* defined(SCSI) */
 	if ( match (&string, "exit") || match (&string, "quit") ) {
 	    ExitFlag = True;
 	    continue;
@@ -6169,6 +6274,9 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    return ( HandleExit(dip, status) );
 	}
 	if (match (&string, "tag=")) {
+	    if (dip->di_job_tag) {
+		free(dip->di_job_tag);
+	    }
 	    dip->di_job_tag = strdup(string);
 	    continue;
 	}
@@ -6176,6 +6284,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    job_id_t job_id = 0;
 	    char *job_tag = NULL;
 	    
+	    status = SUCCESS;
 	    if (*string != '\0') {
 		status = parse_job_args(dip, string, &job_id, &job_tag, True);
 	    } else if (++i < argc) {
@@ -6283,31 +6392,40 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    show_btag_verify_flags_set(dip, verify_flags);
 	    return ( HandleExit(dip, SUCCESS) );
 	}
-	if (match (&string, "workload=")) {
+	if ( match(&string, "workload=") || match(&string, "workloads=") ||
+	     match(&string, "--workload=") || match(&string, "--workloads=") ) {
 	    workload_entry_t *workload;
-	    workload = find_workload(string);
-	    if (workload == NULL) {
-		Eprintf(dip, "Did not find workload '%s'!\n", string);
+            char *token, *saveptr, *workloads;
+	    if (*string == '\0') {
+		Eprintf(dip, "Please specify the workload name(s)!\n");
 		return ( HandleExit(dip, FAILURE) );
-	    } else if (status == FAILURE) {
-		return ( HandleExit(dip, status) );
 	    }
-	    status = ParseWorkload(dip, workload->workload_options);
-	    if (status == FAILURE) {
-		return ( HandleExit(dip, status) );
+            workloads = strdup(string);
+	    token = strtok_r(workloads, ",", &saveptr);
+	    while (token) {
+		workload = find_workload(token);
+		if (workload == NULL) {
+		    Eprintf(dip, "Did not find workload '%s'!\n", token);
+		    return ( HandleExit(dip, FAILURE) );
+		} else if (status == FAILURE) {
+		    return ( HandleExit(dip, status) );
+		}
+		status = ParseWorkload(dip, workload->workload_options);
+		if (status == FAILURE) {
+		    return ( HandleExit(dip, status) );
+		}
+		/* Use the first workload name, since workloads can be nested. */
+		if (dip->di_workload_name == NULL) {
+		    dip->di_workload_name = strdup(token);
+		}
+		token = strtok_r(NULL, ",", &saveptr); /* Next workload please! */
 	    }
-	    /* Use the first workload name, since workloads can be nested. */
-	    if (dip->di_workload_name == NULL) {
-		dip->di_workload_name = strdup(string);
-	    }
+            Free(dip, workloads);
 	    continue;	/* Parse more options to override workload! */
 	}
 	if (match (&string, "workloads")) {
 	    char *workload_name = NULL;
-	    if (*string == '=') {
-	    	string++;
-		workload_name = string;
-	    } else if (++i < argc) {
+	    if (++i < argc) {
 		workload_name = argv[i];
 	    }
 	    show_workloads(dip, workload_name);
@@ -6367,21 +6485,19 @@ make_options_string(dinfo_t *dip, int argc, char **argv, hbool_t quoting)
 	char *opt = argv[arg];
 	char *space = strchr(opt, ' ');
 	/* Embedded spaces require quoting. */
-	//if (quoting && space) {
 	if (space) {
 	    char *dquote = strchr(opt, '"');
 	    char *equals = strchr(opt, '=');
 	    char quote = (dquote) ? '\'' : '"';
 	    char *p = opt;
-	    /* Adding quoting after the option= */
+	    /* Add quoting after the option= */
 	    if (equals) {
 		/* Copy to and including equals sign. */
 		do {
 		    *bp++ = *p++;
-		} while (*(p -1) != '=');
+		} while (*(p-1) != '=');
 	    }
 	    /* TODO: Smarter handling of quotes! */
-	    /* Note: Windows removes double quotes. */
 	    bp += sprintf(bp, "%c%s%c ", quote, p, quote);
 	} else {
 	    bp += sprintf(bp, "%s ", opt);
@@ -7030,18 +7146,27 @@ void
 SignalHandler(int signal_number)
 {
     dinfo_t *dip = master_dinfo;
+    int exit_status = signal_number;
 
-    if (debug_flag || pDebugFlag || dip->di_verbose_flag) {
+    if (debug_flag || pDebugFlag || tDebugFlag || dip->di_verbose_flag) {
 	Printf(NULL, "Caught signal %d\n", signal_number);
+    }
+
+    /*
+     * Note: Since automation often used SIGTERM to kill tools, lets make our 
+     * exit status conditional by signal number. We'll also allow SIGINT (Ctrl/C). 
+     */
+    if ( (signal_number == SIGINT) || (signal_number == SIGTERM) ) {
+	exit_status = SUCCESS;
     }
 
     if ( (terminating_flag == True) || (terminate_on_signals == True) ) {
 	/* If already terminating, then exit the process (likely hung)! */
 	if (debug_flag || pDebugFlag || tDebugFlag) {
 	    if (terminating_flag == True) {
-		Printf(dip, "Exiting with signal %d, due to already terminating!\n", signal_number);
+		Printf(dip, "Exiting with status %d, due to already terminating!\n", exit_status);
 	    } else {
-		Printf(dip, "Exiting with signal %d, due to terminate on signals!\n", signal_number);
+		Printf(dip, "Exiting with status %d, due to terminate on signals!\n", exit_status);
 	    }
 	}
 	finish_exiting(dip, signal_number);
@@ -7528,7 +7653,7 @@ setup_thread_attributes(dinfo_t *dip, pthread_attr_t *tattrp, hbool_t joinable_f
 
     if (p = getenv(THREAD_STACK_ENV)) {
 	string = p;
-	desiredStackSize = number(dip, string, ANY_RADIX, &status, ANY_RADIX);
+	desiredStackSize = number(dip, string, ANY_RADIX, &status, False);
     }
 
     /* Remember: pthread API's return 0 for success; otherwise, an error number to indicate the error! */
@@ -7601,7 +7726,7 @@ init_pthread_attributes(dinfo_t *dip)
 
     if (p = getenv(THREAD_STACK_ENV)) {
 	string = p;
-	desiredStackSize = number(dip, string, ANY_RADIX, &status, ANY_RADIX);
+	desiredStackSize = number(dip, string, ANY_RADIX, &status, False);
     }
     ParentThreadId = pthread_self();
 
@@ -8267,10 +8392,7 @@ init_device_information(void)
 void
 init_device_defaults(dinfo_t *dip)
 {
-    int i;
-
     /* Setup Defaults */
-    
     dip->di_fd = NoFd;
     dip->di_funcs = NULL;
     dip->di_shared_file = False;
@@ -8526,13 +8648,8 @@ init_device_defaults(dinfo_t *dip)
     
     dip->di_trigargs_flag = True;
     dip->di_trigdelay_flag = True;
-    dip->di_trigger_control = TRIGGER_ON_ALL;
-    dip->di_num_triggers = 0;
-    for (i = 0; (i < NUM_TRIGGERS); i++) {
-	dip->di_triggers[i].td_trigger = TRIGGER_NONE;
-	dip->di_triggers[i].td_trigger_cmd = NULL;
-	dip->di_triggers[i].td_trigger_args = NULL;
-    }
+    dip->di_trigdefaults_flag = True;
+    remove_triggers(dip);
     /* Note: May not be needed anymore. */
     if (dip->di_mtrand) {
 	dip->di_mtrand->mti = (NN + 1);	/* Not initialized value. */
@@ -8553,8 +8670,6 @@ init_device_defaults(dinfo_t *dip)
 void
 cleanup_device(dinfo_t *dip, hbool_t master)
 {
-    int i;
-
     if (dip->di_debug_flag) {
 	Printf(NULL, "Cleaning up device "LLPXFMT", master %d...\n",  dip, master);
     }
@@ -8581,6 +8696,10 @@ cleanup_device(dinfo_t *dip, hbool_t master)
 	     (dip->di_dispose_mode == DELETE_FILE) ) {
 	    (void)delete_files(dip, True);
 	}
+    }
+    if (dip->di_array) {
+	FreeStr(dip, dip->di_array);
+	dip->di_array = NULL;
     }
     if ((master == False) && dip->di_file_sep) {
 	FreeStr(dip, dip->di_file_sep);
@@ -8762,20 +8881,8 @@ cleanup_device(dinfo_t *dip, hbool_t master)
 #endif /* defined(AIO) */
     /*
      * Trigger scripts and arguments:
-     */ 
-    for (i = 0; (i < dip->di_num_triggers); i++) {
-	dip->di_triggers[i].td_trigger = TRIGGER_NONE;
-	if (dip->di_triggers[i].td_trigger_cmd) {
-	    FreeStr(dip, dip->di_triggers[i].td_trigger_cmd);
-	    dip->di_triggers[i].td_trigger_cmd = NULL;
-	}
-	if (dip->di_triggers[i].td_trigger_args) {
-	    FreeStr(dip, dip->di_triggers[i].td_trigger_args);
-	    dip->di_triggers[i].td_trigger_args = NULL;
-	}
-    }
-    dip->di_num_triggers = 0;
-    dip->di_trigger_control = TRIGGER_ON_ALL;
+     */
+    remove_triggers(dip);
 
     if ((master == False) && dip->di_mtrand) {
 	Free(dip, dip->di_mtrand);
@@ -8867,6 +8974,9 @@ clone_device(dinfo_t *dip, hbool_t master, hbool_t new_context)
     if ( (master == True) && dip->di_log_file) {
 	cdip->di_ofp = stdout;
 	cdip->di_efp = stderr;
+    }
+    if (dip->di_array) {
+	cdip->di_array = strdup(dip->di_array);
     }
     if (dip->di_file_sep) {
 	cdip->di_file_sep = strdup(dip->di_file_sep);
@@ -9836,7 +9946,7 @@ do_common_device_setup(dinfo_t *dip)
     /*
      * Extra verify buffer required for read-after-write operations.
      */
-    if ( dip->di_raw_flag || (dip->di_iobehavior == DTAPP_IO) ) {
+    if (dip->di_raw_flag || (dip->di_iobehavior == DTAPP_IO) || (dip->di_iobehavior == THUMPER_IO) ) {
 	dip->di_verify_buffer = malloc_palign(dip, dip->di_verify_buffer_size, dip->di_align_offset);
     }
 
