@@ -27,7 +27,7 @@
  * Author:	Robin T. Miller
  *
  * Description:
- *	This module contains Windows OS specific functions.
+ *	This module contains *unix OS specific functions.
  * 
  * Modification History:
  * 

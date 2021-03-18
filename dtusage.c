@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: February 11th, 2021"VARIANT", Version: 23.26, Author: Robin T. Miller";
+char *version_str = "Date: March 17th, 2021"VARIANT", Version: 23.28, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -259,6 +259,19 @@ dthelp(dinfo_t *dip)
     /* Omitting, seems a bit too verbose! */
     //show_btag_verify_flags(dip);
 
+    P (dip, "\n    Force Corruption Options:\n");
+    P (dip, "\tcorrupt_index=value   The corruption index. (Default: random)\n");
+    P (dip, "\tcorrupt_length=value  The corruption length. (Default: %d bytes)\n",
+       dip->di_corrupt_length);
+    P (dip, "\tcorrupt_pattern=value The corruption pattern. (Default: 0x%x)\n",
+       dip->di_corrupt_pattern);
+    P (dip, "\tcorrupt_step=value    Corruption buffer step. (Default: %d bytes)\n",
+       dip->di_corrupt_step);
+    P (dip, "\tcorrupt_reads=value   Corrupt at read records. (Default: %d)\n",
+       dip->di_corrupt_reads);
+    P (dip, "\tcorrupt_writes=value  Corrupt at write records. (Default: %d)\n",
+       dip->di_corrupt_writes);
+
     P (dip, "\n    Job Start Options:\n");
     P (dip, "\tistate={paused,running} (Default: running)\n");
     P (dip, "\t                      Initial state after thread created.\n");
@@ -454,6 +467,8 @@ dthelp(dinfo_t *dip)
 				(dip->di_logheader_flag) ? enabled_str : disabled_str);
     P (dip, "\ttrailer          Log file trailer.          (Default: %s)\n",
 				(dip->di_logtrailer_flag) ? enabled_str : disabled_str);
+    P (dip, "\tforce-corruption Force a FALSE corruption.  (Default: %s)\n",
+				(dip->di_force_corruption) ? enabled_str : disabled_str);
     P (dip, "\thdump            History dump.              (Default: %s)\n",
 				(dip->di_history_timing) ? enabled_str : disabled_str);
     P (dip, "\thtiming          History timing.            (Default: %s)\n",

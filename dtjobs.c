@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,9 @@
  *	This file contains functions to handle dt's jobs.
  *
  * Modification History:
+ * 
+ * March 8th, 2021 by Robin T. Miller
+ *      Add resume_job_thread() to resume current job thread.
  * 
  * June 7th, 2019 by Robin T. Miller
  *      Add support for log directory (logdir=).
@@ -990,6 +993,23 @@ resume_job(dinfo_t *dip, job_info_t *job)
 	   job->ji_job_id, tip->ti_threads,
 	   (tip->ti_threads > 1) ? "s" : "");
     status = set_threads_state(tip, TS_RUNNING);
+    return(status);
+}
+
+int
+resume_job_thread(dinfo_t *dip, job_info_t *job)
+{
+    int status;
+
+    status = acquire_jobs_lock(dip);
+    job->ji_job_state = JS_RUNNING;
+    dip->di_thread_state = TS_RUNNING;
+    dip->di_thread_stopped = time((time_t) 0);
+    Printf(dip, "Job %u, Thread %u resumed...\n",
+	   job->ji_job_id, dip->di_thread_number);
+    if (status == SUCCESS) {
+	status = release_jobs_lock(dip);
+    }
     return(status);
 }
 
@@ -2152,8 +2172,12 @@ create_job_log(dinfo_t *dip, job_info_t *job)
     if (dip->di_job_log) {
 	char logfmt[STRING_BUFFER_SIZE];
 	char *path = logfmt;
+        int status;
 
-	(void)setup_log_directory(dip, path, dip->di_log_dir, dip->di_job_log);
+	status = setup_log_directory(dip, path, dip->di_job_log);
+	if (status == FAILURE) {
+	    return (status);
+	}
 	if (dip->di_num_devs > 1) {
 	    /*
 	     * Create a unique log file with multiple devices.
@@ -2167,7 +2191,7 @@ create_job_log(dinfo_t *dip, job_info_t *job)
 	}
 	/* Format special control strings or log directory + log file name. */
 	job->ji_job_logfile = FmtLogFile(dip, path, True);
-	if (dip->di_debug_flag) {
+	if (dip->di_debug_flag || dip->di_fDebugFlag) {
 	    Printf(dip, "Job %u, job log file is %s...\n",
 		   dip->di_job->ji_job_id, job->ji_job_logfile);
 	}

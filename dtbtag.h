@@ -48,11 +48,7 @@
  * TODO: Plese consider defining the serial number size at compile time! 
  */
 #if !defined(SERIAL_SIZE) 
-# if defined(Nimble)
-#  define SERIAL_SIZE	34		/* Nimble uses VPD device ID.	*/
-# else /* !defined(Nimble) */
 #  define SERIAL_SIZE	16		/* SAN LUN serial number size.	*/
-# endif /* defined(Nimble) */
 #endif /* !defined(SERIAL_SIZE) */
 
 /* 
@@ -213,7 +209,6 @@
 /*
  * Block Tag (btag) Definition:
  * Note: Pack carefully to avoid wasted space due to alignment. 
- * BEWARE: The offsets are NOT correct for Nimble w/larger serial number! 
  */
 typedef struct btag {                                             /* Offset */
     union {                         /*                                  0 */

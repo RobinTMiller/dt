@@ -31,6 +31,14 @@
  *
  * Modification History:
  * 
+ * March 21st, 2021 by Robin T. Miller
+ *      Add support for forcing FALSE data corruptiong for debugging.
+ * 
+ * March 8th, 2021 by Robin T. Miller
+ *      When creating log directories in setup_log_directory(), create the
+ * last subdirectory (as required). For user specified log directory, expand
+ * format control strings prior to creating the directory (logdir= option).
+ * 
  * February 11th, 2021 by Robin T. Miller
  *      Create master log creation function for use by other tool parsers.
  * 
@@ -370,8 +378,6 @@ os_tid_t MonitorThreadId;		/* The monitoring thread ID.	*/
 # define MonitorThreadId	MonitorThread       
 #endif /* defined(WIN32) */
 
-extern iobehavior_funcs_t dtapp_iobehavior_funcs;
-
 iobehavior_funcs_t *iobehavior_funcs_table[] = {
     NULL
 };
@@ -526,24 +532,11 @@ int max_open_files = 0;			/* The maximum open files.	*/
 /*
  * Default alarm message is per pass statistics, user can override. 
  */
-/* Note: To remain backwards compatable, I am not changing the default. */
-#if defined(Nimble)
-
-char    *keepalive0 = "%d Stats: mode %i, blocks %l, %m Mbytes,"
-		      " MB/sec: %mbps, IO/sec: %iops, pass %p/%P,"
-                      " elapsed %t";
-char    *keepalive1 = "%d Stats: mode %i, blocks %L, %M Mbytes,"
-		      " MB/sec: %mbps, IO/sec: %iops, pass %p/%P,"
-                      " elapsed %T";
-                                        /* Default keepalive messages.  */
-#else /* !defined(Nimble) */
 char    *keepalive0 = "%d Stats: mode %i, blocks %l, %m Mbytes, pass %p/%P,"
                       " elapsed %t";
 char    *keepalive1 = "%d Stats: mode %i, blocks %L, %M Mbytes, pass %p/%P,"
                       " elapsed %T";
                                         /* Default keepalive messages.  */
-#endif /* defined(Nimble) */
-
 /*
  * When stats is set to brief, these message strings get used:
  * Remember: The stats type is automatically prepended: "End of TYPE"
@@ -2614,7 +2607,10 @@ create_master_log(dinfo_t *dip, char *log_name)
     }
     /* Note to self: The log file path is returned in "path". */
     /* TODO: I'm not sure why I wrote it this way, unclear! ;( */
-    (void)setup_log_directory(dip, path, dip->di_log_dir, log_name);
+    status = setup_log_directory(dip, path, log_name);
+    if (status == FAILURE) {
+        return(status);
+    }
 
     /* Handle log prefix strings. */
     if ( strstr(path, "%") ) {
@@ -2990,21 +2986,49 @@ make_stderr_buffered(dinfo_t *dip)
     return(status);
 }
 
-char *
-setup_log_directory(dinfo_t *dip, char *path, char *dir, char *log)
+int
+setup_log_directory(dinfo_t *dip, char *path, char *log)
 {
     char *bp = path;
+    char *dir = dip->di_log_dir;
+    int status = SUCCESS;
+
     /*
-     * Allow a log file directory to redirect logs easier.
+     * Allow a log file directory to redirect logs easier. 
+     * Note: We don't create the full directory path, just last!
      */
     if (dir) {
+	if ( strstr(dir, "%") ) {
+	    dir = FmtLogFile(dip, dir, True);
+	    FreeStr(dip, dip->di_log_dir);
+	    dip->di_log_dir = dir;
+	}
 	if (os_file_exists(dir) == False) {
-	    (void)os_create_directory(dir, DIR_CREATE_MODE);
+	    if (dip->di_debug_flag || dip->di_fDebugFlag) {
+		Printf(dip, "Creating directory %s...\n", dir);
+	    }
+	    status = os_create_directory(dir, DIR_CREATE_MODE);
 	}
 	bp += sprintf(bp, "%s%c", dir, dip->di_dir_sep);
+    } else if ( NEL(log, CONSOLE_NAME, CONSOLE_LEN) ) {
+	/* Note: We do not expand the log directory here! */
+        char *dsp = strrchr(log, dip->di_dir_sep);
+	if (dsp) {
+            char *dir = log;
+            *dsp = '\0';
+            /* create the log directory if it does not exist! */
+	    if (os_file_exists(log) == False) {
+		if (dip->di_debug_flag || dip->di_fDebugFlag) {
+		    Printf(dip, "Creating directory %s...\n", log);
+		}
+		status = os_create_directory(log, DIR_CREATE_MODE);
+	    }
+            *dsp = dip->di_dir_sep;
+	}
     }
+    /* Add log name to directory, as required. */
     bp += sprintf(bp, "%s", log);
-    return(bp);
+    return(status);
 }
 
 /*
@@ -3019,13 +3043,16 @@ setup_log_directory(dinfo_t *dip, char *path, char *dir, char *log)
 int
 create_unique_thread_log(dinfo_t *dip)
 {
-    int status = SUCCESS;
     hbool_t make_unique_log_file = True;
     char logfmt[STRING_BUFFER_SIZE];
     char *logpath = dip->di_log_file;
     char *path = logfmt;
+    int status = SUCCESS;
 
-    (void)setup_log_directory(dip, path, dip->di_log_dir, dip->di_log_file);
+    status = setup_log_directory(dip, path, dip->di_log_file);
+    if (status == FAILURE) {
+        return(status);
+    }
     /*
      * For a single thread use the log file name, unless told to be unique.
      * Note: If multiple devices specified, also create unique log files!
@@ -3048,7 +3075,7 @@ create_unique_thread_log(dinfo_t *dip)
     logpath = FmtLogFile(dip, path, True);
     FreeStr(dip, dip->di_log_file);
     dip->di_log_file = logpath;
-    if (dip->di_debug_flag) {
+    if (dip->di_debug_flag || dip->di_fDebugFlag) {
 	Printf(dip, "Job %u, Thread %d, thread log file is %s...\n",
 	       dip->di_job->ji_job_id, dip->di_thread_number, logpath);
     }
@@ -3562,6 +3589,61 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    continue;
 	}
+        /* Force Corruption Options */
+	if (match (&string, "corrupt_index=")) {
+	    dip->di_corrupt_index = (int32_t)number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    dip->di_force_corruption = True;
+	    continue;
+	}
+	if (match (&string, "corrupt_length=")) {
+	    dip->di_corrupt_length = number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    dip->di_force_corruption = True;
+	    continue;
+	}
+	if (match (&string, "corrupt_pattern=")) {
+	    dip->di_corrupt_pattern = number(dip, string, HEX_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    dip->di_force_corruption = True;
+	    continue;
+	}
+	if (match (&string, "corrupt_step=")) {
+	    dip->di_corrupt_step = (int32_t)number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    dip->di_force_corruption = True;
+	    if (dip->di_corrupt_step && (dip->di_corrupt_length == sizeof(CORRUPTION_PATTERN)) ) {
+		dip->di_corrupt_length *= 2;	/* Force two corrupted sections. */
+	    }
+	    continue;
+	}
+	if (match (&string, "corrupt_reads=")) {
+	    dip->di_corrupt_reads = large_number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    dip->di_force_corruption = True;
+	    dip->di_corrupt_writes = 0;
+	    continue;
+	}
+	if (match (&string, "corrupt_writes=")) {
+	    dip->di_corrupt_writes = large_number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    dip->di_force_corruption = True;
+	    dip->di_corrupt_reads = 0;
+	    continue;
+	}
+        /* End of Corruption Options. */
 	if (match (&string, "dsize=")) {
 	    dip->di_device_size = number(dip, string, ANY_RADIX, &status, True);
 	    if (status == FAILURE) {
@@ -4166,6 +4248,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_lDebugFlag = True;
 		goto eloop;
 	    }
+	    if (match(&string, "force-corruption")) {
+		dip->di_force_corruption = True;
+		goto eloop;
+	    }
 	    if (match(&string, "image")) {
 		dip->di_image_copy = True;
 		goto eloop;
@@ -4622,6 +4708,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if ( match(&string, "ldebug") || match(&string, "lock_debug") ) {
 		dip->di_lDebugFlag = False;
+		goto dloop;
+	    }
+	    if (match(&string, "force-corruption")) {
+		dip->di_force_corruption = False;
 		goto dloop;
 	    }
 	    if (match(&string, "image")) {
@@ -5257,8 +5347,11 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		error_log = NULL;
 	    }
 	    if (strlen(string) == 0) continue;
-            (void)setup_log_directory(dip, path, dip->di_log_dir, string);
-	    if ( strstr(path, "%") ) {
+            status = setup_log_directory(dip, path, string);
+	    if (status == FAILURE) {
+		return (HandleExit(dip, status));
+	    }
+	    if (strstr(path, "%")) {
 		path = FmtLogFile(dip, path, True);
 	    } else {
 		path = strdup(path);
@@ -5283,8 +5376,8 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    if ( match(&string, "dt") ) {
 		dip->di_iobehavior = DT_IO;
 		continue;
-	    } else {
-		Eprintf(dip, "Valid I/O behaviors are: dt only (at present)\n");
+	   } else {
+		Eprintf(dip, "Valid I/O behaviors are: dt\n");
 		return ( HandleExit(dip, FAILURE) );
 	    }
 	    status = (*dip->di_iobf->iob_initialize)(dip);
@@ -8437,6 +8530,13 @@ init_device_defaults(dinfo_t *dip)
     dip->di_compare_flag = DEFAULT_COMPARE_FLAG;
     dip->di_xcompare_flag = DEFAULT_XCOMPARE_FLAG;
     dip->di_force_core_dump = DEFAULT_COREDUMP_FLAG;
+    dip->di_force_corruption = False;
+    dip->di_corrupt_index = UNINITIALIZED;
+    dip->di_corrupt_length = sizeof(CORRUPTION_PATTERN);
+    dip->di_corrupt_pattern = CORRUPTION_PATTERN;
+    dip->di_corrupt_step = 0;
+    dip->di_corrupt_reads = CORRUPT_READ_RECORDS;
+    dip->di_corrupt_writes = CORRUPT_WRITE_RECORDS;
     dip->di_fileperthread = DEFAULT_FILEPERTHREAD;
     dip->di_lbdata_flag = DEFAULT_LBDATA_FLAG;
     dip->di_timestamp_flag = DEFAULT_TIMESTAMP_FLAG;
@@ -9946,7 +10046,7 @@ do_common_device_setup(dinfo_t *dip)
     /*
      * Extra verify buffer required for read-after-write operations.
      */
-    if (dip->di_raw_flag || (dip->di_iobehavior == DTAPP_IO) || (dip->di_iobehavior == THUMPER_IO) ) {
+    if (dip->di_raw_flag || (dip->di_iobehavior == DTAPP_IO) ) {
 	dip->di_verify_buffer = malloc_palign(dip, dip->di_verify_buffer_size, dip->di_align_offset);
     }
 

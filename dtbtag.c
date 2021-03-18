@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -373,6 +373,8 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 		} else {
 		    Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", physical_str, lba, lba);
 		}
+        	lba = (offset / dip->di_dsize);
+		Fprintf(dip, DT_FIELD_WIDTH LUF" ("LXF")\n", relative_str, lba, lba);
 	    }
 	}
 

@@ -461,7 +461,9 @@ dtaio_wait (struct dinfo *dip, struct aiocb *acbp)
 	DWORD error = GetLastError();
 	if (error == ERROR_IO_INCOMPLETE) {
 	    /* Note: Polling is ineffecient (IMO), must be a better way? */
-	    Sleep(10); /* Not done yet, wait a while then retry. */
+	    /* FYI: This value is in ms, so if too high, kills performance! */
+	    /* TODO: Switch to I/O competion ports, remove this nonsense!!! */
+	    Sleep(1); /* Not done yet, wait a while then retry. */
 	} else {
 	    /*
 	     * Later we check bytes_rw to know the status of operation
@@ -993,7 +995,8 @@ dtaio_process_read(struct dinfo *dip, struct aiocb *acbp)
     dip->di_retry_count = 0;
 retry:
     dip->di_current_acb = acbp;
-    error = dtaio_wait (dip, acbp);
+    /* Wait for this async read to complete. */
+    error = dtaio_wait(dip, acbp);
 #if defined(WIN32)
     /* total bytes read by ReadFile call or FAILURE in case or error */
     count = acbp->bytes_rw;

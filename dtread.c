@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,9 @@
  *	Read routines for generic data test program.
  *
  * Modification History:
+ * 
+ * March 21st, 2021 by Robin T. Miller
+ *      Add support for forcing FALSE data corruptiong for debugging.
  * 
  * May 5th, 2020 by Robin T. Miller
  *      Use high resolution timer for more accurate I/O timing. This is
@@ -1091,6 +1094,7 @@ retry:
 	count = os_pread_file(dip->di_fd, buffer, bsize, offset);
     }
     DISABLE_NOPROG(dip);
+
     if (dip->di_history_size && (dip->di_retrying == False)) {
 	/* Note: We may be in write mode, used during read-after-write! */
 	hbool_t read_mode = (dip->di_mode == READ_MODE);
@@ -1130,6 +1134,11 @@ retry:
 	return (count);
     }
     dip->di_end_of_file = False;	/* Reset saved end of file state. */
+
+    /* Force a FALSE corruption (if requested), and records match! */
+    if (dip->di_force_corruption && (dip->di_corrupt_reads == (dip->di_records_read + 1)) ) {
+	corrupt_buffer(dip, buffer, (uint32_t)count, dip->di_corrupt_reads);
+    }
 
     /*
      * If something was read, adjust counts and statistics.

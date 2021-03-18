@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2020			    *
+ *			  COPYRIGHT (c) 2006 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -117,7 +117,7 @@
 #define TEMP_DIR_NAME		TEMP_DIR
 #define TEMP_DIR_LEN		(sizeof(TEMP_DIR_NAME) - 1)
 
-#define TOOLS_DIR               "/usr/software/test/noarch"
+#define TOOLS_DIR		"/usr/software/test/noarch"
 #define PATTERN_DIR		TOOLS_DIR"/dtdata"
 #define DEDUP_PATTERN_FILE	PATTERN_DIR"/pattern_dedup"
 #define TRIGGER_SCRIPT		TOOLS_DIR"/dt_noprog_script.ksh"

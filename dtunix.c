@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2020			    *
+ *			  COPYRIGHT (c) 2006 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,12 @@
  *	This module contains *unix OS specific functions.
  * 
  * Modification History:
+ * 
+ * March 10th, 2021 by Robin T. Miller
+ *      For Solaris, clear O_DIRECT flag n os_open_file(), omitted previously!
+ * 
+ * July 17th, 2020 by Robin T. Miller
+ *      Add a hack workaround for Linux disk names in ConvertDeviceToScsiDevice().
  * 
  * June 3rd, 2020 by Robin T. Miller
  *      Update os_report_file_map() to use NO_OFFSET value to report all
@@ -129,13 +135,23 @@ ConvertDeviceToScsiDevice(char *device)
 
     if (device == NULL) return(device);
     scsi_device = strdup(device);
-    p = ( scsi_device + (strlen(scsi_device) - 1) );
 
+#if defined(__linux__)
+    /* Hack: The logic below is broken for" "/dev/mapper/20ef62e25253404fa6c9ce900ec009227" */
+    /* Therefore, if the wrong (mangled) disk name is returned, SCSI open will fail! */
+    if ( NEL(device, DISK_NAME, strlen(DISK_NAME)) ) {
+	return(scsi_device);	/* Return original device name unless "/dev/sd"! */
+    }
+#endif /* defined(__linux__) */
+
+    p = ( scsi_device + (strlen(scsi_device) - 1) );
+    /* TODO: Figure out a better way to strip partitions to get raw disk name! */
+    /* Note: Some OS's add a partition number, like /dev/sda1, others a letter. */
     while ( isdigit(*p) ) {
 	*p = '\0';
 	--p;
     }
-    return (scsi_device);
+    return(scsi_device);
 }
 
 #else /* !defined(__linux__) */
@@ -690,6 +706,8 @@ os_open_file(char *name, int oflags, int perm)
 {
     HANDLE fd;
     hbool_t dio_flag = (oflags & O_DIRECT) ? True : False;
+    
+    oflags &= ~O_DIRECT;	/* Clear the psuedo-flag. */
     
     /* Handle Direct I/O on HFS and Veritas file systems. */
     fd = open(name, oflags, perm);

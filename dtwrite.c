@@ -31,6 +31,9 @@
  * 
  * Modification History:
  * 
+ * March 21st, 2021 by Robin T. Miller
+ *      Add support for forcing FALSE data corruptiong for debugging.
+ * 
  * July 9th, 2020 by Robin T. Miller (on behalf of dcb314)
  * 	Fix incorrect comparision of maxdata written in iolock function.
  * 	
@@ -1396,6 +1399,10 @@ write_record(
 {
     ssize_t count;
 
+    /* Force a FALSE corruption (if requested), and records match! */
+    if (dip->di_force_corruption && (dip->di_corrupt_writes == (dip->di_records_written + 1)) ) {
+	corrupt_buffer(dip, buffer, (uint32_t)bsize, dip->di_corrupt_writes);
+    }
 retry:
     *status = SUCCESS;
     ENABLE_NOPROG(dip, WRITE_OP);

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,10 @@
  *	Data Verification functions.
  *
  * Modification History:
+ * 
+ * March 8th, 2021 by Robin T. Miller
+ *      When corruptions occur, if onerr=stop is enabled, stop other threads,
+ * thereby reducing I/O in traces and expediting trigger(s) execution.
  * 
  * November 30th, 2020 by Robin T. Miller
  *      When reporting extended error information, clarify the LBA type.
@@ -1952,6 +1956,15 @@ ReportCompareError (
 {
     int prt_flags = (PRT_NOLEVEL|PRT_SYSLOG);
 
+    if (dip->di_oncerr_action == ONERR_ABORT) {
+	job_id_t job_id = 0;
+	char *job_tag = NULL;
+
+	Printf(dip, "onerr=abort, so stopping all job threads...\n");
+	stop_jobs(dip, job_id, job_tag);
+	/* Resume us for possible re-reads, triggers, etc. */
+	(void)resume_job_thread(dip, dip->di_job);
+    }
     if (dip->di_extended_errors == True) {
 	INIT_ERROR_INFO(eip, dip->di_dname, miscompare_op, READ_OP, &dip->di_fd, 0, dip->di_offset,
 			byte_count, (os_error_t)0, logLevelError, prt_flags, RPT_NOERRORMSG);

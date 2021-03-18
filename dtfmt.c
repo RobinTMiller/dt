@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -52,6 +52,8 @@
  * Forward References:
  */
 int FmtCommon(dinfo_t *dip, char *key, char **buffer);
+
+static char *not_available = "NA";
 
 /*
  * FmtKeepAlive() - Format Keepalive Message.
@@ -869,7 +871,7 @@ FmtPrefix(struct dinfo *dip, char *prefix, int psize)
  *      %ymd = The year, month, day.
  *      %year = The year.
  *      %month = The month.
- *      %daye = The day.
+ *      %day = The day.
  *      %hms = The hour, minute, second.
  *      %hour = The hour.
  *      %minute = The minute.
@@ -990,6 +992,26 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
 		length -= 3;
 		from += 4;
 		continue;
+            } else if (strncasecmp(key, "lba", 3) == 0) {
+		to += Sprintf(to, LUF, (slarge_t)dip->di_start_lba);
+                length -= 3;
+                from += 4;
+                continue;
+            } else if (strncasecmp(key, "offset", 6) == 0) {
+		to += Sprintf(to, FUF, dip->di_offset);
+                length -= 6;
+                from += 7;
+                continue;
+            } else if (strncasecmp(key, "elba", 4) == 0) {
+		to += Sprintf(to, LUF, dip->di_error_lba);
+                length -= 4;
+                from += 5;
+                continue;
+            } else if (strncasecmp(key, "eoffset", 7) == 0) {
+		to += Sprintf(to, FUF, dip->di_error_offset);
+                length -= 7;
+                from += 8;
+                continue;
 	    } else if (strncasecmp(key, "iodir", 5) == 0) {
                 if (dip->di_io_dir == FORWARD) {
                     to += Sprintf(to, "%s", "forward");
@@ -1197,7 +1219,7 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
 		from += 7;
 		continue;
 	    } else if (strncasecmp(key, "tmpdir", 6) == 0) {
-		to += Sprintf(to, "%s", TEMP_DIR_NAME);
+		to += Sprintf(to, "%s%c", TEMP_DIR_NAME, dip->di_dir_sep);
 		length -= 6;
 		from += 7;
 		continue;
@@ -1236,8 +1258,19 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
 /*
  * FmtCommon - Format Common Strings. 
  *  
+ * Description: 
+ *      This function is invoked from other formatting functions, since what's
+ * defined here is common to log prefix, keepalive messages, and prefix strings.
+ *  
+ * Note: The "%" is expected to have been stripped by the caller! 
+ * 
+ * Common Format Controls: 
+ *      %array = The array name or IP.
+ *  
  * Job Control Keywords:
- * 	%job = The job ID.
+ *      %job = The job ID.
+ *      %jlog = The job log.
+ *      %tlog = The thread log.
  *	%tag = The job tag.
  * 	%tid = The thread ID.
  * 	%thread = The thread number.
@@ -1251,8 +1284,7 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
  * 	%revision = The Inquiry revision level.
  *	%devid = The device identifier. (Inquiry page 0x83)
  *  	%serial = The disk serial number. (Inquiry page 0x80)
- *  	%mgmtaddr = The management network address. (Inquiry page 0x85)
- *  
+ *      %mgmtaddr = The management network address. (Inquiry page 0x85)
  */
 int
 FmtCommon(dinfo_t *dip, char *key, char **buffer)
@@ -1260,14 +1292,33 @@ FmtCommon(dinfo_t *dip, char *key, char **buffer)
     int length = 0;
     char *to = *buffer;
 
-    /*
-     * Job Control Keywords:
-     */
-    if (strncasecmp(key, "job", 3) == 0) {
+    if (strncasecmp(key, "array", 5) == 0) {
+        /* This is a user specified option. */
+	if (dip->di_array) {
+	    to += Sprintf(to, "%s", dip->di_array);
+        } else {
+	    to += Sprintf(to, "%s", not_available);
+	}
+	length = 5;
+    } else if (strncasecmp(key, "job", 3) == 0) {
 	if (dip->di_job) {
 	    to += Sprintf(to, "%u", dip->di_job->ji_job_id);
 	}
 	length = 3;
+    } else if (strncasecmp(key, "jlog", 4) == 0) {
+	if (dip->di_job_log) {
+	    to += Sprintf(to, "%s", dip->di_job_log);
+        } else {
+	    to += Sprintf(to, "%s", not_available);
+	}
+	length = 4;
+    } else if (strncasecmp(key, "tlog", 4) == 0) {
+	if (dip->di_log_file) {
+	    to += Sprintf(to, "%s", dip->di_log_file);
+        } else {
+	    to += Sprintf(to, "%s", not_available);
+	}
+	length = 4;
     } else if (strncasecmp(key, "tag", 3) == 0) {
 	if (dip->di_job && dip->di_job->ji_job_tag) {
 	    to += Sprintf(to, "%s", dip->di_job->ji_job_tag);

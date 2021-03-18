@@ -38,7 +38,7 @@
 #define _THREAD_SAFE 1
 
 /* Vendor Control Flags: */
-#define HGST	0
+#define HGST	1
 #define Nimble	0
 
 #if defined(AIX_WORKAROUND)
@@ -141,9 +141,9 @@
 
 #define DEFAULT_GTOD_LOG_PREFIX		"%tod (%etod) %prog (j:%job t:%thread): " 
 
-#  //define DATA_CORRUPTION_URL	"";
-#  //define DATA_CORRUPTION_URL1"";
-#  //define NO_PROGRESS_URL		"";
+#//define DATA_CORRUPTION_URL	"";
+#//define DATA_CORRUPTION_URL1"";
+#//define NO_PROGRESS_URL		"";
 
 #if !defined(MAXHOSTNAMELEN)
 #    define MAXHOSTNAMELEN	256
@@ -163,7 +163,7 @@
 #define DEFAULT_COREDUMP_FLAG	False
 #define DEFAULT_FILEPERTHREAD   True
 #define DEFAULT_LBDATA_FLAG	False
-#define DEFAULT_POISON_FLAG	False
+#define DEFAULT_POISON_FLAG	True
 #define DEFAULT_PREFILL_FLAG	UNINITIALIZED
 #define DEFAULT_MOUNT_LOOKUP	True
 #define DEFAULT_NATE_FLAG	False
@@ -318,7 +318,7 @@ typedef enum {
     (dip->di_read_percentage || dip->di_random_percentage) || \
     (dip->di_random_rpercentage || dip->di_random_wpercentage) || \
     dip->di_vary_iodir || dip->di_vary_iotype || (dip->di_unmap_type == UNMAP_TYPE_RANDOM) || \
-    (dip->di_iobehavior == DTAPP_IO) || (dip->di_iobehavior == THUMPER_IO) || (dip->di_variable_limit == True) )
+    (dip->di_iobehavior == DTAPP_IO) || (dip->di_variable_limit == True) )
 
 #if defined(AIO)
 # define getFileOffset(dip) \
@@ -362,6 +362,10 @@ typedef enum {
 
 #define DEFAULT_PATTERN	 0x39c39c39U	/* Default data pattern.	*/
 #define ASCII_PATTERN	 0x41424344U	/* Default ASCII data pattern.	*/
+
+#define CORRUPTION_PATTERN   0xfeedface /* Default corruption pattern.  */
+#define CORRUPT_READ_RECORDS  13        /* Corrupt at read records.     */
+#define CORRUPT_WRITE_RECORDS 0         /* Corrupt at write records.    */
 
 #define DEF_LOG_BUFSIZE	(PATH_BUFFER_SIZE * 2) /* File name + stats!	*/
 
@@ -422,7 +426,7 @@ typedef enum dispose {DELETE_FILE, KEEP_FILE, KEEP_ON_ERROR} dispose_t;
 typedef enum file_type {INPUT_FILE, OUTPUT_FILE} file_type_t;
 typedef enum test_mode {READ_MODE, WRITE_MODE} test_mode_t;
 typedef enum onerrors {ONERR_ABORT, ONERR_CONTINUE, ONERR_PAUSE} onerrors_t;
-typedef enum iobehavior { DT_IO, DTAPP_IO, THUMPER_IO } iobehavior_t;
+typedef enum iobehavior { DT_IO, DTAPP_IO } iobehavior_t;
 typedef enum iodir {FORWARD, REVERSE, NUM_IODIRS = 2} iodir_t;
 typedef enum iomode {COPY_MODE, MIRROR_MODE, TEST_MODE, VERIFY_MODE} iomode_t;
 typedef enum iotype {SEQUENTIAL_IO, RANDOM_IO, NUM_IOTYPES = 2} iotype_t;
@@ -804,6 +808,16 @@ typedef struct dinfo {
 	hbool_t	di_verbose_flag;	/* Verbose messages output.	*/
 	hbool_t	di_verify_flag;		/* Verify the read/write data.	*/
 	hbool_t	di_verify_only;		/* Verify of copied data flag.	*/
+        /*
+         * Forced Corruption Parameters:
+         */
+        hbool_t di_force_corruption;    /* Force a FALSE corruption.    */
+        int32_t di_corrupt_index;       /* Corrupt at buffer index.     */
+        uint32_t di_corrupt_length;     /* The corruption length.       */
+        uint32_t di_corrupt_pattern;    /* The corruption pattern.      */
+        uint32_t di_corrupt_step;       /* Corrupt buffer step value.   */
+        uint64_t di_corrupt_reads;      /* Corruption read records.     */
+        uint64_t di_corrupt_writes;     /* Corruption write records.    */
 	/*
 	 * Per Pass Statistics: 
 	 */
@@ -1740,7 +1754,7 @@ extern int reopen_output_file(dinfo_t *dip);
 
 extern int format_device_name(dinfo_t *dip, char *format);
 extern char *make_options_string(dinfo_t *dip, int argc, char **argv, hbool_t quoting);
-extern char *setup_log_directory(dinfo_t *dip, char *path, char *dir, char *log);
+extern int setup_log_directory(dinfo_t *dip, char *path, char *log);
 extern int setup_thread_names(dinfo_t *dip);
 extern void handle_file_dispose(dinfo_t *dip);
 extern int handle_file_system_full(dinfo_t *dip, hbool_t delete_flag);
@@ -1960,6 +1974,7 @@ extern int resume_jobs(dinfo_t *dip, job_id_t job_id, char *job_tag);
 extern int resume_job_by_id(dinfo_t *dip, job_id_t job_id);
 extern int resume_job_by_tag(dinfo_t *dip, char *job_tag);
 extern int resume_jobs_by_tag(dinfo_t *dip, char *job_tag);
+extern int resume_job_thread(dinfo_t *dip, job_info_t *job);
 extern int show_jobs(dinfo_t *dip, job_id_t job_id, char *job_tag, hbool_t verbose);
 extern int show_job_by_id(dinfo_t *dip, job_id_t job_id);
 extern int show_job_by_tag(dinfo_t *dip, char *job_tag);
@@ -2183,6 +2198,7 @@ extern void init_buffer(	dinfo_t		*dip,
 				void		*buffer,
 				size_t		count,
 				u_int32		pattern );
+extern void corrupt_buffer( dinfo_t *dip, void *buffer, int32_t length, uint64_t record);
 extern void poison_buffer(      dinfo_t     *dip,
                                 void        *buffer,
                                 size_t      count,

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,9 @@
  *	Utility routines for generic data test program.
  * 
  * Modification History:
+ * 
+ * March 16th, 2021 by Robin T. Miller
+ *      Add corrupt_buffer() in support of forcing corruptions for debug.
  * 
  * October 27th, 2020 by Robin T. Miller
  *      Add functions in support for additional trigger functionality.
@@ -380,6 +383,75 @@ init_buffer(    dinfo_t     *dip,
     bp = buffer;
     for (i = 0; i < count; i++) {
 	*bp++ = p.pat[i & (sizeof(u_int32) - 1)];
+    }
+    return;
+}
+
+/************************************************************************
+ *									*
+ * corrupt_buffer() - Corrupt Buffer.					*
+ *									*
+ * Inputs:							        * 
+ * 	dip = The device information pointer.			        *
+ *	buffer = Pointer to buffer to corrupt.				*
+ *	length = The data buffer length.				*
+ *									*
+ * Return Value:							*
+ *		Void.							*
+ *									*
+ ************************************************************************/
+/* Note: RAND_MAX is 32767, so call it twice! */
+/* Consider adding one of these: https://prng.di.unimi.it/ */
+/* FYI: This is yet another POSIX weakness! (IMHO) */
+#define os_random()	( (rand() << 16) + rand() )
+#define CRANDOM(lower, upper) \
+    ( lower + (int32_t)( ((double)(upper - lower + 1) * os_random()) / (UINT32_MAX + 1.0)) )
+
+void
+corrupt_buffer( dinfo_t *dip, void *buffer, int32_t length, uint64_t record)
+{
+    uint8_t *bp = (uint8_t *)buffer;
+    uint8_t *eptr = (bp + length);
+    int32_t cindex = dip->di_corrupt_index;
+    int32_t clength = dip->di_corrupt_length;
+    int32_t base = 0;
+    union {
+	u_char pat[sizeof(u_int32)];
+	u_int32 pattern;
+    } p;
+    p.pattern = dip->di_corrupt_pattern;
+
+    if (dip->di_random_seed == 0) {
+	dip->di_random_seed = os_create_random_seed();
+	srand((unsigned int)dip->di_random_seed);
+    }
+    if (clength == 0) {
+        clength = CRANDOM(base, length);
+    }
+    /* Corrupt the entire buffer, if corrupt length is larger than request. */
+    if (clength > length) {
+        cindex = 0;
+	clength = length;
+    }
+    if (cindex == UNINITIALIZED) {
+	cindex = CRANDOM(base, (length - clength));
+    }
+    Wprintf(dip, "Record #"LUF", Corrupting buffer "LLPXFMT" at index %u, length %d, pattern 0x%x, step %u...\n",
+	    record, bp, cindex, clength, p.pattern, dip->di_corrupt_step);
+
+    bp += cindex;	/* Set the starting buffer offset. */
+    /* Corrupt the buffer. */
+    while (clength && (bp < eptr)) {
+	register int32_t i;
+        /* Byte at a time, buffer may be misaligned! */
+	for (i = 0; clength && (bp < eptr) && (i < sizeof(p.pattern)); i++, --clength) {
+	    *bp++ = p.pat[i & (sizeof(uint32_t) - 1)];
+	}
+        /* Allow multiple corruption sections via buffer step. */
+        /* Note: This only has effect with large corruption lengths! */
+	if (dip->di_corrupt_step) {
+            bp += dip->di_corrupt_step;
+	}
     }
     return;
 }

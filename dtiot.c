@@ -31,7 +31,12 @@
  *	IOT related functions.
  *
  * Modification History:
- *
+ * 
+ * February 22nd, 2021 by Robin T. Miller
+ *      When analyzing IOT good/bad data blocks, report block numbers that
+ * are zero based rather than starting at block 1 to avoid confusion, and
+ * so the individual IOT block numbers (already base zero) will match!
+ * 
  * February 5th, 2021 by Robin T. Miller
  *      Enhance IOT analysis for partial block corruptions.
  * 
@@ -260,11 +265,17 @@ process_iot_data(dinfo_t *dip, u_char *pbuffer, u_char *vbuffer, size_t bcount, 
 void
 report_bad_sequence(dinfo_t *dip, int start, int length, Offset_t offset)
 {
-    Offset_t pos = (offset + ((start-1) * dip->di_lbdata_size));
+    Offset_t pos = (offset + (start * dip->di_lbdata_size));
     uint64_t lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_lbdata_size, pos, MismatchedData);
+    int end = (start + length - 1);
 
-    Fprintf(dip, DT_FIELD_WIDTH "%d\n",
-	  "Start of corrupted blocks", start);
+    if (length <= 1) {
+	Fprintf(dip, DT_FIELD_WIDTH "%d\n",
+	      "Start of corrupted blocks", start);
+    } else {
+	Fprintf(dip, DT_FIELD_WIDTH "%d - %d\n",
+	      "Range of corrupted blocks", start, end);
+    }
     Fprintf(dip, DT_FIELD_WIDTH "%d (%d bytes)\n",
 	  "Length of corrupted blocks", length, (length * dip->di_lbdata_size));
     if (lba == NO_LBA) {
@@ -284,11 +295,17 @@ report_bad_sequence(dinfo_t *dip, int start, int length, Offset_t offset)
 void
 report_good_sequence(dinfo_t *dip, int start, int length, Offset_t offset)
 {
-    Offset_t pos = (offset + ((start-1) * dip->di_lbdata_size));
+    Offset_t pos = (offset + (start * dip->di_lbdata_size));
     uint64_t lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_lbdata_size, pos, MismatchedData);
+    int end = (start + length - 1);
 
-    Fprintf(dip, DT_FIELD_WIDTH "%d\n",
-	    "Start of good blocks", start);
+    if (length <= 1) {
+	Fprintf(dip, DT_FIELD_WIDTH "%d\n",
+	      "Start of good blocks", start);
+    } else {
+	Fprintf(dip, DT_FIELD_WIDTH "%d - %d\n",
+	      "Range of good blocks", start, end);
+    }
     Fprintf(dip, DT_FIELD_WIDTH "%d (%d bytes)\n",
 	    "Length of good blocks", length, (length * dip->di_lbdata_size));
     if (lba == NO_LBA) {
@@ -312,9 +329,9 @@ analyze_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
     uint8_t *vptr = vbuffer;
     size_t count = bcount;
     int bad_blocks = 0, good_blocks = 0;
-    int bad_start = 0,  good_start = 0;
+    int bad_start = -1,  good_start = -1;
     int zero_blocks = 0;
-    uint32_t block = 1;
+    uint32_t block = 0;		/* Zero based to avoid confusion! */
     int blocks = (int)(count / dip->di_lbdata_size);
     Offset_t record_offset;
     
@@ -355,17 +372,17 @@ analyze_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
 	int result = compare_iot_block(dip, pptr, vptr, raw_flag);
 	if (result == 0) {
 	    good_blocks++;
-	    if (good_start == 0) {
+	    if (good_start < 0) {
 		good_start = block;
 	    }
-	    if (bad_start) {
+	    if (bad_start >= 0) {
 		report_bad_sequence(dip, bad_start, (block - bad_start), record_offset);
-		bad_start = 0;
+		bad_start = -1;
 	    }
 	} else {
 	    u_int32 i;
 	    bad_blocks++;
-	    if (bad_start == 0) {
+	    if (bad_start < 0) {
 		bad_start = block;
 	    }
 	    for (i = 0; (i < dip->di_lbdata_size); i++) {
@@ -376,20 +393,20 @@ analyze_iot_data(dinfo_t *dip, uint8_t *pbuffer, uint8_t *vbuffer, size_t bcount
 	    if (i == dip->di_lbdata_size) {
 		zero_blocks++;
 	    }
-	    if (good_start) {
+	    if (good_start >= 0) {
 		report_good_sequence(dip, good_start, (block - good_start), record_offset);
-		good_start = 0;
+		good_start = -1;
 	    }
 	}
 	block++; blocks--;
 	pptr += dip->di_lbdata_size;
 	vptr += dip->di_lbdata_size;
     }
-    if (bad_start) {
+    if (bad_start >= 0) {
 	report_bad_sequence(dip, bad_start, (block - bad_start), record_offset);
 	bad_start = 0;
     }
-    if (good_start) {
+    if (good_start >= 0) {
 	report_good_sequence(dip, good_start, (block - good_start), record_offset);
 	good_start = 0;
     }
@@ -470,7 +487,7 @@ display_iot_block(dinfo_t *dip, int block, Offset_t block_offset,
     }
     Fprintf(dip, "\n");
     Fprintf(dip, DT_FIELD_WIDTH "%u (%s)\n", "Record Block",
-	    block, (good_data == True) ? "good data" : "bad data" );
+	    block, (good_data == True) ? "GOOD data" : "BAD data" );
     lba = MapOffsetToLBA(dip, dip->di_fd, dip->di_lbdata_size, block_offset, MismatchedData);
     if (lba == NO_LBA) {
 	Fprintf(dip, DT_FIELD_WIDTH FUF " (<not mapped>)\n", "Record Block Offset",
