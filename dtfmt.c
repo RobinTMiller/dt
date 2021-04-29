@@ -32,6 +32,9 @@
  *
  * Modification History:
  * 
+ * October 21st, 2020 by Robin T. Miller
+ *      Add format control strings for Nimble specific SCSI information.
+ * 
  * May 11th, 2020 by Robin T. MIller
  *      Add format strings for individual date and time fields for more
  * flexible formatting and add support for date/time field separators.
@@ -1285,6 +1288,16 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
  *	%devid = The device identifier. (Inquiry page 0x83)
  *  	%serial = The disk serial number. (Inquiry page 0x80)
  *      %mgmtaddr = The management network address. (Inquiry page 0x85)
+ *  
+ * Nimble Format Control Strings:
+ *      %sw_version = Array software version.
+ *      %target_type = The target type (Group Scoped, etc).
+ *      %target_name = The target name (iSCSI IQN, etc).
+ *      %volume_name = The volume name (aka LU Admin Name).
+ *      %mgmt_ip_addr = The management IP address.
+ *      %protocol_type = The protocol type (FC or iSCSI).
+ *      %itn_addrs = The ITN addresses (iSCSI IP addresses, etc).
+ *      %sync_rep = Sync replication boolean (True or False).
  */
 int
 FmtCommon(dinfo_t *dip, char *key, char **buffer)

@@ -532,11 +532,24 @@ int max_open_files = 0;			/* The maximum open files.	*/
 /*
  * Default alarm message is per pass statistics, user can override. 
  */
+/* Note: To remain backwards compatable, I am not changing the default. */
+#if defined(Nimble)
+
+char    *keepalive0 = "%d Stats: mode %i, blocks %l, %m Mbytes,"
+		      " MB/sec: %mbps, IO/sec: %iops, pass %p/%P,"
+                      " elapsed %t";
+char    *keepalive1 = "%d Stats: mode %i, blocks %L, %M Mbytes,"
+		      " MB/sec: %mbps, IO/sec: %iops, pass %p/%P,"
+                      " elapsed %T";
+                                        /* Default keepalive messages.  */
+#else /* !defined(Nimble) */
 char    *keepalive0 = "%d Stats: mode %i, blocks %l, %m Mbytes, pass %p/%P,"
                       " elapsed %t";
 char    *keepalive1 = "%d Stats: mode %i, blocks %L, %M Mbytes, pass %p/%P,"
                       " elapsed %T";
                                         /* Default keepalive messages.  */
+#endif /* defined(Nimble) */
+
 /*
  * When stats is set to brief, these message strings get used:
  * Remember: The stats type is automatically prepended: "End of TYPE"
@@ -1517,10 +1530,10 @@ do_common_startup_logging(dinfo_t *dip)
 		 (dip->di_iobehavior == DTAPP_IO) && (dip->di_device_number == 0) ) {
 		report_os_information(dip, True);
 	    }
-	    report_file_system_information(dip, True, True);
+	    report_file_system_information(dip, True, False);
 	}
 	if (odip) {
-	    report_file_system_information(odip, True, True);
+	    report_file_system_information(odip, True, False);
 	}
 #if defined(SCSI)
 	/* Display SCSI information. */
@@ -2618,6 +2631,9 @@ create_master_log(dinfo_t *dip, char *log_name)
     } else {
 	logpath = strdup(log_name);
     }
+    if (dip->di_debug_flag || dip->di_fDebugFlag) {
+	Printf(dip, "Open'ing master log %s...\n", logpath);
+    }
     status = OpenOutputFile(dip, &master_logfp, logpath, "w", EnableErrors);
     if (status == SUCCESS) {
 	master_log = logpath;
@@ -2912,7 +2928,7 @@ do_free_space_wait(dinfo_t *dip, int retries)
     
     if (dir == NULL) return(dip->di_fs_space_free);
     if (retries == 0) {
-	os_get_fs_information(dip, dir);
+	(void)os_get_fs_information(dip, dir);
 	return(dip->di_fs_space_free);
     }
     if (dip->di_verbose_flag == True) {
@@ -5377,14 +5393,14 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_iobehavior = DT_IO;
 		continue;
 	   } else {
-		Eprintf(dip, "Valid I/O behaviors are: dt\n");
-		return ( HandleExit(dip, FAILURE) );
-	    }
-	    status = (*dip->di_iobf->iob_initialize)(dip);
-	    if (status == FAILURE) {
-		return (HandleExit(dip, status));
-	    }
-	    continue;
+	       Eprintf(dip, "Valid I/O behaviors are: dt\n");
+	       return ( HandleExit(dip, FAILURE) );
+	   }
+	   status = (*dip->di_iobf->iob_initialize)(dip);
+	   if (status == FAILURE) {
+	       return (HandleExit(dip, status));
+	   }
+	   continue;
 	}
 	if (match (&string, "iodir=")) {
 	    /* Note: iodir={reverse|vary} are special forms of random I/O! */
@@ -10046,7 +10062,7 @@ do_common_device_setup(dinfo_t *dip)
     /*
      * Extra verify buffer required for read-after-write operations.
      */
-    if (dip->di_raw_flag || (dip->di_iobehavior == DTAPP_IO) ) {
+    if (dip->di_raw_flag || (dip->di_iobehavior == DTAPP_IO) || (dip->di_iobehavior == THUMPER_IO) ) {
 	dip->di_verify_buffer = malloc_palign(dip, dip->di_verify_buffer_size, dip->di_align_offset);
     }
 

@@ -117,11 +117,21 @@
 #define TEMP_DIR_NAME		TEMP_DIR
 #define TEMP_DIR_LEN		(sizeof(TEMP_DIR_NAME) - 1)
 
-#define TOOLS_DIR		"/usr/software/test/noarch"
-#define PATTERN_DIR		TOOLS_DIR"/dtdata"
-#define DEDUP_PATTERN_FILE	PATTERN_DIR"/pattern_dedup"
-#define TRIGGER_SCRIPT		TOOLS_DIR"/dt_noprog_script.ksh"
-#define STOPON_FILE		TEMP_DIR"/stopit"
+#if defined(Nimble)
+/* Nimble Tools/Scripts/Data Files: */
+#  define TOOLS_DIR             "/usr/local/bin"
+#  define PATTERN_DIR		TOOLS_DIR"/data"
+#  define DEDUP_PATTERN_FILE	PATTERN_DIR"/pattern_dedup"
+#  define TRIGGER_SCRIPT	TOOLS_DIR"/nosmgr.py --array=%array --stop"
+#  define STOPON_FILE		TEMP_DIR"/stopdt"
+#else /* !defined(Nimble) */
+/* Historic from NetApp */
+#  define TOOLS_DIR             "/usr/software/test/noarch"
+#  define PATTERN_DIR		TOOLS_DIR"/dtdata"
+#  define DEDUP_PATTERN_FILE	PATTERN_DIR"/pattern_dedup"
+#  define TRIGGER_SCRIPT	TOOLS_DIR"/dt_noprog_script.ksh"
+#  define STOPON_FILE		TEMP_DIR"/stopit"
+#endif /* defined(Nimble) */
 
 /*
  * Define POSIX Mode for Creating Files & Directories:

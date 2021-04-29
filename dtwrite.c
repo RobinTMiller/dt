@@ -1401,7 +1401,7 @@ write_record(
 
     /* Force a FALSE corruption (if requested), and records match! */
     if (dip->di_force_corruption && (dip->di_corrupt_writes == (dip->di_records_written + 1)) ) {
-	corrupt_buffer(dip, buffer, (uint32_t)bsize, dip->di_corrupt_writes);
+	corrupt_buffer(dip, buffer, (int32_t)bsize, dip->di_corrupt_writes);
     }
 retry:
     *status = SUCCESS;

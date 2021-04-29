@@ -39,7 +39,7 @@
 
 /* Vendor Control Flags: */
 #define HGST	1
-#define Nimble	0
+//#define Nimble	1
 
 #if defined(AIX_WORKAROUND)
 # include "aix_workaround.h"
@@ -141,9 +141,9 @@
 
 #define DEFAULT_GTOD_LOG_PREFIX		"%tod (%etod) %prog (j:%job t:%thread): " 
 
-#//define DATA_CORRUPTION_URL	"";
-#//define DATA_CORRUPTION_URL1"";
-#//define NO_PROGRESS_URL		"";
+#  //define DATA_CORRUPTION_URL	"";
+#  //define DATA_CORRUPTION_URL1"";
+#  //define NO_PROGRESS_URL		"";
 
 #if !defined(MAXHOSTNAMELEN)
 #    define MAXHOSTNAMELEN	256
@@ -163,8 +163,13 @@
 #define DEFAULT_COREDUMP_FLAG	False
 #define DEFAULT_FILEPERTHREAD   True
 #define DEFAULT_LBDATA_FLAG	False
-#define DEFAULT_POISON_FLAG	True
-#define DEFAULT_PREFILL_FLAG	UNINITIALIZED
+#if defined(Nimble)
+#  define DEFAULT_POISON_FLAG	True
+#  define DEFAULT_PREFILL_FLAG	True
+#else /* defined(Nimble */
+#  define DEFAULT_POISON_FLAG	False
+#  define DEFAULT_PREFILL_FLAG	UNINITIALIZED
+#endif /* defined(Nimble) */
 #define DEFAULT_MOUNT_LOOKUP	True
 #define DEFAULT_NATE_FLAG	False
 #define DEFAULT_TIMESTAMP_FLAG	False
@@ -318,7 +323,7 @@ typedef enum {
     (dip->di_read_percentage || dip->di_random_percentage) || \
     (dip->di_random_rpercentage || dip->di_random_wpercentage) || \
     dip->di_vary_iodir || dip->di_vary_iotype || (dip->di_unmap_type == UNMAP_TYPE_RANDOM) || \
-    (dip->di_iobehavior == DTAPP_IO) || (dip->di_variable_limit == True) )
+    (dip->di_iobehavior == DTAPP_IO) || (dip->di_iobehavior == THUMPER_IO) || (dip->di_variable_limit == True) )
 
 #if defined(AIO)
 # define getFileOffset(dip) \
@@ -426,7 +431,7 @@ typedef enum dispose {DELETE_FILE, KEEP_FILE, KEEP_ON_ERROR} dispose_t;
 typedef enum file_type {INPUT_FILE, OUTPUT_FILE} file_type_t;
 typedef enum test_mode {READ_MODE, WRITE_MODE} test_mode_t;
 typedef enum onerrors {ONERR_ABORT, ONERR_CONTINUE, ONERR_PAUSE} onerrors_t;
-typedef enum iobehavior { DT_IO, DTAPP_IO } iobehavior_t;
+typedef enum iobehavior { DT_IO, DTAPP_IO, THUMPER_IO } iobehavior_t;
 typedef enum iodir {FORWARD, REVERSE, NUM_IODIRS = 2} iodir_t;
 typedef enum iomode {COPY_MODE, MIRROR_MODE, TEST_MODE, VERIFY_MODE} iomode_t;
 typedef enum iotype {SEQUENTIAL_IO, RANDOM_IO, NUM_IOTYPES = 2} iotype_t;
@@ -2153,7 +2158,7 @@ extern void gather_totals(struct dinfo *dip);
 extern void init_stats(struct dinfo *dip);
 extern void report_pass(struct dinfo *dip, enum stats stats_type);
 extern void report_stats(struct dinfo *dip, enum stats stats_type);
-extern void report_file_system_information(dinfo_t *dip, hbool_t print_header, hbool_t report_free_space);
+extern void report_file_system_information(dinfo_t *dip, hbool_t print_header, hbool_t acquire_free_space);
 extern void report_os_information(dinfo_t *dip, hbool_t print_header);
 extern void report_scsi_summary(dinfo_t *dip, hbool_t print_header);
 extern void dt_job_finish(dinfo_t *dip, job_info_t *job);

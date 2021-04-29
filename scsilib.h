@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2019			    *
+ *			  COPYRIGHT (c) 2006 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -49,14 +49,5 @@ extern int os_spta(scsi_generic_t *sgp);
 extern hbool_t os_is_retriable(scsi_generic_t *sgp);
 extern char *os_host_status_msg(scsi_generic_t *sgp);
 extern char *os_driver_status_msg(scsi_generic_t *sgp);
-
-#if 0
-# if defined(_WIN32)
-extern HRESULT os_perror(char *msg, ...);
-# else /* !defined(_WIN32) */
-/* For all *nix systems! */
-# define os_perror  Perror
-# endif /* defined(_WIN32) */
-#endif /* 0 */
 
 #endif /* SCSILIB_AX_H */

@@ -37,9 +37,16 @@
  *      When setting up SCSI information, only update user capacity for disks.
  *      The user capacity must only be setup for disk devices, not files!
  * 
+ * October 27th, 2020 by Robin T. Miller
+ *      For Nimble disks, automatically add DSD Force Core CDB and external
+ * trigger script. This is to ease support of these in automation.
+ * 
  * May 19th, 2020 by Robin T. Miller
  *      For spt commands add "logprefix=" to disable the spt log prefix.
  *      The ExecuteCommand() API was updated to apply dt's log prefix.
+ * 
+ * March 9th, 2019 by Robin T. Miller
+ *      Add support for acquiring and reporting Nimble SCSI information.
  * 
  * January 25th, 2019 by Robin T. Miller
  *      Add support for unmapping blocks via token based xcopy zero ROD method.

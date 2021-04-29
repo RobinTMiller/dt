@@ -32,6 +32,13 @@
  *
  * Modification History:
  * 
+ * May 26th, 2020 by Robin T. Miller
+ *      Add noprogtt=5m to Nimble workloads, plus define DSD core template.
+ * 
+ * January 9th, 2020 by Robin T. Miller
+ *      For Nimble Longevity workloads, increate the history data to 152 bytes
+ * to capture the entire block tag, which was extended for larger serial numbers.
+ * 
  * August 8th, 2019 (happy birthday brother Randy!)
  *      Added keepalive workload to define a better keepalive message.
  * 
@@ -183,6 +190,56 @@ workload_entry_t predefined_workloads[] =
 	"Video on Demand (VOD) Workload",
 	"bs=512k readp=0 randp=100 disable=verify flags=direct"
     },
+#if defined(Nimble)
+    {	"longevity_common",
+	"Longevity Common Options (template)",
+	"min=8k max=1m incr=vary "
+	"enable=raw,reread enable=syslog "
+	"history=5 history_data=152 enable=history_timing "
+	"logprefix='%seq %nos %et %prog (j:%job t:%thread): ' "
+	"keepalivet=5m runtime=-1 stopon="STOPON_FILE" "
+	"maxbad=1m onerr=abort noprogt=30s noprogtt=5m"
+    },
+    {	"longevity_file_dedup",
+	"Longevity File System w/Dedup Workload",
+	"workload=longevity_common "
+	"min_limit=1m max_limit=2g incr_limit=vary "
+	"dispose=keep flags=direct notime=close,fsync oflags=trunc "
+	"maxdatap=75 threads=4 "
+	"pf="DEDUP_PATTERN_FILE
+    },
+    {	"longevity_disk_dedup",
+	"Longevity Direct Disk w/Dedup Workload",
+	"workload=longevity_common "
+	"capacityp=75 slices=4 "
+	"pf="DEDUP_PATTERN_FILE
+    },
+    {	"longevity_file_system",
+	"Longevity File System Workload",
+	"workload=longevity_common workload=high_validation "
+	"min_limit=1m max_limit=2g incr_limit=vary "
+	"dispose=keep flags=direct notime=close,fsync oflags=trunc "
+	"maxdatap=75 threads=4"
+    },
+    {	"longevity_disk_unmap",
+	"Longevity Direct Disk w/SCSI UNMAP Workload",
+	"workload=longevity_common workload=high_validation "
+	"capacityp=75 slices=4 unmap=unmap"
+    },
+    {	"longevity_disk",
+	"Longevity Direct Disk Workload",
+	"workload=longevity_common workload=high_validation "
+	"capacityp=75 slices=4"
+    },
+    {	"longevity_disk_write_only",
+	"Longevity Direct Disk Write Only",
+	"workload=longevity_disk disable=raw,reread,verify"
+    },
+    {	"longevity_file_write_only",
+	"Longevity File System Write Only",
+	"workload=longevity_file_system disable=raw,reread,verify"
+    },
+#endif /* defined(Nimble) */
     {	"san_file_system",
 	"SAN File System Workload",
 	"bs=random limit=2g dispose=keeponerror "
@@ -266,7 +323,11 @@ workload_entry_t predefined_workloads[] =
     },
     {	"log_timestamps",
 	"Define options for adding log file timestamps (template)",
+#if defined(Nimble)
+	"logprefix='%nos %et %prog (j:%job t:%thread): '"
+#else /* !defined(Nimble) */
 	"logprefix='%date %et %prog (j:%job t:%thread): '"
+#endif /* defined(Nimble) */
     }
 };
 int workload_entries = sizeof(predefined_workloads) / sizeof(workload_entry_t);

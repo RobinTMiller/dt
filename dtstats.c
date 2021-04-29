@@ -31,8 +31,22 @@
  *
  * Modification History:
  * 
+ * March 31st, 2021 by Robin T. Miller
+ *      Add report_file_system_common() to report common information.
+ *      Use acquire_free_space flag to acquire updated FS information.
+ * 
+ * March 30th, 2021 by Robin T. Miller
+ *      Update display of file system free/totoal space for 64-bits.
+ *      Previously, these were truncated by 32-bit formatted! :(
+ * 
  * October 10th, 2020 by Robin T. Miller
  *      Add megabytes/second to Average Transfer Rates output.
+ * 
+ * February 26th, 2020 by Robin T. Miller
+ *      Minor updates to reuse this for Nimble thumper I/O behavior.
+ * 
+ * March 9th, 2019 by Robin T. Miller
+ *      Add displaying Nimble SCSI information.
  * 
  * December 3rd, 2016 by Robin T. Miller
  *      Expanding job statistics to include the total read/write bytes, and
@@ -82,6 +96,7 @@ static char *data_op_str = "Data operation performed";
  */
 void format_buffer_modes(dinfo_t *dip, char *buffer);
 void report_file_lock_statistics(dinfo_t *dip, hbool_t print_header);
+void report_file_system_common(dinfo_t *dip, hbool_t acquire_free_space);
 
 /*
  * Functions to Process Statistics:
@@ -356,11 +371,11 @@ report_stats(struct dinfo *dip, enum stats stats_type)
 
     if ( (stats_type == JOB_STATS) || (stats_type == TOTAL_STATS) ) {
 	report_os_information(dip, True);
-    	report_file_system_information(dip, True, False);
+    	report_file_system_information(dip, True, True);
 	report_file_lock_statistics(dip, True);
 	report_scsi_summary(dip, True);
 	if (dip->di_output_dinfo) {
-	    report_file_system_information(dip->di_output_dinfo, True, False);
+	    report_file_system_information(dip->di_output_dinfo, True, True);
 	    report_scsi_summary(dip->di_output_dinfo, True);
 	}
     }
@@ -770,7 +785,7 @@ report_stats(struct dinfo *dip, enum stats stats_type)
 	Lprintf (dip, "%lu/%lu\n", dip->di_pass_count, dip->di_pass_limit);
     }
 
-     if (dip->di_file_limit || dip->di_user_dir_limit || dip->di_user_subdir_limit || dip->di_user_subdir_depth) {
+    if (dip->di_file_limit || dip->di_user_dir_limit || dip->di_user_subdir_limit || dip->di_user_subdir_depth) {
 	large_t max_files = calculate_max_files(dip);
 
 	if ( (stats_type == JOB_STATS) || (stats_type == TOTAL_STATS) ) {
@@ -896,11 +911,56 @@ report_os_information(dinfo_t *dip, hbool_t print_header)
     return;
 }
 
+/*
+ * Report file system information (common) to Unix and Windows.
+ */
 void
-report_file_system_information(dinfo_t *dip, hbool_t print_header, hbool_t report_free_space)
+report_file_system_common(dinfo_t *dip, hbool_t acquire_free_space)
 {
     double Mbytes, Gbytes, Tbytes;
+    int status = SUCCESS;
 
+    if (dip->di_filesystem_type) {
+	Lprintf(dip, DT_FIELD_WIDTH "%s\n",
+		"Filesystem type", dip->di_filesystem_type);
+    }
+    if (dip->di_filesystem_options) {
+	Lprintf(dip, DT_FIELD_WIDTH "%s\n",
+		"Filesystem options", dip->di_filesystem_options);
+    }
+    if (dip->di_fs_block_size) {
+	Lprintf(dip, DT_FIELD_WIDTH "%u\n",
+		"Filesystem block size", dip->di_fs_block_size);
+    }
+    /*
+     * When reporting statistics we need to acquire updated free space.
+     */
+    if (acquire_free_space) {
+	char *dir = (dip->di_topdirpath) ? dip->di_topdirpath : dip->di_dir;
+	status = os_get_fs_information(dip, dir);
+    }
+    if ( (status == SUCCESS) && dip->di_fs_space_free) {
+	large_t data_bytes = dip->di_fs_space_free;
+	Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
+	Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
+	Tbytes = (double) ( (double)data_bytes / (double)TBYTE_SIZE);
+	Lprintf(dip, DT_FIELD_WIDTH LUF " (%.3f Mbytes, %.3f Gbytes, %.3f Tbytes)\n",
+		"Filesystem free space", data_bytes, Mbytes, Gbytes, Tbytes);
+    }
+    if (dip->di_fs_total_space) {
+        large_t data_bytes = dip->di_fs_total_space;
+	Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
+	Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
+	Tbytes = (double) ( (double)data_bytes / (double)TBYTE_SIZE);
+	Lprintf(dip, DT_FIELD_WIDTH LUF " (%.3f Mbytes, %.3f Gbytes, %.3f Tbytes)\n",
+		"Filesystem total space", data_bytes, Mbytes, Gbytes, Tbytes);
+    }
+    return;
+}
+
+void
+report_file_system_information(dinfo_t *dip, hbool_t print_header, hbool_t acquire_free_space)
+{
 #if defined(WIN32)
     if ( (print_header == True) &&
 	 (dip->di_volume_name || dip->di_universal_name || dip->di_filesystem_type ||
@@ -920,32 +980,9 @@ report_file_system_information(dinfo_t *dip, hbool_t print_header, hbool_t repor
 	Lprintf(dip, DT_FIELD_WIDTH "%s\n",
 		"Universal name", dip->di_universal_name);
     }
-    if (dip->di_filesystem_type) {
-	Lprintf(dip, DT_FIELD_WIDTH "%s\n",
-		"Filesystem type", dip->di_filesystem_type);
-    }
-    if (dip->di_fs_block_size) {
-	Lprintf(dip, DT_FIELD_WIDTH "%u\n",
-		"Filesystem block size", dip->di_fs_block_size);
-    }
-    /* Note: Free space is not updated for total statistics. */
-    /* Why? If we've stopped I/O on the array, we cannot get it! */
-    if (report_free_space && dip->di_fs_space_free) {
-        large_t data_bytes = dip->di_fs_space_free;
-	Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
-	Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
-	Tbytes = (double) ( (double)data_bytes / (double)TBYTE_SIZE);
-	Lprintf(dip, DT_FIELD_WIDTH "%u (%.3f Mbytes, %.3f Gbytes, %.3f Tbytes)\n",
-		"Filesystem free space", data_bytes, Mbytes, Gbytes, Tbytes);
-    }
-    if (dip->di_fs_total_space) {
-        large_t data_bytes = dip->di_fs_total_space;
-	Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
-	Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
-	Tbytes = (double) ( (double)data_bytes / (double)TBYTE_SIZE);
-	Lprintf(dip, DT_FIELD_WIDTH "%u (%.3f Mbytes, %.3f Gbytes, %.3f Tbytes)\n",
-		"Filesystem total space", data_bytes, Mbytes, Gbytes, Tbytes);
-    }
+
+    report_file_system_common(dip, acquire_free_space);
+
     if (dip->di_volume_path_name) {
 	Lprintf(dip, DT_FIELD_WIDTH "%s\n",
 		"Volume path name", dip->di_volume_path_name);
@@ -972,28 +1009,9 @@ report_file_system_information(dinfo_t *dip, hbool_t print_header, hbool_t repor
 	Lprintf(dip, DT_FIELD_WIDTH "%s\n",
 		"Mounted on directory", dip->di_mounted_on_dir);
     }
-    if (dip->di_filesystem_type) {
-	Lprintf(dip, DT_FIELD_WIDTH "%s\n",
-		"Filesystem type", dip->di_filesystem_type);
-    }
-    if (dip->di_filesystem_options) {
-	Lprintf(dip, DT_FIELD_WIDTH "%s\n",
-		"Filesystem options", dip->di_filesystem_options);
-    }
-    if (dip->di_fs_block_size) {
-	Lprintf(dip, DT_FIELD_WIDTH "%u\n",
-		"Filesystem block size", dip->di_fs_block_size);
-    }
-    /* Note: Free space is not updated for total statistics. */
-    /* Why? If we've stopped I/O on the array, we cannot get it! */
-    if (report_free_space && dip->di_fs_space_free) {
-	Lprintf(dip, DT_FIELD_WIDTH "%u\n",
-		"Filesystem free space", dip->di_fs_space_free);
-    }
-    if (dip->di_fs_total_space) {
-	Lprintf(dip, DT_FIELD_WIDTH "%u\n",
-		"Filesystem total space", dip->di_fs_total_space);
-    }
+
+    report_file_system_common(dip, acquire_free_space);
+
 #endif /* defined(WIN32) */
     return;
 }

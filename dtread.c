@@ -1137,7 +1137,7 @@ retry:
 
     /* Force a FALSE corruption (if requested), and records match! */
     if (dip->di_force_corruption && (dip->di_corrupt_reads == (dip->di_records_read + 1)) ) {
-	corrupt_buffer(dip, buffer, (uint32_t)count, dip->di_corrupt_reads);
+	corrupt_buffer(dip, buffer, (int32_t)count, dip->di_corrupt_reads);
     }
 
     /*

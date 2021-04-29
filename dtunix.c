@@ -31,8 +31,15 @@
  * 
  * Modification History:
  * 
+ * March 31st, 2021 by Robin T. Miller
+ *      For Solaris mount lookups, save the FS type and mount options.
+ * 
+ * March 30th, 2021 by Robin T. Miller
+ *      In os_get_fs_information() switch to fundamental block size, required
+ * for accurate free space on Solaris. Revert to block size as required.
+ * 
  * March 10th, 2021 by Robin T. Miller
- *      For Solaris, clear O_DIRECT flag n os_open_file(), omitted previously!
+ *      For Solaris, clear O_DIRECT flag in os_open_file(), omitted previously!
  * 
  * July 17th, 2020 by Robin T. Miller
  *      Add a hack workaround for Linux disk names in ConvertDeviceToScsiDevice().
@@ -299,6 +306,8 @@ FindMountDevice(dinfo_t *dip, char *path, hbool_t debug)
 {
     char mounted_path[PATH_BUFFER_SIZE];
     char mounted_match[PATH_BUFFER_SIZE];
+    char filesystem_type[SMALL_BUFFER_SIZE];
+    char filesystem_options[PATH_BUFFER_SIZE];
     char path_dir[PATH_BUFFER_SIZE];
     struct mnttab mnttab;
     struct mnttab *mnt = &mnttab;
@@ -336,6 +345,8 @@ FindMountDevice(dinfo_t *dip, char *path, hbool_t debug)
 		}
 		strncpy(mounted_path, mnt->mnt_mountp, sizeof(mounted_path)-1);
 		strncpy(mounted_match, mnt->mnt_special, sizeof(mounted_match)-1);
+		strncpy(filesystem_type, mnt->mnt_fstype, sizeof(filesystem_type)-1);
+		strncpy(filesystem_options, mnt->mnt_mntopts, sizeof(filesystem_options)-1);
 		match = True;
 	    }
 	}
@@ -343,6 +354,8 @@ FindMountDevice(dinfo_t *dip, char *path, hbool_t debug)
     if (match == True) {
 	dip->di_mounted_from_device = strdup(mounted_match);
 	dip->di_mounted_on_dir = strdup(mounted_path);
+	dip->di_filesystem_type = strdup(filesystem_type);
+	dip->di_filesystem_options = strdup(filesystem_options);
     }
     (void)fclose(fp);
     return(match);
@@ -1111,28 +1124,57 @@ os_get_fs_information(dinfo_t *dip, char *dir)
 	status = statvfs(cdir, sfsp);
     }
 	
-    /*
+    /* 
+     * Note: This data structure varies by Unix OS, this is Linux!
+     *
      * struct statvfs {
-     *     unsigned long  f_bsize;    file system block size
-     *     unsigned long  f_frsize;   fragment size
-     *     fsblkcnt_t     f_blocks;   size of fs in f_frsize units
-     *     fsblkcnt_t     f_bfree;    # free blocks
-     *     fsblkcnt_t     f_bavail;   # free blocks for non-root
-     *     fsfilcnt_t     f_files;    # inodes
-     *     fsfilcnt_t     f_ffree;    # free inodes
-     *     fsfilcnt_t     f_favail;   # free inodes for non-root
-     *     unsigned long  f_fsid;     file system ID
-     *     unsigned long  f_flag;     mount flags
-     *     unsigned long  f_namemax;  maximum filename length
+     *     unsigned long  f_bsize;    // file system block size
+     *     unsigned long  f_frsize;   // fragment size
+     *     fsblkcnt_t     f_blocks;   // size of fs in f_frsize units
+     *     fsblkcnt_t     f_bfree;    // # free blocks
+     *     fsblkcnt_t     f_bavail;   // # free blocks for non-root
+     *     fsfilcnt_t     f_files;    // # inodes
+     *     fsfilcnt_t     f_ffree;    // # free inodes
+     *     fsfilcnt_t     f_favail;   // # free inodes for non-root
+     *     unsigned long  f_fsid;     // file system ID
+     *     unsigned long  f_flag;     // mount flags
+     *     unsigned long  f_namemax;  // maximum filename length
      * };
+     * 
+     * For reference, this is the Solaris format:
+     * 
+     *        The statvfs structure pointed to by buf includes the following members:
+     *
+     *         u_long      f_bsize;             // preferred file system block size
+     *         u_long      f_frsize;            // fundamental filesystem block (size if supported)
+     *         fsblkcnt_t  f_blocks;            // total # of blocks on file system in units of f_frsize
+     *         fsblkcnt_t  f_bfree;             // total # of free blocks
+     *         fsblkcnt_t  f_bavail;            // # of free blocks avail to non-privileged user
+     *         fsfilcnt_t  f_files;             // total # of file nodes (inodes)
+     *         fsfilcnt_t  f_ffree;             // total # of free file nodes
+     *         fsfilcnt_t  f_favail;            // # of inodes avail to non-privileged user
+     *         u_long      f_fsid;              // file system id (dev for now)
+     *         char        f_basetype[FSTYPSZ]; // target fs type name, null-terminated
+     *         u_long      f_flag;              // bit mask of flags
+     *         u_long      f_namemax;           // maximum file name length
+     *         char        f_fstr[32];          // file system specific string
+     *         u_long      f_filler[16];        // reserved for future expansion
      */
     if (status == SUCCESS) {
-	dip->di_fs_block_size = (uint32_t)sfsp->f_bsize;
+	/* Note: This may need to be revisited, as I'm not sure if this is right yet! */
+	/* The preferred block size can be large (on Solaris), so fundamental must be used. */
+	/* On Linux, for ext4 file systems, f_bsize and f_frsize are the same value. */
+	/* If we don't get the free space right, then our percentage calculation is wrong! */
+	if (sfsp->f_frsize) {
+	    dip->di_fs_block_size = (uint32_t)sfsp->f_frsize;
+	} else {
+	    dip->di_fs_block_size = (uint32_t)sfsp->f_bsize;
+	}
 	/* Note: The file system blocks are converted to bytes! */
 	if ( getuid() ) {
-	    dip->di_fs_space_free = (large_t)(sfsp->f_bsize * sfsp->f_bavail);
+	    dip->di_fs_space_free = (large_t)(sfsp->f_frsize * sfsp->f_bavail);
 	} else {
-	    dip->di_fs_space_free = (large_t)(sfsp->f_bsize * sfsp->f_bfree);
+	    dip->di_fs_space_free = (large_t)(sfsp->f_frsize * sfsp->f_bfree);
 	}
 	dip->di_fs_total_space = (large_t)(sfsp->f_frsize * sfsp->f_blocks);
     }
