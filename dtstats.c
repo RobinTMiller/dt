@@ -42,12 +42,6 @@
  * October 10th, 2020 by Robin T. Miller
  *      Add megabytes/second to Average Transfer Rates output.
  * 
- * February 26th, 2020 by Robin T. Miller
- *      Minor updates to reuse this for Nimble thumper I/O behavior.
- * 
- * March 9th, 2019 by Robin T. Miller
- *      Add displaying Nimble SCSI information.
- * 
  * December 3rd, 2016 by Robin T. Miller
  *      Expanding job statistics to include the total read/write bytes, and
  * adding Gigabyte since we are using very large and very fast disks nowadays!
@@ -143,6 +137,18 @@ gather_stats(struct dinfo *dip)
     /*
      * Gather per pass statistics.
      */
+    if (dip->di_dbytes_written) {
+	dip->di_pass_dbytes_written = dip->di_dbytes_written;
+	dip->di_pass_records_written = dip->di_records_written;
+	/* Avoid stale read stats with multiple passes. */
+	/* Remember: The runtime or stopon may keep us from reading! */
+	dip->di_pass_dbytes_read = 0;
+	dip->di_pass_records_read = 0;
+    }
+    if (dip->di_dbytes_read) {
+	dip->di_pass_dbytes_read = dip->di_dbytes_read;
+	dip->di_pass_records_read = dip->di_records_read;
+    }
     dip->di_total_files_read += dip->di_files_read;
     dip->di_total_files_written += dip->di_files_written;
     dip->di_total_bytes_read += dip->di_dbytes_read;
@@ -785,7 +791,7 @@ report_stats(struct dinfo *dip, enum stats stats_type)
 	Lprintf (dip, "%lu/%lu\n", dip->di_pass_count, dip->di_pass_limit);
     }
 
-    if (dip->di_file_limit || dip->di_user_dir_limit || dip->di_user_subdir_limit || dip->di_user_subdir_depth) {
+     if (dip->di_file_limit || dip->di_user_dir_limit || dip->di_user_subdir_limit || dip->di_user_subdir_depth) {
 	large_t max_files = calculate_max_files(dip);
 
 	if ( (stats_type == JOB_STATS) || (stats_type == TOTAL_STATS) ) {
@@ -935,11 +941,14 @@ report_file_system_common(dinfo_t *dip, hbool_t acquire_free_space)
     /*
      * When reporting statistics we need to acquire updated free space.
      */
-    if (acquire_free_space) {
+    if (isFileSystemFile(dip) && acquire_free_space) {
 	char *dir = (dip->di_topdirpath) ? dip->di_topdirpath : dip->di_dir;
 	status = os_get_fs_information(dip, dir);
+	if (status != SUCCESS) {
+	    return;
+	}
     }
-    if ( (status == SUCCESS) && dip->di_fs_space_free) {
+    if (dip->di_fs_space_free) {
 	large_t data_bytes = dip->di_fs_space_free;
 	Mbytes = (double) ( (double)data_bytes / (double)MBYTE_SIZE);
 	Gbytes = (double) ( (double)data_bytes / (double)GBYTE_SIZE);
