@@ -122,7 +122,7 @@
 int verify_prefix(struct dinfo *dip, u_char *buffer, size_t bcount, int bindex, size_t *pcount);
 
 static void report_reread_corrupted(dinfo_t *dip, size_t request_size, Offset_t record_offset, uint32_t pattern);
-static void report_reread_data(dinfo_t *dip, size_t request_size, Offset_t record_offset);
+static int update_reread_file(dinfo_t *dip, char *buffer, char *reread_file);
 static int verify_data_with_btags(	struct dinfo	*dip,
 					uint8_t		*buffer,
 					size_t		bytes,
@@ -881,7 +881,7 @@ verify_data (	struct dinfo	*dip,
  *
  * Inputs:
  *	cdip = The current device information pointer.
- *	buffer = Pointer to data to verify.
+ *	buffer = Pointer to the write data to verify.
  *	count = The number of bytes to compare.
  *	pattern = Data pattern to compare against.
  *	lba = Pointer to starting logical block address.
@@ -1016,6 +1016,7 @@ verify_reread(
 	if (memcmp(buffer, reread_buffer, reread_count) == 0) {
 	    Fprintf(dip, "Reread data matches previous data read, possible write failure!\n");
 	} else {
+	    /* Please Note: If another mismatch occurs, that data corruption is also reported! */
 	    status = (*dip->di_funcs->tf_verify_data)(dip, reread_buffer, reread_count, pattern, lba, False);
 	    if (status == SUCCESS) {
 		Fprintf(dip, "Reread data matches the expected data, possible read failure!\n");
@@ -1045,8 +1046,10 @@ verify_reread(
 
 cleanup_exit:
     cdip->di_retrying = False;
+    /* Command line to re-read the corrupted record. */
     report_reread_corrupted(cdip, bcount, record_offset, pattern);
-    report_reread_data(cdip, bcount, record_offset);
+    /* Command line to re-read the file, including the corrupted record. */
+    report_reread_data(cdip, True, NULL);
 #if defined(DATA_CORRUPTION_URL)
     Fprintf(dip, "Note: For more information regarding data corruptions, please visit this link:\n");
     Fprintf(dip, "      %s\n", DATA_CORRUPTION_URL);
@@ -1083,7 +1086,7 @@ report_reread_corrupted(dinfo_t *dip, size_t request_size, Offset_t record_offse
      * Display a re-read command line, required for "reference trace".
      */
     Fprintf(dip, "Command line to re-read the corrupted data:\n");
-    sbp += Sprintf(str, "-> %s", dtpath);
+    sbp += Sprintf(str, "    %c %s", getuid() ? '%' : '#', dtpath);
     if (dip->di_iobehavior == DTAPP_IO) {
 	sbp += Sprintf(sbp, " iobehavior=dtapp", dip->di_fprefix_string);
     }
@@ -1152,25 +1155,40 @@ report_reread_corrupted(dinfo_t *dip, size_t request_size, Offset_t record_offse
 }
 
 /*
- * report_reread_data() - Report command to do re-read up to and including corrupted record. 
+ * report_reread_data() - Report command to do re-read the data. 
  *  
- * Note: The goal is to use this for re-reading data across all threads, e.g. power outage! 
+ * Description: 
+ *      We'll report the re-read command line for the corrupted data, or
+ * report the re-read for all data written for this device/file.
+ *  
+ * Note: This function has dual purpose: 
+ *   1) Used during data corruptions to re-read file to corruption.
+ *   2) Used to report re-read file command when thread is exiting. 
  */
-static void
-report_reread_data(dinfo_t *dip, size_t request_size, Offset_t record_offset)
+void
+report_reread_data(dinfo_t *dip, hbool_t corruption_flag, char *reread_file)
 {
     char str[STRING_BUFFER_SIZE];
     char *sbp = str;
+    char *scmd = NULL;
     large_t data_limit = dip->di_data_limit;
+
+    /* Note: This won't be perfect since there are so many dt options! */
+
+    if (os_file_exists(dip->di_dname) == False) {
+	Wprintf(dip, "File %s does NOT exist!\n", dip->di_dname);
+	Wprintf(dip, "Nonetheless, reporting the reread command line for storage outage testing...\n");
+    }
 
     /*
      * Display a re-read command line, required for "reference trace".
      */
-    Fprintf(dip, "Command line to re-read the corrupted file:\n");
-    sbp += Sprintf(str, "-> %s", dtpath);
+    Printf(dip, "Command line to re-read the data:\n");
+    sbp += Sprintf(str, "    %c %s", getuid() ? '%' : '#', dtpath);
     if (dip->di_iobehavior == DTAPP_IO) {
 	sbp += Sprintf(sbp, " iobehavior=dtapp", dip->di_fprefix_string);
     }
+    scmd = sbp; scmd++; /* Start of actual command line. */
     sbp += Sprintf(sbp, " if=%s", dip->di_dname);
     if (dip->di_min_size && dip->di_max_size) {
 	sbp += Sprintf(sbp, " min="SDF" max="SDF, dip->di_min_size, dip->di_max_size);
@@ -1198,17 +1216,35 @@ report_reread_data(dinfo_t *dip, size_t request_size, Offset_t record_offset)
 	    sbp += Sprintf(sbp, " iodir=reverse");
 	}
     }
-    /* The bytes we've read up to the corruption. */
-    sbp += Sprintf(sbp, " limit="LUF, dip->di_dbytes_read);
-    /* The number of records read up to the corruption. */
-    sbp += Sprintf(sbp, " records="LUF, (dip->di_full_reads + dip->di_partial_reads));
-    /* The starting file offset, if specified. */
+    if (corruption_flag) {
+	sbp += Sprintf(sbp, " limit="LUF, dip->di_dbytes_read);
+	sbp += Sprintf(sbp, " records="LUF, dip->di_records_read);
+    } else {
+	/* Since our goal is to re-read all data written, prefer write statistics. */
+	/* Note: While reading is supported, we expect to be invoked for writing! */
+	sbp += Sprintf(sbp, " limit="LUF, (dip->di_pass_dbytes_written) ? dip->di_pass_dbytes_written : dip->di_pass_dbytes_read);
+	sbp += Sprintf(sbp, " records="LUF, (dip->di_pass_records_written) ? dip->di_pass_records_written : dip->di_pass_records_read);
+    }
+    /* Note: Not adding slice information, since this affects file offset and data limit! */
+#if 0
+    /* Add slice  information, if specified. */
+    if (dip->di_slices) {
+	/* Note: Slice logic sets up starting offset and slice range! */
+	sbp += Sprintf(sbp, " slices=%d slice=%d", dip->di_slices, dip->di_slice_number);
+    }
+#endif /* 0 */
+    /* This will set the starting slice offset. */
     if (dip->di_file_position) {
+	/* The starting file offset, if specified. */
 	sbp += Sprintf(sbp, " offset="FUF, dip->di_file_position);
     }
     /* Random seed for this thread for random operations. */
     if (dip->di_random_seed) {
 	sbp += Sprintf(sbp, " rseed="LXF, dip->di_random_seed);
+    }
+    /* Add the step option, if specified. */
+    if (dip->di_step_offset) {
+	sbp += Sprintf(sbp, " step="FUF, dip->di_step_offset);
     }
     /* A host of various options for pattern generation. */
     if (dip->di_fprefix_string) {
@@ -1249,11 +1285,48 @@ report_reread_data(dinfo_t *dip, size_t request_size, Offset_t record_offset)
     if (dip->di_scsi_io_flag) {
 	sbp += Sprintf(sbp, " enable=scsi_io");
     }
-    /* The user can remove these to retry and save future corruptions. */
-    sbp += Sprintf(sbp, " disable=retryDC,savecorrupted,trigdefaults");
-    Fprintf(dip, "%s\n", str);
-    Fprintf(dip, "\n");
+    if (corruption_flag) {
+	/* The user can remove these to retry and save future corruptions. */
+	sbp += Sprintf(sbp, " disable=retryDC,savecorrupted,trigdefaults");
+    }
+    Printf(dip, "%s\n", str);
+    Printf(dip, "\n");
+
+    if ( (corruption_flag == False) && reread_file) {
+	if (dip->di_log_file) {
+	    /* Note: This will be the full log file path. */
+	    sbp += Sprintf(sbp, " log=%s-reread", dip->di_log_file);
+	} else {
+	    if (dip->di_log_dir) {
+		sbp += Sprintf(sbp, " logdir=%s", dip->di_log_dir);
+	    }
+	    sbp += Sprintf(sbp, " workload=reread_thread_logs");
+	}
+	/* Consider adding async jobs to optimze rereads. */
+	sbp += Sprintf(sbp, " enable=async\n");
+	(void)update_reread_file(dip, scmd, reread_file);
+    }
     return;
+}
+
+static int
+update_reread_file(dinfo_t *dip, char *buffer, char *reread_file)
+{
+    FILE *fp = NULL;
+    int lock_status, status;
+
+    /* Multiple threads may be writing to this file, so lock accordingly! */
+    lock_status = acquire_print_lock();
+    status = OpenOutputFile(dip, &fp, reread_file, "a", DisableErrors);
+    if (fp) {
+	status = Fputs(buffer, fp);
+	(void)fflush(fp);
+	(void)CloseFile(dip, &fp);
+    }
+    if (lock_status == SUCCESS) {
+	int unlock_status = release_print_lock();
+    }
+    return (status);
 }
 
 int

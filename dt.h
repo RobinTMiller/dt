@@ -25,6 +25,12 @@
 /*
  * Modification History:
  * 
+ * May 25th, 2021 by Robin T. Miller
+ *      Resetting RETRYDC_LIMIT back to 1, since the delay and extra re-read,
+ * is generally undesirable when sending triggers quickly is more important!
+ * Note: The extra re-read was added to help determine persistent vs. transient
+ * type data corruptions, prevalent in caching products.
+ * 
  * April 9th, 2020 by Robin T. Miller (Happy birthday to my son Tom!)
  *      Increase the data corruption retries from 1 to 2, so we can gather
  * yet another data point. If our first (immediate) re-read is still bad,
@@ -141,6 +147,7 @@
 
 #define DEFAULT_GTOD_LOG_PREFIX		"%tod (%etod) %prog (j:%job t:%thread): " 
 
+/* Note: These must be defined per company to their own web pages! */
 #  //define DATA_CORRUPTION_URL	"";
 #  //define DATA_CORRUPTION_URL1"";
 #  //define NO_PROGRESS_URL		"";
@@ -163,13 +170,8 @@
 #define DEFAULT_COREDUMP_FLAG	False
 #define DEFAULT_FILEPERTHREAD   True
 #define DEFAULT_LBDATA_FLAG	False
-#if defined(Nimble)
-#  define DEFAULT_POISON_FLAG	True
-#  define DEFAULT_PREFILL_FLAG	True
-#else /* defined(Nimble */
-#  define DEFAULT_POISON_FLAG	False
-#  define DEFAULT_PREFILL_FLAG	UNINITIALIZED
-#endif /* defined(Nimble) */
+#define DEFAULT_POISON_FLAG	False
+#define DEFAULT_PREFILL_FLAG	UNINITIALIZED
 #define DEFAULT_MOUNT_LOOKUP	True
 #define DEFAULT_NATE_FLAG	False
 #define DEFAULT_TIMESTAMP_FLAG	False
@@ -242,7 +244,7 @@
 /* Note: (5 * 60) = 300 seconds or 5 minutes! */
 #define RETRY_LIMIT	60			/* Default retry limit.		*/
 #define RETRYDC_DELAY	5			/* Default retry DC delay (secs).*/
-#define RETRYDC_LIMIT	2			/* Retry data corruption limit.	*/
+#define RETRYDC_LIMIT	1			/* Retry data corruption limit.	*/
 #define SAVE_CORRUPTED	True			/* Default save corrupted data.	*/
 
 typedef enum corruption_type {
@@ -254,8 +256,14 @@ typedef enum corruption_type {
 /*
  * Default Random Block Sizes:
  */
-#define MIN_RANDOM_SIZE		512		/* Minimum random size.	*/
-#define MAX_RANDOM_SIZE		MBYTE_SIZE      /* Maximum random size.	*/
+#define MIN_RANDOM_SIZE		512		/* The minimum random size. */
+#define MAX_RANDOM_SIZE		MBYTE_SIZE      /* The maximum random size. */
+
+/*
+ * Default Random File Limits:
+ */
+#define MIN_DATA_LIMIT     (10 * MBYTE_SIZE)    /* The minimum file limit. */
+#define MAX_DATA_LIMIT     (2 * GBYTE_SIZE)     /* The maximum file limit. */
 
 /*
  * IOPS Measurement Types:
@@ -834,6 +842,12 @@ typedef struct dinfo {
 	v_large	di_lbytes_written;	/* Number of loop bytes wrote.	*/
 	v_large	di_vbytes_read;		/* Number of volume bytes read.	*/
 	v_large	di_vbytes_written;	/* Number of volume bytes wrote.*/
+        /* Saved for reread command line. */
+	large_t	di_pass_dbytes_read;	/* The pass data bytes read.	*/
+	large_t	di_pass_dbytes_written;	/* The pass data bytes written.	*/
+	u_long	di_pass_records_read;	/* The pass records read.	*/
+	u_long	di_pass_records_written;/* The pass records written.	*/
+
 	/*
 	 * Information to Handle "File System Full":
 	 */
@@ -1376,10 +1390,11 @@ typedef struct dinfo {
 	hbool_t di_scsi_info_flag;	/* The SCSI information flag.	*/
 	hbool_t	di_scsi_recovery;	/* The SCSI recovery flag.	*/
 	hbool_t di_scsi_sense;		/* Display full sense flag.     */
-	char	*di_scsi_dsf;		/* The SCSI device special file	*/
-					/* Note: Optional, use for FS!	*/
+	char	*di_scsi_dsf;		/* The SCSI device special file.*/
+	char	*di_tscsi_dsf;		/* The SCSI trigger device file.*/
 	scsi_generic_t *di_sgp;		/* The SCSI generic data.       */
 	scsi_generic_t *di_sgpio;	/* The SCSI I/O generic data.   */
+	scsi_generic_t *di_tsgp;	/* The trigger SCSI generic.    */
 	unsigned int di_scsi_timeout;	/* The SCSI CDB timeout value.	*/
 	uint32_t di_scsi_recovery_delay; /* The SCSI recovery delay.	*/
 	uint32_t di_scsi_recovery_limit; /* The SCSI recovery limit.	*/
@@ -2128,9 +2143,10 @@ extern void SetupTransferLimits(dinfo_t *dip, large_t bytes);
 #if defined(SCSI)
 
 extern void clone_scsi_info(dinfo_t *dip, dinfo_t *cdip);
-extern void free_scsi_info(dinfo_t *dip);
-extern int init_sg_info(dinfo_t *dip);
-extern int init_scsi_info(dinfo_t *dip);
+extern void free_scsi_info(dinfo_t *dip, scsi_generic_t **sgpp, scsi_generic_t **sgpiop);
+extern int init_sg_info(dinfo_t *dip, char *scsi_dsf, scsi_generic_t **sgpp, scsi_generic_t **sgpiop);
+extern int init_scsi_info(dinfo_t *dip, char *scsi_dsf, scsi_generic_t **sgpp, scsi_generic_t **sgpiop);
+extern int init_scsi_trigger(dinfo_t *dip, char *scsi_dsf, scsi_generic_t **sgpp);
 extern void report_scsi_information(dinfo_t *dip);
 extern void report_standard_scsi_information(dinfo_t *dip);
 extern int get_lba_status(dinfo_t *dip, Offset_t starting_offset, large_t data_bytes);
@@ -2647,6 +2663,7 @@ extern void ReportLbdataError(	struct dinfo	*dip,
 				u_int32		byte_position,
 				u_int32		expected_data,
 				u_int32		data_found );
+extern void report_reread_data(dinfo_t *dip, hbool_t corruption_flag, char *reread_file);
 extern int save_corrupted_data(dinfo_t *dip, char *filepath, void *buffer, size_t bufsize, corruption_type_t ctype);
 
 /*

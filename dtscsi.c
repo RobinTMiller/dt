@@ -33,20 +33,16 @@
  * 
  * Modification History:
  * 
+ * June 16th, 2021 by Robin T. Miller
+ *      Add support for separate SCSI trigger device.
+ * 
  * October 28th, 2020 by Robin T. Miller
  *      When setting up SCSI information, only update user capacity for disks.
  *      The user capacity must only be setup for disk devices, not files!
  * 
- * October 27th, 2020 by Robin T. Miller
- *      For Nimble disks, automatically add DSD Force Core CDB and external
- * trigger script. This is to ease support of these in automation.
- * 
  * May 19th, 2020 by Robin T. Miller
  *      For spt commands add "logprefix=" to disable the spt log prefix.
  *      The ExecuteCommand() API was updated to apply dt's log prefix.
- * 
- * March 9th, 2019 by Robin T. Miller
- *      Add support for acquiring and reporting Nimble SCSI information.
  * 
  * January 25th, 2019 by Robin T. Miller
  *      Add support for unmapping blocks via token based xcopy zero ROD method.
@@ -94,13 +90,17 @@ strip_trailing_spaces(char *bp)
 void
 clone_scsi_info(dinfo_t *dip, dinfo_t *cdip)
 {
+    int error = SUCCESS;
     /*
      * Note: We will only clone the information dt currently uses.
      *	     The assumption is the SCSI information already exists!
      */
     if (cdip->di_sgp) {
-	int error = init_sg_info(cdip);
+	error = init_sg_info(cdip, cdip->di_scsi_dsf, &cdip->di_sgp, &dip->di_sgpio);
 	/* Ignore any errors! */
+	if (cdip->di_tsgp) {
+	    error = init_sg_info(cdip, cdip->di_tscsi_dsf, &cdip->di_tsgp, NULL);
+	}
     }
     if (dip->di_inquiry) {
 	/* Note: We don't have a thread number, so clone for all! */
@@ -125,6 +125,9 @@ clone_scsi_info(dinfo_t *dip, dinfo_t *cdip)
     if (dip->di_scsi_dsf) {
 	cdip->di_scsi_dsf = strdup(dip->di_scsi_dsf);
     }
+    if (dip->di_tscsi_dsf) {
+	cdip->di_tscsi_dsf = strdup(dip->di_tscsi_dsf);
+    }
     if (dip->di_spt_path) {
 	cdip->di_spt_path = strdup(dip->di_spt_path);
     }
@@ -135,10 +138,11 @@ clone_scsi_info(dinfo_t *dip, dinfo_t *cdip)
 }
 
 void
-free_scsi_info(dinfo_t *dip)
+free_scsi_info(dinfo_t *dip, scsi_generic_t **sgpp, scsi_generic_t **sgpiop)
 {
-    if (dip->di_sgp) {
-	scsi_generic_t *sgp = dip->di_sgp;
+    scsi_generic_t *sgp = *sgpp;
+
+    if (sgp) {
 	if (sgp->fd != INVALID_HANDLE_VALUE) {
 	    (void)os_close_device(sgp);
 	}
@@ -148,7 +152,7 @@ free_scsi_info(dinfo_t *dip)
 	}
 	Free(dip, sgp->dsf);
 	Free(dip, dip->di_sgp);
-	dip->di_sgp = NULL;
+	*sgpp = NULL;
     }
     if (dip->di_inquiry) {
 	Free(dip, dip->di_inquiry);
@@ -178,6 +182,10 @@ free_scsi_info(dinfo_t *dip)
 	Free(dip, dip->di_scsi_dsf);
 	dip->di_scsi_dsf = NULL;
     }
+    if (dip->di_tscsi_dsf) {
+	Free(dip, dip->di_tscsi_dsf);
+	dip->di_tscsi_dsf = NULL;
+    }
     if (dip->di_spt_path) {
 	Free(dip, dip->di_spt_path);
 	dip->di_spt_path = NULL;
@@ -187,18 +195,19 @@ free_scsi_info(dinfo_t *dip)
 	dip->di_spt_options = NULL;
     }
     /* Free SCSI I/O data (if any). */
-    if (dip->di_sgpio) {
-	if (dip->di_sgpio->sense_data) {
-	    free_palign(dip, dip->di_sgpio->sense_data);
-	    Free(dip, dip->di_sgpio);
-	    dip->di_sgpio = NULL;
+    if (sgpiop && *sgpiop) {
+	sgp = *sgpiop;
+	if (sgp->sense_data) {
+	    free_palign(dip, sgp->sense_data);
+	    Free(dip, sgp);
 	}
+	*sgpiop = NULL;
     }
     return;
 }
 
 int
-init_sg_info(dinfo_t *dip)
+init_sg_info(dinfo_t *dip, char *scsi_dsf, scsi_generic_t **sgpp, scsi_generic_t **sgpiop)
 {
     scsi_generic_t *sgp;
     scsi_addr_t *sap;
@@ -222,8 +231,8 @@ init_sg_info(dinfo_t *dip)
 	sgp->recovery_limit = dip->di_scsi_recovery_limit; // ScsiRecoveryRetriesDefault;
     }
 
-    if (dip->di_scsi_dsf) {
-	sgp->dsf = strdup(dip->di_scsi_dsf);
+    if (scsi_dsf) {
+	sgp->dsf = strdup(scsi_dsf);
     } else {
 	sgp->dsf = strdup(dip->di_dname);
     }
@@ -244,13 +253,13 @@ init_sg_info(dinfo_t *dip)
 	return(FAILURE);
     }
     sgp->sense_flag = dip->di_scsi_sense;
-    if (dip->di_scsi_io_flag == True) {
+    if ( sgpiop && dip->di_scsi_io_flag == True) {
 	/* Create a separate sgp for SCSI I/O. */
 	scsi_generic_t *sgpio = Malloc(dip, sizeof(*sgp));
 	if (sgpio == NULL) {
 	    dip->di_scsi_io_flag = False;
 	} else {
-	    dip->di_sgpio = sgpio;
+	    *sgpiop = sgpio;
 	    *sgpio = *sgp;
 	    sgpio->errlog = True;
 	    sgpio->sense_data = malloc_palign(dip, sgpio->sense_length, 0);
@@ -259,22 +268,22 @@ init_sg_info(dinfo_t *dip)
     } else {
 	sgp->warn_on_error = True;
     }
-    dip->di_sgp = sgp;
+    *sgpp = sgp;
     return(error);
 }
 
 int
-init_scsi_info(dinfo_t *dip)
+init_scsi_info(dinfo_t *dip, char *scsi_dsf, scsi_generic_t **sgpp, scsi_generic_t **sgpiop)
 {
     scsi_generic_t *sgp;
     int status;
     
-    if ( (sgp = dip->di_sgp) == NULL) {
-	status = init_sg_info(dip);
+    if ( (sgp = *sgpp) == NULL) {
+	status = init_sg_info(dip, scsi_dsf, sgpp, sgpiop);
 	if (status == FAILURE) {
 	    return(status);
 	}
-	sgp = dip->di_sgp;
+	sgp = *sgpp;
     }
     status = get_standard_scsi_information(dip, sgp);
 
@@ -288,6 +297,38 @@ init_scsi_info(dinfo_t *dip)
 	//sgp->errlog = True;
 	//sgp->warn_on_error = False;
 	dip->di_scsi_errors = True;
+    }
+    return(status);
+}
+
+int
+init_scsi_trigger(dinfo_t *dip, char *scsi_dsf, scsi_generic_t **sgpp)
+{
+    scsi_generic_t *tsgp;
+    inquiry_t *inquiry = NULL;
+    int status;
+ 
+    if ( (tsgp = *sgpp) == NULL) {
+	status = init_sg_info(dip, scsi_dsf, sgpp, NULL);
+	if (status == FAILURE) {
+	    return(status);
+	}
+	tsgp = *sgpp;
+    }
+    inquiry = Malloc(dip, sizeof(*inquiry));
+    /* Do partial setup for the SCSI trigger device. */
+    /* Note: We cannot do full SCSI initialization or we overwrite normal information! */
+    if (inquiry) {
+	/* Do an Inquiry to ensure we have a valid SCSI device. */
+	status = Inquiry(tsgp->fd, tsgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
+			 NULL, &dip->di_tsgp, inquiry, sizeof(*inquiry), 0, 0, dip->di_scsi_timeout);
+	if (status) {
+	    Wprintf(dip, "SCSI Inquiry failed on %s trigger device, thus disabling!\n", tsgp->dsf);
+	    free_scsi_info(dip, &tsgp, NULL);
+	    Free(dip, inquiry);
+	    Free(dip, dip->di_tscsi_dsf);
+	    dip->di_tscsi_dsf = NULL;
+	}
     }
     return(status);
 }

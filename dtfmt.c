@@ -32,6 +32,10 @@
  *
  * Modification History:
  * 
+ * June 16th, 2021 by Robin T. Miller
+ *      Add SCSI format control strings: %sdsf and %tdsf
+ *      %sdsf = The SCSI device, %tdsf = the SCSI trigger device.
+ * 
  * October 21st, 2020 by Robin T. Miller
  *      Add format control strings for Nimble specific SCSI information.
  * 
@@ -1269,6 +1273,8 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
  * 
  * Common Format Controls: 
  *      %array = The array name or IP.
+ *      %sdsf = The SCSI device special file.
+ *      %tdsf = The Trigger device special file.
  *  
  * Job Control Keywords:
  *      %job = The job ID.
@@ -1288,16 +1294,6 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
  *	%devid = The device identifier. (Inquiry page 0x83)
  *  	%serial = The disk serial number. (Inquiry page 0x80)
  *      %mgmtaddr = The management network address. (Inquiry page 0x85)
- *  
- * Nimble Format Control Strings:
- *      %sw_version = Array software version.
- *      %target_type = The target type (Group Scoped, etc).
- *      %target_name = The target name (iSCSI IQN, etc).
- *      %volume_name = The volume name (aka LU Admin Name).
- *      %mgmt_ip_addr = The management IP address.
- *      %protocol_type = The protocol type (FC or iSCSI).
- *      %itn_addrs = The ITN addresses (iSCSI IP addresses, etc).
- *      %sync_rep = Sync replication boolean (True or False).
  */
 int
 FmtCommon(dinfo_t *dip, char *key, char **buffer)
@@ -1349,6 +1345,16 @@ FmtCommon(dinfo_t *dip, char *key, char **buffer)
 	}
 	length = 8;
 #if defined(SCSI)
+    } else if (strncasecmp(key, "sdsf", 4) == 0) {
+	if (dip->di_scsi_dsf) {
+	    to += Sprintf(to, "%s", dip->di_scsi_dsf);
+	}
+	length = 4;
+    } else if (strncasecmp(key, "tdsf", 4) == 0) {
+	if (dip->di_tscsi_dsf) {
+	    to += Sprintf(to, "%s", dip->di_tscsi_dsf);
+	}
+	length = 4;
     } else if (strncasecmp(key, "capacity", 8) == 0) {
 	if (dip->di_device_capacity) {
 	    to += Sprintf(to, LUF, dip->di_device_capacity);

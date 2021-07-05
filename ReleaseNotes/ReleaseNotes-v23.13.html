@@ -101,8 +101,8 @@ The source and binaries are available here:
 # <b>dt version</b>
     --> Date: June 12th, 2020, Version: 23.13, Author: Robin T. Miller <--
 # 
-# <b>>dt of=dt-btags.data bs=1m step=1m limit=10m enable=btags pattern=iot disable=stats,scsi dispose=keep</b>
-# <b>>dt if=dt-btags.data showfsmap</b>
+# <b>dt of=dt-btags.data bs=1m step=1m limit=10m enable=btags pattern=iot disable=stats,scsi dispose=keep</b>
+# <b>dt if=dt-btags.data showfsmap</b>
 dt (j:0 t:0): File: dt-btags.data, LBA Size: 512 bytes
 dt (j:0 t:0): 
 dt (j:0 t:0):    File Offset    Start LBA      End LBA     Blocks
@@ -181,30 +181,42 @@ dt (j:1 t:1): 000000000000524752/   464 | 4e 52 4e 4e 4f 53 4f 4f 50 54 50 50 51
 dt (j:1 t:1): 000000000000524768/   480 | 52 56 52 52 53 57 53 53 54 58 54 54 55 59 55 55 "RVRRSWSSTXTTUYUU"
 dt (j:1 t:1): 000000000000524784/   496 | 56 5a 56 56 57 5b 57 57 58 5c 58 58 59 5d 59 59 "VZVVW[WWX\XXY]YY"
 dt (j:1 t:1): 
-# <b>>dt if=dt-btags.data showfslba offset=512k records=1</b>
+# <b>dt if=dt-btags.data showfslba offset=512k records=1</b>
 dt (j:0 t:0):    File Offset   Physical LBA
 dt (j:0 t:0):         524288      151569408
 # 
-# <b>dt workloads longevity</b>
+# <b>dt workloads file_system</b>
 Valid Workloads:
 
-    longevity_common: Longevity Common Options (template)
-        min=8k max=1m incr=vary enable=raw,reread enable=syslog history=5 history_data=128 enable=history_timing logprefix='%seq %nos %et %prog (j:%job t:%thread): ' keepalivet=5m runtime=-1 onerr=abort noprogt=30s noprogtt=5m
+    san_file_system: SAN File System Workload
+        bs=random limit=2g dispose=keeponerror iodir=vary iotype=vary keepalivet=5m workload=keepalive pattern=iot prefix='%d@%h' enable=btags onerr=abort disable=pstats notime=close,fsync oflags=trunc threads=4 enable=noprog noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=htiming enable=syslog runtime=12h stopon=/var/tmp/stopit bufmodes=buffered,cachereads,cachewrites,unbuffered
 
-    longevity_file_dedup: Longevity File System w/Dedup Workload
-        workload=longevity_common min_limit=1m max_limit=2g flags=direct notime=close,fsync oflags=trunc pf=/usr/software/test/noarch/dtdata/pattern_dedup maxdatap=75 threads=4
+    file_system_write_only: File System Write Only
+        workload=san_file_system disable=raw,reread,verify
 
-    longevity_disk_dedup: Longevity Direct Disk w/Dedup Workload
-        workload=longevity_common pf=/usr/software/test/noarch/dtdata/pattern_dedup capacityp=75 slices=4
+# <b>dt workloads disk</b>
+Valid Workloads:
 
-    longevity_file_system: Longevity File System Workload
-        workload=longevity_common workload=high_validation min_limit=1m max_limit=2g incr_limit=vary flags=direct notime=close,fsync oflags=trunc maxdatap=75 threads=4
+    san_disk: SAN Direct Disk Workload
+        bs=random slices=4 pattern=iot prefix='%d@%h' enable=btags iodir=vary iotype=vary keepalivet=5m workload=keepalive onerr=abort disable=pstats noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=htiming enable=syslog runtime=12h enable=stopimmed stopon=/var/tmp/stopit 
 
-    longevity_disk_unmap: Longevity Direct Disk w/SCSI UNMAP Workload
-        workload=longevity_common workload=high_validation capacityp=75 slices=4 unmap=unmap
+    disk_read_after_write: Direct Disk Read-After-Write w/Rereads
+        workload=san_disk enable=read_immed,reread slices=8
 
-    longevity_disk: Longevity Direct Disk Workload
-        workload=longevity_common workload=high_validation capacityp=75 slices=4
+    disk_aligned_io: Direct Disk Aligned I/O (assumes 4k blocks)
+        workload=san_disk dsize=4k
+
+    disk_unaligned_io: Direct Disk Aligned I/O (assumes 4k blocks)
+        workload=san_disk dsize=4k offset=4k-3b
+
+    disk_dedup: Direct Disk Deduplication
+        min=8k max=256k incr=4k enable=syslog history=5 enable=htiming disable=pstats keepalivet=5m threads=4 pf=/usr/software/test/noarch/dtdata/pattern_dedup
+
+    disk_unmaps: Direct Disk with Unmaps
+        workload=san_disk unmap=unmap
+
+    disk_write_only: Direct Disk Write Only
+        workload=san_disk disable=raw,reread,verify
 
 # 
 </PRE>	

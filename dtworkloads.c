@@ -32,12 +32,9 @@
  *
  * Modification History:
  * 
- * May 26th, 2020 by Robin T. Miller
- *      Add noprogtt=5m to Nimble workloads, plus define DSD core template.
- * 
- * January 9th, 2020 by Robin T. Miller
- *      For Nimble Longevity workloads, increate the history data to 152 bytes
- * to capture the entire block tag, which was extended for larger serial numbers.
+ * June 14th, 2021 by Robin T. Miller
+ *      Add workload templates for define the dedup pattern and stopon file.
+ *      This makes it easy for automation to use the default file locations!
  * 
  * August 8th, 2019 (happy birthday brother Randy!)
  *      Added keepalive workload to define a better keepalive message.
@@ -88,13 +85,12 @@ workload_entry_t predefined_workloads[] =
 	"trigger=cmd:\""TRIGGER_SCRIPT"\" "
 	"keepalivet=300"
     },
+    /* Initial FS dedup workload, now deprecated in favor of newer! */
+    /* Note: Not removing this workload since scripts may be using! */
     {	"dt_dedup",
 	"Deduplication Pattern",
-	"min=8k max=256k incr=4k limit=1g maxdatap=75 "
-	"enable=syslog history=5 enable=htiming "
-	"bufmodes=cachereads,buffered,unbuffered,cachewrites "
-	"disable=pstats keepalivet=5m threads=4 "
-	"pf="DEDUP_PATTERN_FILE
+	"workload=dt_file_system_dedup "
+	"bufmodes=cachereads,buffered,unbuffered,cachewrites"
     },
     {	"dt_hammer",
 	"dt Hammer File System Workload (requires ~6.20g space)",
@@ -190,16 +186,19 @@ workload_entry_t predefined_workloads[] =
 	"Video on Demand (VOD) Workload",
 	"bs=512k readp=0 randp=100 disable=verify flags=direct"
     },
-#if defined(Nimble)
+    /* Longevity Workloads */
     {	"longevity_common",
 	"Longevity Common Options (template)",
 	"min=8k max=1m incr=vary "
-	"enable=raw,reread enable=syslog "
-	"history=5 history_data=152 enable=history_timing "
+	"enable=raw,reread,log_trailer,syslog "
+	"history=5 history_data=128 enable=history_timing "
 	"logprefix='%seq %nos %et %prog (j:%job t:%thread): ' "
-	"keepalivet=5m runtime=-1 stopon="STOPON_FILE" "
-	"maxbad=1m onerr=abort noprogt=30s noprogtt=5m"
+	"keepalivet=5m runtime=-1 "
+	"onerr=abort noprogt=30s noprogtt=5m "
+	"stopon="STOPON_FILE
     },
+    /* This is the original workload, see new dedup workloads below! */
+    /* Note: We must keep this workload for backwards compatability. */
     {	"longevity_file_dedup",
 	"Longevity File System w/Dedup Workload",
 	"workload=longevity_common "
@@ -239,7 +238,6 @@ workload_entry_t predefined_workloads[] =
 	"Longevity File System Write Only",
 	"workload=longevity_file_system disable=raw,reread,verify"
     },
-#endif /* defined(Nimble) */
     {	"san_file_system",
 	"SAN File System Workload",
 	"bs=random limit=2g dispose=keeponerror "
@@ -268,6 +266,82 @@ workload_entry_t predefined_workloads[] =
 	"keepalive='%d stats: Mode: %i, Blocks: %l, %m Mbytes, "
 	"MB/sec: %mbps, IO/sec: %iops, Pass %p, Elapsed: %T'"
     },
+    /* -> Start of Deduplication Workloads <- */
+    /* 
+     * The disk and block sizes chosen are suitable for deduplication, 
+     * where aligned modulo 4k requests are required to enable. 
+     * Plesae Note: File system block size and array volume size is
+     * also a factor for deduplication, override defaults (as required) 
+     *  
+     * The end delay provides time for deduplication to occur, before we 
+     * start overwriting previous data. Increase the end delay to provide 
+     * more time for deduplication. 
+     *  
+     * Note: Knowing the specifics of array dedup algorithms is ket to 
+     * the correct set of dt options, so "tuning" to your array may be 
+     * required. 
+     *  
+     * TODO: Adding compression/deduplication ratios to be added! 
+     * For now, please use the dedup pattern file to verify both! 
+     */
+    /* Deduplication Workloads */
+    {	"dt_dedup_common",
+	"Deduplication Common Options (template)",
+	"dsize=4k min=8k max=1m incr=vary "
+	"enable=raw,reread,log_trailer,syslog "
+	"history=5 enable=history_timing "
+	"logprefix='%seq %nos %et %prog (j:%job t:%thread): ' "
+	"keepalivet=5m runtime=-1 stopon="STOPON_FILE" "
+	"onerr=abort "
+	"noprogt=30s noprogtt=5m notime=close,fsync "
+	"end_delay=60 enable=secsdelay "
+	"stopon="STOPON_FILE
+    },
+    {	"dt_dedup_pattern_file",
+	"Deduplication Pattern File (template)",
+	"pf="DEDUP_PATTERN_FILE
+    },
+    {	"dt_dedup_data_pattern",
+	"Deduplication Data Pattern (template)",
+	"pattern=iot prefix='%U@%h'"
+    },
+    /*
+     * The dedupe data generated is suitable per set of disks.
+     * The pattern file consists of both compresible/dedup data.
+     * The prefix makes the data unique per disk and per host. 
+     * The I/O direction is varied to force varying data pattern. 
+     *
+     * Note: The "%s" is for the SCSI disk serial number. 
+     * TODO: Consider adding SCSI UNMAPs to avoid reading stale data. 
+     */
+    {	"dt_disk_dedup",
+	"Direct Disk Deduplication Workload",
+	"workload=dt_dedup_common,dt_dedup_pattern_file "
+	"capacityp=75 slices=4 "
+	"iodir=vary prefix='%s@%h'"
+    },
+    /*
+     * The dedupe data generated is suitable per set of files.
+     * The IOT pattern will change per pass, as is the default. 
+     * Add "disable=unique" to avoid changing IOT seed per pass. 
+     * Add "dispose=keep" to avoid file system trims, if enabled.
+     * Increase the file count for higher duplication data factor. 
+     *  
+     * Note: The prefix is suitable for multiple files per host. 
+     * Deduplicate data is achieved by same data to multiple files! 
+     */
+    {	"dt_file_system_dedup",
+	"File System Deduplication Workload 2x Data Factor",
+	"workload=dt_dedup_common,dt_dedup_data_pattern "
+	"dispose=keep flags=direct maxdatap=75 "
+	"files=2 limit=2g maxdatap=75 threads=4 "
+	"pattern=iot prefix='%U@%h'"
+    },
+    /* -> End of Deduplication Workloads <- */
+    {	"stopon_file",
+	"Stop dt File (template)",
+	"enable=stopimmed stopon="STOPON_FILE" "
+    },
     {	"disk_read_after_write",
 	"Direct Disk Read-After-Write w/Rereads",
 	"workload=san_disk "
@@ -281,12 +355,11 @@ workload_entry_t predefined_workloads[] =
 	"Direct Disk Aligned I/O (assumes 4k blocks)",
 	"workload=san_disk dsize=4k offset=4k-3b"
     },
+    /* Initial Disk dedup workload, now deprecated in favor of newer! */
+    /* Note: Not removing this workload since scripts may be using! */
     {	"disk_dedup",
 	"Direct Disk Deduplication",
-	"min=8k max=256k incr=4k "
-	"enable=syslog history=5 enable=htiming "
-	"disable=pstats keepalivet=5m threads=4 "
-	"pf="DEDUP_PATTERN_FILE
+	"workload=dt_disk_dedup"
     },
     {	"disk_unmaps",
 	"Direct Disk with Unmaps",
@@ -308,6 +381,11 @@ workload_entry_t predefined_workloads[] =
 	"Define options to display job statistics only (template)",
 	"disable=stats enable=job_stats"
     },
+    /* Note: A rather long workload name, but wish to be descriptive! */
+    {	"disable_corruption_behavior",
+	"Define options to disable corruption behavior (template)",
+	"disable=retryDC,savecorrupted,trigdefaults"
+    },
     /* Note: Use logdir= option to direct logs to specific directory! */
     {	"all_logs",
 	"Define options for creating all logs (template)",
@@ -320,6 +398,10 @@ workload_entry_t predefined_workloads[] =
     {	"thread_logs",
 	"Define options for creating thread logs (template)",
 	"log='dt_thread-j%jobt%thread-%dsf.log'"
+    },
+    {	"reread_thread_logs",
+	"Define options for creating reread thread logs (template)",
+	"log='dt_thread-j%jobt%thread-%dsf.log-reread'"
     },
     {	"log_timestamps",
 	"Define options for adding log file timestamps (template)",

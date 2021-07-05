@@ -430,7 +430,7 @@ typedef unsigned int iotlba_t;
 #define BLOCK_SIZE		512		/* Bytes in block.	*/
 #define KBYTE_SIZE		1024		/* Kilobytes value.	*/
 #define MBYTE_SIZE		1048576L	/* Megabytes value.	*/
-#define GBYTE_SIZE		1073741824L	/* Gigabytes value.	*/
+#define GBYTE_SIZE		1073741824LL	/* Gigabytes value.	*/
 
 #define ANY_RADIX	0		/* Any radix string conversion.	*/
 #define DEC_RADIX	10		/* Base for decimal conversion.	*/

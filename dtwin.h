@@ -379,19 +379,11 @@ struct tms {
 #define TEMP_DIR_NAME		TEMP_DIR
 #define TEMP_DIR_LEN		(sizeof(TEMP_DIR_NAME) - 1)
 
-#if defined(Nimble)
-#  define TOOLS_DIR             "C:\\tools"
-#  define PATTERN_DIR	        TOOLS_DIR"\\data"
-#  define DEDUP_PATTERN_FILE	PATTERN_DIR"\\pattern_dedup"
-#  define TRIGGER_SCRIPT	TOOLS_DIR"\\nosmgr.py --array=%array --stop"
-#  define STOPON_FILE           TEMP_DIR"\\stopdt"
-#else /* !defined(Nimble) */
-#  define TOOLS_DIR             "C:\\tools"
-#  define PATTERN_DIR	        "x:\\noarch\\dtdata"
-#  define DEDUP_PATTERN_FILE	PATTERN_DIR"\\pattern_dedup"
-#  define TRIGGER_SCRIPT	TOOLS_DIR"\\dt_noprog_script.bat"
-#  define STOPON_FILE           TEMP_DIR"\\stopit"
-#endif /* defined(Nimble) */
+#define TOOLS_DIR             	"C:\\tools"
+#define PATTERN_DIR	        "x:\\noarch\\dtdata"
+#define DEDUP_PATTERN_FILE	PATTERN_DIR"\\pattern_dedup"
+#define TRIGGER_SCRIPT		TOOLS_DIR"\\dt_noprog_script.bat"
+#define STOPON_FILE		TEMP_DIR"\\stopit"
 
 #define OS_READONLY_MODE	GENERIC_READ
 #define OS_WRITEONLY_MODE	GENERIC_WRITE

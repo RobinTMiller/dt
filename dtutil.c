@@ -31,6 +31,9 @@
  * 
  * Modification History:
  * 
+ * June 16th, 2021 by Robin T. Miller
+ *      Update execute triggers to handle the SCSI trigger device.
+ * 
  * March 16th, 2021 by Robin T. Miller
  *      Add corrupt_buffer() in support of forcing corruptions for debug.
  * 
@@ -2895,16 +2898,17 @@ ExecuteTrigger(struct dinfo *dip, ...)
 	trigger_data_t *tdp = &dip->di_triggers[i];
 
 	switch (tdp->td_trigger) {
-	    case TRIGGER_NONE:
+	    case TRIGGER_NONE: {
 		return(status);
 		/*NOTREACHED*/
 		break;
-
-	    case TRIGGER_BR:
+	    }
+	    case TRIGGER_BR: {
 #if defined(SCSI)
-		if (dip->di_scsi_flag) {
-		    Printf(dip, "Executing SCSI Bus Reset...\n");
-		    status = os_reset_bus(dip->di_sgp);
+		scsi_generic_t *sgp = (dip->di_tsgp) ? dip->di_tsgp : dip->di_sgp;
+		if (sgp) {
+		    Printf(dip, "Executing SCSI Bus Reset on %s...\n", sgp->dsf);
+		    status = os_reset_bus(sgp);
 		} else
 #endif /* defined(SCSI) */
 		{
@@ -2914,12 +2918,13 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		}
 		break;
-
-	    case TRIGGER_BDR:
+	    }
+	    case TRIGGER_BDR: {
 #if defined(SCSI)
-		if (dip->di_scsi_flag) {
-		    Printf(dip, "Executing SCSI Bus Device Reset...\n");
-		    status = os_reset_device(dip->di_sgp);
+		scsi_generic_t *sgp = (dip->di_tsgp) ? dip->di_tsgp : dip->di_sgp;
+		if (sgp) {
+		    Printf(dip, "Executing SCSI Bus Device Reset on %s...\n", sgp->dsf);
+		    status = os_reset_device(sgp);
 		} else
 #endif /* defined(SCSI) */
 		{
@@ -2929,12 +2934,13 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		}
 		break;
-
-	    case TRIGGER_LR:
+	    }
+	    case TRIGGER_LR: {
 #if defined(SCSI)
-		if (dip->di_scsi_flag) {
-		    Printf(dip, "Executing SCSI LUN Reset...\n");
-		    status = os_reset_lun(dip->di_sgp);
+		scsi_generic_t *sgp = (dip->di_tsgp) ? dip->di_tsgp : dip->di_sgp;
+		if (sgp) {
+		    Printf(dip, "Executing SCSI LUN Reset on %s...\n", sgp->dsf);
+		    status = os_reset_lun(sgp);
 		} else
 #endif /* defined(SCSI) */
 		{
@@ -2944,13 +2950,13 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		    status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		}
 		break;
-
+	    }
 	    case TRIGGER_SEEK: {
 		large_t lba =  makeLBA(dip, getFileOffset(dip));
 #if defined(SCSI)
-		if (dip->di_scsi_flag) {
-		    scsi_generic_t *sgp = dip->di_sgp;
-		    Printf(dip, "Executing Seek(10) to lba %u...\n", lba);
+		scsi_generic_t *sgp = (dip->di_tsgp) ? dip->di_tsgp : dip->di_sgp;
+		if (sgp) {
+		    Printf(dip, "Executing Seek(10) to LBA %u on %s...\n", lba, sgp->dsf);
 		    status = Seek10(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
 				    NULL, &sgp, (unsigned int)lba, sgp->timeout);
 		} else
@@ -2963,18 +2969,17 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		}
 		break;
 	    }
-
-	    case TRIGGER_TRIAGE:
+	    case TRIGGER_TRIAGE: {
 #if defined(SCSI)
 		status = do_scsi_triage(dip);
 #endif /* defined(SCSI) */
 		break;
-
+	    }
 	    case TRIGGER_CDB: {
 #if defined(SCSI)
-		scsi_generic_t *sgp = dip->di_sgp;
-		if (dip->di_scsi_flag) {
-		    Printf(dip, "Executing User Defined Trigger CDB...\n");
+		scsi_generic_t *sgp = (dip->di_tsgp) ? dip->di_tsgp : dip->di_sgp;
+		if (sgp) {
+		    Printf(dip, "Executing User Defined Trigger CDB on %s...\n", sgp->dsf);
 		    status = SendAnyCdb(sgp->fd, sgp->dsf, dip->di_sDebugFlag, True/*dip->di_scsi_errors*/,
 					NULL, &sgp, sgp->timeout, dip->di_cdb, dip->di_cdb_size);
 		} else {
@@ -2983,7 +2988,6 @@ ExecuteTrigger(struct dinfo *dip, ...)
 #endif /* defined(SCSI) */
 		break;
 	    }
-
 	    case TRIGGER_CMD: {
 		va_list ap;
 		char *op;
@@ -3023,7 +3027,6 @@ ExecuteTrigger(struct dinfo *dip, ...)
 		status = ExecuteCommand(dip, cmd, LogPrefixEnable, True);
 		break;
 	    }
-
 	    default:
 		Eprintf(dip, "Invalid trigger type detected, type = %d\n", tdp->td_trigger);
 		return(FAILURE);

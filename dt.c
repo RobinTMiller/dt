@@ -31,8 +31,18 @@
  *
  * Modification History:
  * 
+ * June 16th, 2021 by Robin T. Miller
+ *      Add support for separate SCSI trigger device.
+ * 
+ * June 14th, 2021 by Robin T. Miller
+ *      Add support for "limit=random" to automatically setup random limits.
+ * 
+ * May 24th, 2021 by Robin T. Miller
+ *      When reporting the no-progress record number with read-after-write
+ * enabled, do not include both reads and writes, so the record is accurate.
+ * 
  * March 21st, 2021 by Robin T. Miller
- *      Add support for forcing FALSE data corruptiong for debugging.
+ *      Add support for forcing FALSE data corruptions for debugging.
  * 
  * March 8th, 2021 by Robin T. Miller
  *      When creating log directories in setup_log_directory(), create the
@@ -378,7 +388,10 @@ os_tid_t MonitorThreadId;		/* The monitoring thread ID.	*/
 # define MonitorThreadId	MonitorThread       
 #endif /* defined(WIN32) */
 
+extern iobehavior_funcs_t dtapp_iobehavior_funcs;
+
 iobehavior_funcs_t *iobehavior_funcs_table[] = {
+    //&dtapp_iobehavior_funcs,
     NULL
 };
 
@@ -515,7 +528,7 @@ char	*master_log;			/* The master log file name.	*/
 FILE	*master_logfp;			/* The master log file pointer.	*/
 dinfo_t	*master_dinfo;			/* The parents' information.	*/
 dinfo_t *iotune_dinfo;			/* The I/O device information.	*/
-
+char	*reread_file;			/* Optional re-read file name.	*/
 char	*tools_directory;		/* The default tools directory.	*/
 
 hbool_t DeleteErrorLogFlag = True;	/* Controls error log deleting.	*/
@@ -863,6 +876,8 @@ main(int argc, char **argv)
     if (StdoutIsAtty == True) {
 	dip->di_logheader_flag = False;
 	dip->di_logtrailer_flag = False;
+    } else {
+	dip->di_logtrailer_flag = True;
     }
 
     (void)make_stderr_buffered(dip);
@@ -3247,6 +3262,12 @@ finish_test_common(dinfo_t *dip, int thread_status)
 	(odip->di_history_dump == True) && (odip->di_history_dumped == False) ) {
 	dump_history_data(odip);
     }
+
+    /* If we've been writing, report command to reread the file data. */
+    if (dip->di_logtrailer_flag && (dip->di_ftype == OUTPUT_FILE) ) {
+	report_reread_data(dip, False, reread_file);
+    }
+
     /*
      * If thread status is FAILURE, log the command line.
      * Also log to thread log when log trailer flag enabled.
@@ -4078,9 +4099,19 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    continue;
 	}
 	if ( match(&string, "limit=") || match(&string, "data_limit=") ) {
-	    dip->di_data_limit = large_number(dip, string, ANY_RADIX, &status, True);
-	    if (status == FAILURE) {
-		return ( HandleExit(dip, status) );
+	    if (match(&string, "random")) {
+		dip->di_min_limit = MIN_DATA_LIMIT;
+		dip->di_max_limit = MAX_DATA_LIMIT;
+		if (dip->di_incr_limit == 0) {
+		    dip->di_variable_limit = True;
+		}
+		dip->di_data_limit = dip->di_max_limit;
+	    } else {
+		/* limit=value */
+		dip->di_data_limit = large_number(dip, string, ANY_RADIX, &status, True);
+		if (status == FAILURE) {
+		    return ( HandleExit(dip, status) );
+		}
 	    }
 	    dip->di_user_limit = dip->di_data_limit;
 	    /* Override the max limit as well, if previously specified! */
@@ -5197,12 +5228,6 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    dip->di_output_file = strdup(string);
 	    continue;
 	}
-#if defined(SCSI)
-	if (match (&string, "sdsf=")) {
-	    if (dip->di_scsi_dsf) free(dip->di_scsi_dsf);
-	    dip->di_scsi_dsf = strdup(string);
-	    continue;
-	}
 	if (match(&string, "lockmode=")) {
 	    if (match(&string, "full")) {
 		dip->di_lock_mode = lock_full;
@@ -5229,6 +5254,17 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		return ( HandleExit(dip, FAILURE) );
 	    }
 	    dip->di_lock_files = True;
+	    continue;
+	}
+#if defined(SCSI)
+	if (match (&string, "sdsf=")) {
+	    if (dip->di_scsi_dsf) free(dip->di_scsi_dsf);
+	    dip->di_scsi_dsf = strdup(string);
+	    continue;
+	}
+	if (match (&string, "tdsf=")) {
+	    if (dip->di_tscsi_dsf) free(dip->di_tscsi_dsf);
+	    dip->di_tscsi_dsf = strdup(string);
 	    continue;
 	}
 	if (match (&string, "readtype=")) {
@@ -5353,7 +5389,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	if ( match(&string, "elog=") || match(&string, "error_log=") ) {
 	    char logfmt[STRING_BUFFER_SIZE];
 	    char *path = logfmt;
-            char *logpath = NULL;
+            char *logpath = string;
 	    /* Handle existing error log file. */
 	    if (error_log) {
 		if (error_logfp) {
@@ -5362,8 +5398,8 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		FreeStr(dip, error_log);
 		error_log = NULL;
 	    }
-	    if (strlen(string) == 0) continue;
-            status = setup_log_directory(dip, path, string);
+	    if (strlen(logpath) == 0) continue;
+            status = setup_log_directory(dip, path, logpath);
 	    if (status == FAILURE) {
 		return (HandleExit(dip, status));
 	    }
@@ -5372,10 +5408,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    } else {
 		path = strdup(path);
 	    }
-	    /* Ok, that's it! The error file is open'ed for append upon errors! */
+	    /* Ok, that's it! The error file is open'ed for append upon errors. */
 	    error_log = path;
 	    if (DeleteErrorLogFlag == True) {
-		(void)os_delete_file(error_log); /* Delete existing error log file! */
+		(void)os_delete_file(error_log); /* Delete existing error log file. */
 	    }
 	    continue;
 	}
@@ -5388,19 +5424,47 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
             continue;
 	}
+	if ( match(&string, "reread_file=") ) {
+	    char logfmt[STRING_BUFFER_SIZE];
+	    char *path = logfmt;
+            char *reread_name = string;
+	    /* Handle existing reread file. */
+	    if (reread_file) {
+		FreeStr(dip, reread_file);
+		reread_file = NULL;
+	    }
+	    if (strlen(reread_name) == 0) continue;
+            status = setup_log_directory(dip, path, reread_name);
+	    if (status == FAILURE) {
+		return (HandleExit(dip, status));
+	    }
+	    if (strstr(path, "%")) {
+		path = FmtLogFile(dip, path, True);
+	    } else {
+		path = strdup(path);
+	    }
+	    reread_file = path;
+	    (void)os_delete_file(reread_file); /* Delete existing reread file. */
+            /* Enable options to properly enable this reread file option: */
+	    dip->di_logtrailer_flag = True;
+	    dip->di_keep_existing = True;
+	    dip->di_dispose_mode = KEEP_FILE;
+	    continue;
+	}
 	if ( match(&string, "iob=") || match(&string, "iobehavior=") ) {
+	    /* Sorry, ALL other I/O behaviors removed! */
 	    if ( match(&string, "dt") ) {
 		dip->di_iobehavior = DT_IO;
 		continue;
-	   } else {
-	       Eprintf(dip, "Valid I/O behaviors are: dt\n");
-	       return ( HandleExit(dip, FAILURE) );
-	   }
-	   status = (*dip->di_iobf->iob_initialize)(dip);
-	   if (status == FAILURE) {
-	       return (HandleExit(dip, status));
-	   }
-	   continue;
+	    } else {
+		Eprintf(dip, "Valid I/O behaviors are: dt\n");
+		return ( HandleExit(dip, FAILURE) );
+	    }
+	    status = (*dip->di_iobf->iob_initialize)(dip);
+	    if (status == FAILURE) {
+		return (HandleExit(dip, status));
+	    }
+	    continue;
 	}
 	if (match (&string, "iodir=")) {
 	    /* Note: iodir={reverse|vary} are special forms of random I/O! */
@@ -6532,7 +6596,8 @@ parse_args(dinfo_t *dip, int argc, char **argv)
             Free(dip, workloads);
 	    continue;	/* Parse more options to override workload! */
 	}
-	if (match (&string, "workloads")) {
+        /* Note: This parsing *must* stay after the workload= parsing! */
+	if ( match(&string, "workload") || match(&string, "workloads") ) {
 	    char *workload_name = NULL;
 	    if (++i < argc) {
 		workload_name = argv[i];
@@ -7077,8 +7142,9 @@ keepalive_alarm(dinfo_t *dip)
 	     (dip->di_optype == WRITE_OP) ||
 	     (dip->di_optype == AIOWAIT_OP) ) {
 	    Offset_t offset = (Offset_t)GetStatsValue(dip, ST_OFFSET, False, NULL);
-	    u_long records = (u_long)GetStatsValue(dip, ST_RECORDS, True, NULL);
 	    u_int32 lba = (dip->di_dsize) ? (u_int32)(offset / dip->di_dsize) : 0;
+            /* Get the current read or write record count. */
+	    u_long records = (dip->di_mode == READ_MODE) ? dip->di_records_read : dip->di_records_written;
 	    records++; /* Current outstanding record. */
 	    if (optmsg) {
 		bp += Sprintf(bp, "No progress made for record %u (lba %u, offset " FUF ") during %s() on %s for %d seconds!",
@@ -7122,18 +7188,11 @@ keepalive_alarm(dinfo_t *dip)
 #endif /* defined(DATA_CORRUPTION_URL) */
 	    }
 
-	    /*
-	     * If no triggers were specified, simply terminate this thread. 
-	     */
-	    if (dip->di_num_triggers == 0) {
-		Eprintf(dip, "No triggers, so terminating this job and all threads...\n");
-		dip->di_error_count++;
-		dip->di_terminating = True;
-		(void)stop_job(dip, dip->di_job);
-		exit_status = FAILURE;
-	    } else if ( (dip->di_trigger_control == TRIGGER_ON_ALL) ||
-			(dip->di_trigger_control == TRIGGER_ON_NOPROGS) ) {
-		if ( dip->di_num_triggers && (dip->di_trigger_active == False) ) {
+	    if ( dip->di_num_triggers &&
+		 (dip->di_trigger_control == TRIGGER_ON_ALL) ||
+		 (dip->di_trigger_control == TRIGGER_ON_NOPROGS) ) {
+        	/* Start thread to execute triggers, if not active already. */
+		if (dip->di_trigger_active == False) {
 		    int pstatus;
 		    /* Execute triggers via a thread to allow us to keep running! */
 		    pstatus = pthread_create(&dip->di_trigger_thread, tjattrp, do_triggers, dip);
@@ -7146,6 +7205,12 @@ keepalive_alarm(dinfo_t *dip)
 			}
 		    }
 		}
+	    } else {
+		Eprintf(dip, "No triggers or noprog triggers are not enabled, so stopping this job and its' threads...\n");
+		dip->di_error_count++;
+		dip->di_terminating = True;
+		(void)stop_job(dip, dip->di_job);
+		exit_status = FAILURE;
 	    }
 	}
     }
@@ -8797,7 +8862,10 @@ cleanup_device(dinfo_t *dip, hbool_t master)
 	cleanup_device(odip, False);
 	odip->di_output_dinfo = odip;
 #if defined(SCSI)
-	free_scsi_info(odip);
+	free_scsi_info(odip, &odip->di_sgp, &odip->di_sgpio);
+	if (odip->di_tsgp) {
+	    free_scsi_info(odip, &odip->di_tsgp, NULL);
+	}
 #endif /* defined(SCSI) */
     }
     /*
@@ -8961,7 +9029,10 @@ cleanup_device(dinfo_t *dip, hbool_t master)
 	dip->di_volume_path_name = NULL;
     }
 #if defined(SCSI)
-    free_scsi_info(dip);
+    free_scsi_info(dip, &dip->di_sgp, &dip->di_sgpio);
+    if (dip->di_tsgp) {
+	free_scsi_info(dip, &dip->di_tsgp, NULL);
+    }
 #endif /* defined(SCSI) */
     if (dip->di_pass_cmd) {
 	FreeStr(dip, dip->di_pass_cmd);
@@ -9728,7 +9799,7 @@ do_common_device_setup(dinfo_t *dip)
 	dip->di_max_data = (large_t)( (double)dip->di_fs_space_free *
 				      ((double)dip->di_max_data_percentage / 100.0) );
 	if (dip->di_threads > 1) {
-	    dip->di_max_data /= dip->di_threads; /* Divide across threads. */
+	    dip->di_max_data /= dip->di_threads;    /* Divide space across threads. */
 	}
 	if (dip->di_max_data) {
 	    /* This is important for direct I/O and IOT data pattern. */
@@ -9821,7 +9892,10 @@ do_common_device_setup(dinfo_t *dip)
 #if defined(SCSI)
     if ( (dip->di_scsi_flag == True) &&
 	 ((dip->di_dtype->dt_dtype == DT_DISK) || dip->di_scsi_dsf) ) {
-	if ( (status = init_scsi_info(dip)) == FAILURE ) {
+	if (dip->di_scsi_dsf == NULL) {
+	    dip->di_scsi_dsf = strdup(dip->di_dname);
+	}
+	if ((status = init_scsi_info(dip, dip->di_scsi_dsf, &dip->di_sgp, &dip->di_sgpio)) == FAILURE) {
 	    dip->di_scsi_flag = False;
 	}
     } else {
@@ -9832,8 +9906,11 @@ do_common_device_setup(dinfo_t *dip)
 	return(FAILURE);
     }
     if ( (dip->di_scsi_io_flag == True) && (dip->di_aio_flag == True) ) {
-	Eprintf(dip, "SCSI I/O and Asynchronous (AIO) is NOT supported!\n");
+	Eprintf(dip, "SCSI I/O and Asynchronous I/O (AIO) is NOT supported!\n");
 	return(FAILURE);
+    }
+    if (dip->di_tscsi_dsf) {
+	(void)init_scsi_trigger(dip, dip->di_tscsi_dsf, &dip->di_tsgp);
     }
 #endif /* defined(SCSI) */
 
@@ -10016,7 +10093,7 @@ do_common_device_setup(dinfo_t *dip)
      * Note: setup_slice() sets this for slices, called after this function!
      */
     if (dip->di_step_offset &&
-      ((dip->di_dtype->dt_dtype == DT_REGULAR) || dip->di_slices) ) {
+	((dip->di_dtype->dt_dtype == DT_REGULAR) || dip->di_slices) ) {
 	if (dip->di_data_limit && (dip->di_data_limit != INFINITY)) {
 	    dip->di_end_position = (dip->di_file_position + dip->di_data_limit);
 	} else {

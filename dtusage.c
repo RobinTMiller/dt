@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: April 27th, 2021"VARIANT", Version: 23.30, Author: Robin T. Miller";
+char *version_str = "Date: June 28th, 2021"VARIANT", Version: 23.33, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -78,6 +78,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\tof=filename           The output file to write.\n");
 #if defined(SCSI)
     P (dip, "\tsdsf=filename         The SCSI device special file.\n");
+    P (dip, "\ttdsf=filename         The SCSI trigger device file.\n");
 #endif /* defined(SCSI) */
     P (dip, "\tpf=filename           The data pattern file to use.\n");
     P (dip, "\tdir=dirpath           The directory path for files.\n");
@@ -90,7 +91,8 @@ dthelp(dinfo_t *dip)
     P (dip, "\tdepth=value           The subdirectory depth.\n");
     P (dip, "\tbs=value              The block size to read/write.\n");
     P (dip, "    or");
-    P (dip, "\tbs=random             Random size between 512 and 256k.\n");
+    P (dip, "\tbs=random             Random sizes between "SDF" and "SDF" bytes.\n",
+       MIN_RANDOM_SIZE, MAX_RANDOM_SIZE);
     P (dip, "\tibs=value             The read block size. (overrides bs=)\n");
     P (dip, "\tobs=value             The write block size. (overrides bs=)\n");
     P (dip, "\tjob_log=filename      The job log file name. (alias: jlog=)\n");
@@ -100,6 +102,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\tlogprefix=string      The per line logging prefix.\n");
     P (dip, "\terror_log=filename    The error log file name. (alias: elog=)\n");
     P (dip, "\tmaster_log=filename   The master log file name. (alias: mlog=)\n");
+    P (dip, "\treread_file=filename  The reread file name.\n");
 #if defined(AIO)
     P (dip, "\taios=value            Set number of AIO's to queue.\n");
 #endif /* defined(AIO) */
@@ -153,7 +156,10 @@ dthelp(dinfo_t *dip)
     P (dip, "\tmax=value             Set the maximum record size to transfer.\n");
     P (dip, "\tlba=value             Set starting block used w/lbdata option.\n");
     P (dip, "\tlbs=value             Set logical block size for lbdata option.\n");
-    P (dip, "\tlimit=value           The number of bytes to transfer.\n");
+    P (dip, "\tlimit=value           The number of bytes to transfer (data limit).\n");
+    P (dip, "    or");
+    P (dip, "\tlimit=random          Random data limits between "LUF" and "LUF" bytes.\n",
+       MIN_DATA_LIMIT, MAX_DATA_LIMIT);
     P (dip, "\tincr_limit=value      Set the data limit increment.\n");
     P (dip, "\tmin_limit=value       Set the minumum data limit.\n");
     P (dip, "\tmax_limit=value       Set the maximum data limit.\n");
@@ -701,7 +707,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\n    Keepalive Format Control:\n");
     P (dip, "\t    %%b = The bytes read or written.   %%B = Total bytes read and written.\n");
     P (dip, "\t    %%c = Record count for this pass.  %%C = Total records for this test.\n");
-    P (dip, "\t    %%d = The device name.             %%D = The real device name.\n");
+    P (dip, "\t    %%d = The device/file name.        %%D = The real device name.\n");
     P (dip, "\t    %%e = The number of errors.        %%E = The error limit.\n");
     P (dip, "\t    %%f = The files read or written.   %%F = Total files read and written.\n");
     P (dip, "\t    %%h = The host name.               %%H = The full host name.\n");
@@ -735,11 +741,12 @@ dthelp(dinfo_t *dip)
     P (dip, "\n    Default Pass Keepalive: (when full pass stats are disabled via disable=pstats)\n");
     P (dip, "\t    pkeepalive=\"%s\"\n", keepalive1);
 
-    P (dip, "\n    Log File/Log Prefix Format Keywords:\n");
+    P (dip, "\n    Common Format Control Keywords:\n");
     P (dip, "\t    %%array   = The array name or management IP.\n");
     P (dip, "\t    %%bufmode = The file buffer mode.  %%dfs    = The directory separator ('%c')\n",
 						       dip->di_dir_sep);
     P (dip, "\t    %%dsf     = The device name.       %%device = The device path.\n");
+    P (dip, "\t    %%sdsf    = The SCSI device name.  %%tdsf   = The trigger device name.\n");
     P (dip, "\t    %%file    = The file name.         %%devnum = The device number.\n");
     P (dip, "\t    %%host    = The host name.         %%user   = The user name.\n");
     P (dip, "\t    %%job     = The job ID.            %%tag    = The job tag.\n");
@@ -782,7 +789,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\t    \\ddd = Octal Value    \\xdd or \\Xdd = Hexadecimal Value\n");
   
     P (dip, "\n    Prefix Format Control:\n");
-    P (dip, "\t    %%d = The device name.           %%D = The real device name.\n");
+    P (dip, "\t    %%d = The device/file name.      %%D = The real device name.\n");
     P (dip, "\t    %%h = The host name.             %%H = The full host name.\n");
     P (dip, "\t    %%p = The process ID.            %%P = The parent PID.\n");
     P (dip, "\t    %%s = The device serial number.\n");
