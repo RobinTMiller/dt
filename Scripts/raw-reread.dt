@@ -1,0 +1,40 @@
+# Make this a required parameter so this script is general purpose!
+$DISKS=${DISKS:?Please define DISKS to list of disks to test!}
+#
+#enable=scriptverify
+# Linux dt: /auto/share/IOGenerationTools/Dt/Linux/dt
+#
+# Base Workload: (for reference)
+#   san_disk: SAN Direct Disk Workload
+#      bs=random slices=4 pattern=iot prefix='%d@%h' enable=btags iodir=vary iotype=vary keepalivet=5m onerr=abort disable=pstats noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=syslog runtime=12h stopon=/var/tmp/stopit.dt
+#
+$LOGDIR=${LOGDIR:-/var/tmp/dtlogs}
+$LOGPREFIX="logprefix='%seq %ymd %hms %et %prog (j:%job t:%thread): '"
+$RUNTIME=${RUNTIME:-24h}
+# Additional options plus overrides:
+$OPTIONS="max=1m hdsize=64 runtime=${RUNTIME} keepalivet=30 job_log=${LOGDIR}/dt_job%job.log log=${LOGDIR}/dt_thread-j%jobt%thread.log enable=htiming,read_immed,reread,stopimmed slices=8 ${LOGPREFIX}"
+#
+# So here's a summary of the options:
+#   random block sizes, 8 slices (threads), vary between sequential and random I/O,
+#   vary between forward and reverse direction for sequential I/O,
+#   5 history entries, saving 64 bytes per record,
+#   set I/O monitoring to 15 seconds, failing I/O after 130 seconds
+#   report dt start/end times to syslog, along with any errors detected
+#   runtime set to 24 hours, with a stopit file to stop after current pass
+#   we will do a read-after-write during write pass, but also do a read pass
+#   we will report a keepalive every 5 minutes using default keepalive string
+#
+
+# List of disks for Anish's tc71 system.
+#$DISKS='/dev/mapper/mpathaa,/dev/mapper/mpathab,/dev/mapper/mpathac,/dev/mapper/mpathad,/dev/mapper/mpathae,/dev/mapper/mpathaf,/dev/mapper/mpathag,/dev/mapper/mpathah,/dev/mapper/mpathai,/dev/mapper/mpathaj,/dev/mapper/mpathak,/dev/mapper/mpathal,/dev/mapper/mpatham,/dev/mapper/mpathan,/dev/mapper/mpathao,/dev/mapper/mpathap,/dev/mapper/mpathaq,/dev/mapper/mpathar,/dev/mapper/mpathas,/dev/mapper/mpathat,/dev/mapper/mpathau,/dev/mapper/mpathav,/dev/mapper/mpathaw,/dev/mapper/mpathax,/dev/mapper/mpathay,/dev/mapper/mpathaz,/dev/mapper/mpathba,/dev/mapper/mpathbb,/dev/mapper/mpathbc,/dev/mapper/mpathbd,/dev/mapper/mpathbe,/dev/mapper/mpathbf,/dev/mapper/mpathbg,/dev/mapper/mpathbh,/dev/mapper/mpathbi,/dev/mapper/mpathbj,/dev/mapper/mpathbk,/dev/mapper/mpathbl,/dev/mapper/mpathbm,/dev/mapper/mpathbn,/dev/mapper/mpathbo,/dev/mapper/mpathbp,/dev/mapper/mpathbq,/dev/mapper/mpathbr,/dev/mapper/mpathbs,/dev/mapper/mpathbt,/dev/mapper/mpathbu,/dev/mapper/mpathbv,/dev/mapper/mpathbw,/dev/mapper/mpathbx,/dev/mapper/mpathby,/dev/mapper/mpathbz,/dev/mapper/mpathca,/dev/mapper/mpathcb,/dev/mapper/mpathcc,/dev/mapper/mpathcd,/dev/mapper/mpathce,/dev/mapper/mpathcf,/dev/mapper/mpathcg,/dev/mapper/mpathch,/dev/mapper/mpathci,/dev/mapper/mpathcj,/dev/mapper/mpathck,/dev/mapper/mpathcl,/dev/mapper/mpathcm,/dev/mapper/mpathcn,/dev/mapper/mpathco,/dev/mapper/mpathcp,/dev/mapper/mpathcq,/dev/mapper/mpathcr,/dev/mapper/mpathcs,/dev/mapper/mpathct,/dev/mapper/mpathcu,/dev/mapper/mpathcv,/dev/mapper/mpathcw,/dev/mapper/mpathcx,/dev/mapper/mpathcy,/dev/mapper/mpathcz,/dev/mapper/mpathda,/dev/mapper/mpathdb,/dev/mapper/mpathdc,/dev/mapper/mpathdd,/dev/mapper/mpathde,/dev/mapper/mpathdf,/dev/mapper/mpathdg,/dev/mapper/mpathdh,/dev/mapper/mpathdi,/dev/mapper/mpathdj,/dev/mapper/mpathdk,/dev/mapper/mpathdl,/dev/mapper/mpathdm,/dev/mapper/mpathdn,/dev/mapper/mpathdo,/dev/mapper/mpathdp,/dev/mapper/mpathdq,/dev/mapper/mpathdr,/dev/mapper/mpathds,/dev/mapper/mpathdt,/dev/mapper/mpathdu,/dev/mapper/mpathdv,/dev/mapper/mpathdw,/dev/mapper/mpathdx,/dev/mapper/mpathdy,/dev/mapper/mpathdz,/dev/mapper/mpathea,/dev/mapper/mpatheb,/dev/mapper/mpathec,/dev/mapper/mpathed,/dev/mapper/mpathee,/dev/mapper/mpathef,/dev/mapper/mpatheg,/dev/mapper/mpatheh,/dev/mapper/mpathei,/dev/mapper/mpathej,/dev/mapper/mpathek,/dev/mapper/mpathel,/dev/mapper/mpathem,/dev/mapper/mpathen,/dev/mapper/mpatheo,/dev/mapper/mpathep,/dev/mapper/mpatheq,/dev/mapper/mpather,/dev/mapper/mpathes,/dev/mapper/mpathet,/dev/mapper/mpatheu,/dev/mapper/mpathev,/dev/mapper/mpathew,/dev/mapper/mpathex,/dev/mapper/mpathey,/dev/mapper/mpathez,/dev/mapper/mpathfa,/dev/mapper/mpathfb,/dev/mapper/mpathfc,/dev/mapper/mpathfd,/dev/mapper/mpathfe,/dev/mapper/mpathff,/dev/mapper/mpathfg,/dev/mapper/mpathfh,/dev/mapper/mpathfi,/dev/mapper/mpathfj,/dev/mapper/mpathfk,/dev/mapper/mpathfl,/dev/mapper/mpathfm,/dev/mapper/mpathfn,/dev/mapper/mpathfo,/dev/mapper/mpathfp,/dev/mapper/mpathfq,/dev/mapper/mpathfr,/dev/mapper/mpathfs,/dev/mapper/mpathft,/dev/mapper/mpathfu,/dev/mapper/mpathfv,/dev/mapper/mpathfw,/dev/mapper/mpathfx,/dev/mapper/mpathfy,/dev/mapper/mpathfz,/dev/mapper/mpathga,/dev/mapper/mpathgb,/dev/mapper/mpathgc,/dev/mapper/mpathgd,/dev/mapper/mpathge,/dev/mapper/mpathgf,/dev/mapper/mpathgg,/dev/mapper/mpathgh,/dev/mapper/mpathgi,/dev/mapper/mpathgj,/dev/mapper/mpathgk,/dev/mapper/mpathgl,/dev/mapper/mpathgm,/dev/mapper/mpathgn,/dev/mapper/mpathgo,/dev/mapper/mpathgp,/dev/mapper/mpathgq,/dev/mapper/mpathgr,/dev/mapper/mpathgs,/dev/mapper/mpathgt,/dev/mapper/mpathgu,/dev/mapper/mpathgv,/dev/mapper/mpathgw,/dev/mapper/mpathgx,/dev/mapper/mpathgy,/dev/mapper/mpathgz,/dev/mapper/mpathha,/dev/mapper/mpathhb,/dev/mapper/mpathhc,/dev/mapper/mpathhd,/dev/mapper/mpathhe,/dev/mapper/mpathhf,/dev/mapper/mpathhg,/dev/mapper/mpathhh,/dev/mapper/mpathhi,/dev/mapper/mpathhj,/dev/mapper/mpathhk,/dev/mapper/mpathhl,/dev/mapper/mpathhm,/dev/mapper/mpathhn,/dev/mapper/mpathho,/dev/mapper/mpathhp,/dev/mapper/mpathhq,/dev/mapper/mpathhr,/dev/mapper/mpathhs,/dev/mapper/mpathht,/dev/mapper/mpathhu,/dev/mapper/mpathhv,/dev/mapper/mpathhw,/dev/mapper/mpathhx,/dev/mapper/mpathhy,/dev/mapper/mpathhz,/dev/mapper/mpathia,/dev/mapper/mpathib,/dev/mapper/mpathic,/dev/mapper/mpathid,/dev/mapper/mpathie,/dev/mapper/mpathif,/dev/mapper/mpathig,/dev/mapper/mpathih,/dev/mapper/mpathii,/dev/mapper/mpathij,/dev/mapper/mpathik,/dev/mapper/mpathil,/dev/mapper/mpathim,/dev/mapper/mpathin,/dev/mapper/mpathio,/dev/mapper/mpathip,/dev/mapper/mpathiq,/dev/mapper/mpathir,/dev/mapper/mpathis,/dev/mapper/mpathit,/dev/mapper/mpathiu,/dev/mapper/mpathiv,/dev/mapper/mpathiw,/dev/mapper/mpathix,/dev/mapper/mpathiy,/dev/mapper/mpathiz,/dev/mapper/mpathja,/dev/mapper/mpathjb,/dev/mapper/mpathjc,/dev/mapper/mpathjd,/dev/mapper/mpatho,/dev/mapper/mpathp,/dev/mapper/mpathq,/dev/mapper/mpathr,/dev/mapper/mpaths,/dev/mapper/mpatht,/dev/mapper/mpathu,/dev/mapper/mpathv,/dev/mapper/mpathw,/dev/mapper/mpathx,/dev/mapper/mpathy,/dev/mapper/mpathz'
+
+#wd=wd1,sd=sd*,xfersize=(1k,10,4k,50,9k,25,1024k,15),rdpct=0,seekpct=80
+#rd=run1,wd=wd1,iorate=max,elapsed=1000000,interval=10
+
+# For my testing:
+#$DISKS='/dev/mapper/mpathf,/dev/mapper/mpathe'
+
+system rm -rf ${LOGDIR}
+system mkdir -p ${LOGDIR}
+of=${DISKS} workload=san_disk ${OPTIONS}
+system ls -ls ${LOGDIR}

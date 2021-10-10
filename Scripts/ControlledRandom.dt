@@ -1,0 +1,60 @@
+enable=scriptverify
+
+$DISK=${DISK:-/dev/nimblestorage/large-lun002-2b0ee650cb61c226f6c9ce900ec009227}
+
+#
+# Requirement:
+#   How best to do random I/O with Uniform Distribution across a 20TB LUN?
+#
+# Problem:
+#   dt's random is truly random with overwrites and since it does NOT maintain
+# a random map of previously written blocks, cannot guarantee all blocks are written.
+#
+# Solution, Controlled Random I/O:
+#   This script illustrates how to perform controller random I/O using slices and
+# sequential I/O with slices with multiple jobs. Sorry, no single command line!
+#
+# Note: Multiple slices creates its' own random I/O even with each slice doing
+# sequential I/O. But, to provide higher performance and random I/O sequences,
+# multiple threads with starting slice offset and setp options can benefit I/O.
+#
+# Performance Considerations:
+#   The best performance options is difficult to define, since this varies by
+# many factors, include but not limited to:
+#   Array model, protocol/port speed, # of disks, # of paths, queue depth, etc.
+#
+# FWIW: With proper options, I have found all I/O tools drive I/O fairly high!
+#
+
+#
+# FYI: This example will show how to use multiple jobs to a single slice.
+# My test LUN is 5TB, so I'll break this capacity into 100 slices.
+#
+$BS=${STEP:-256k}
+# Note: Do not specify a capacity for dt to use the full disk capacity.
+$CAPACITY=1t
+# Note: You may need to tune this value. Actual I/O's is 2 times this!
+$SLICES=100
+$SLICE=${SLICES}/2
+$SOFFSET=${BS}
+$STEP=${BS}
+
+# Note: For testing, I'm using a smaller capacity and and one slice. (add logs as desired)
+$OPTS="bs=${BS} enable=async,raw,reread capacity=${CAPACITY} disable=trigdefaults slices=${SLICES} slice=${SLICE} disable=stats enable=job_stats keepalivet=5m"
+
+# Suggest these options for final test: (add disable=verify for write only)
+##$OPTS="bs=${BS} enable=async disable=trigdefaults slices=${SLICES} disable=stats enable=job_stats keepalivet=5m"
+
+#
+# Envision the data layout:
+#   First Thread: <data><step><data><step>...
+#  Second Thread: <step><data><step><data>...
+#
+# Note: This can be done with more than two threads (of course), but you must
+# be aware of how each thread is laying out its' data! You must avoid overlaps!
+#
+
+# Start the actual I/O via two jobs here:
+of=${DISK} ${OPTS} step=${STEP} pattern=0x01FF03FF
+# Note: The starting offset within a slice.
+of=${DISK} ${OPTS} soffset=${SOFFSET} step=${STEP} pattern=0x02FF02FF

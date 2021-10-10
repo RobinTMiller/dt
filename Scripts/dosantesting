@@ -12,7 +12,7 @@ CLUS1_DST=${CLUS1_DST:-/dev/dm-1}
 CLUS2_SRC=${CLUS2_SRC:-/dev/dm-2}
 CLUS2_DST=${CLUS2_DST:-/dev/dm-3}
 
-${DT_PATH} workload=san_interop_lun of=${CLUS1_SRC},${CLUS2_SRC} runtime=3m
+${DT_PATH} workload=san_disk of=${CLUS1_SRC},${CLUS2_SRC} runtime=3m
 check_error
 
 ${DT_PATH} script=doluncopy.dt

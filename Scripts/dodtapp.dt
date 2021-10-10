@@ -1,0 +1,55 @@
+enable=scriptverify
+version
+
+# A simple script to demonstrate multiple mirror operations.
+
+logprefix="%et %prog %device (j:%job t:%thread): "
+
+$CAPACITYP=${CAPACITYP:-capacityp=10}
+$LOGDIR=${LOGDIR:/var/tmp}
+system rm -f ${LOGDIR}/dtapp_job*.log ${LOGDIR}/dtapp_thread*.log
+
+$MIRROR_OPTIONS="iobehavior=dtapp bs=random ${CAPACITYP} onerr=abort history=25 keepalivet=30 tag=mirror job_log=${LOGDIR}/dtapp_job%job.log log=${LOGDIR}/dtapp_thread-j%jobt%thread.log"
+
+# For this test, these are paths to the same LUN!
+# Note: Override defaults with environment variables.
+$WRITER=${WRITER:?'Please set writer device(s)!'}
+$MIRROR=${MIRROR:?'Please set mirror device(s)!'}
+
+# Background jobs via &, bg, or enable=async
+# Each job has an ID, but a tag can be specified.
+# For this test, all jobs are synchronous except the last.
+# Also Note: Random I/O has been removed, due to overwrites!
+
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} limit=250m
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} prefix="%U" pattern=incr enable=lbdata
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} pattern=iot slices=10 enable=raw
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} pattern=iot prefix="%d@%h" step=1m slices=3 passes=3
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} pattern=incr enable=lbdata aios=16
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} iodir=reverse enable=lbdata enable=timestamp
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} iodir=reverse pattern=iot slices=10
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} pattern=incr prefix="%s" iodir=reverse enable=scsi_io
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} slices=10 slice=7 prefix="%U" enable=lbdata iodir=vary passes=3
+of=${WRITER} mirror=${MIRROR} ${MIRROR_OPTIONS} pattern=iot slices=10 disable=pstats rseed=0x56240e41 &
+
+# Give threads a short time to get started.
+msleep=50
+
+# Show active jobs:
+jobs
+
+# Query thread status:
+query
+
+# Wait for all jobs/threads to complete.
+
+wait tag=mirror
+
+# Now, verify just the primary (source) devices.
+
+if=${WRITER} ${MIRROR_OPTIONS} pattern=iot slices=10 disable=pstats rseed=0x56240e41
+
+# And now verify just the destination (mirror) devices.
+if=${MIRROR} ${MIRROR_OPTIONS} pattern=iot slices=10 disable=pstats rseed=0x56240e41 vflags=~serial
+
+# Ok, we're all done!

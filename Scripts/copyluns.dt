@@ -5,16 +5,16 @@ version
 
 # The slices option creates multiple threads to the same device/file.
 
-$COPY_OPTIONS="bs=32k slices=2 limit=100m"
+$COPY_OPTIONS="bs=32k slices=2 limit=1g"
 $DEBUG_OPTIONS=enable=fdebug,debug
 
 # First cluster source/destination devices.
-$CLUS1_SRC=${CLUS1_SRC:/dev/dm-0}
-$CLUS1_DST=${CLUS1_DST:/dev/dm-1}
+$CLUS1_SRC=${CLUS1_SRC:?'Please define the first source disk: CLUS1_SRC'}
+$CLUS1_DST=${CLUS1_DST:?'Please define the first destination disk: CLUS1_DST'}
 
 # Second cluster source/destination devices.
-$CLUS2_SRC=${CLUS2_SRC:/dev/dm-2}
-$CLUS2_DST=${CLUS2_DST:/dev/dm-3}
+$CLUS2_SRC=${CLUS2_SRC:?'Please define the second source disk: CLUS2_SRC'}
+$CLUS2_DST=${CLUS2_DST:?'Please define the second destination disk? CLUS2_DST'}
 
 # Background jobs via &, bg, or enable=async
 # Each job has an ID, but a tag can be specified.

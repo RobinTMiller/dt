@@ -1,7 +1,0 @@
-#!/bin/ksh
-
-# Remember: The directory much have subdirs named: *-client*
-
-# ../Scripts/show_IO_resume_times.ksh-orig -i 1 -l /var/tmp
-#../Scripts/show_IO_resume_times.ksh -i 1 -l /var/tmp
-../Scripts/show_IO_resume_times.ksh -i 5 -g -l /var/tmp

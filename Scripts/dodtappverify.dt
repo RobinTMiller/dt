@@ -1,0 +1,29 @@
+enable=scriptverify
+version
+
+logprefix="%et %prog %device (j:%job t:%thread d:%devnum): "
+
+$LOGDIR=${LOGDIR:/var/tmp}
+system rm -f ${LOGDIR}/dtappverify_job*.log ${LOGDIR}/dtappverify_thread*.log
+
+$WRITER=${WRITER:?'Please set writer device(s)!'}
+$MIRROR=${MIRROR:?'Please set mirror device(s)!'}
+
+$DEBUG="enable=edebug,tdebug disable=pstats,scsi_info"
+#$DEBUG="enable=debug,Debug,jdebug,tdebug disable=pstats,scsi_info"
+
+$MIRROR_OPTIONS="iobehavior=dtapp bs=random onerr=abort history=25 tag=dtapp job_log=${LOGDIR}/dtappverify_job%job.log log=${LOGDIR}/dtappverify_thread-j%jobt%thread.log"
+
+#of=${WRITER} ${MIRROR_OPTIONS} ${DEBUG}
+#of=${WRITER} ${MIRROR_OPTIONS} prefix="%U" pattern=incr enable=lbdata ${DEBUG}
+#of=${WRITER} ${MIRROR_OPTIONS} pattern=iot slices=10 disable=raw ${DEBUG}
+#of=${WRITER} ${MIRROR_OPTIONS} pattern=iot prefix="%d@%h" step=1m slices=3 passes=3 ${DEBUG}
+#of=${WRITER} ${MIRROR_OPTIONS} pattern=incr enable=lbdata ${DEBUG}
+#of=${WRITER} ${MIRROR_OPTIONS} iodir=reverse enable=lbdata enable=timestamp ${DEBUG}
+#of=${WRITER} ${MIRROR_OPTIONS} iodir=reverse pattern=iot slices=10 ${DEBUG}
+#of=${WRITER} ${MIRROR_OPTIONS} pattern=incr prefix="%s" iodir=reverse enable=scsi_io ${DEBUG}
+#of=${WRITER} ${MIRROR_OPTIONS} slices=10 slice=7 prefix="%U" enable=lbdata iodir=vary passes=3 ${DEBUG}
+#of=${WRITER} ${MIRROR_OPTIONS} pattern=iot slices=10 disable=pstats rseed=0x56240e41 ${DEBUG}
+
+if=${WRITER} ${MIRROR_OPTIONS} pattern=iot slices=10 rseed=0x56240e41 ${DEBUG}
+if=${MIRROR} ${MIRROR_OPTIONS} pattern=iot slices=10 rseed=0x56240e41 vflags=~serial ${DEBUG}

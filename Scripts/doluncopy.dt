@@ -10,12 +10,12 @@ $COPY_OPTIONS="bs=32k slices=3 keepalivet=15"
 $DATA_LIMIT="limit=1g"
 
 # First cluster source/destination devices.
-$CLUS1_SRC=${CLUS1_SRC:/dev/dm-0}
-$CLUS1_DST=${CLUS1_DST:/dev/dm-1}
+$CLUS1_SRC=${CLUS1_SRC:?'Please define the first source disk: CLUS1_SRC'}
+$CLUS1_DST=${CLUS1_DST:?'Please define the first destination disk: CLUS1_DST'}
 
 # Second cluster source/destination devices.
-$CLUS2_SRC=${CLUS2_SRC:/dev/dm-2}
-$CLUS2_DST=${CLUS2_DST:/dev/dm-3}
+$CLUS2_SRC=${CLUS2_SRC:?'Please define the second source disk: CLUS2_SRC'}
+$CLUS2_DST=${CLUS2_DST:?'Please define the second destination disk? CLUS2_DST'}
 
 # Populate the source disks to be copied, with a known patttern.
 

@@ -1,11 +1,12 @@
 #!/bin/sh
-DT_MAJOR=${DT_MAJOR:-"v21"}
-DT_MINOR=${DT_MINOR:-"21"}
+DT_MAJOR=${DT_MAJOR:-"v23"}
+DT_MINOR=${DT_MINOR:-"24"}
 DT_VERSION="${DT_MAJOR}.${DT_MINOR}"
 rm -f dt-source-${DT_VERSION}.tar.gz
-cp /dev/null dt.${DT_MAJOR}/windows/dt.VC.db
-find dt.${DT_MAJOR} \( -name '*.o' -o -name '*.obj' \) | xargs rm
-tar --exclude=.git -cf dt-source-${DT_VERSION}.tar ./dt.${DT_MAJOR}
+##cp /dev/null dt.${DT_MAJOR}/windows/dt.VC.db
+##find dt.${DT_MAJOR} \( -name '*.o' -o -name '*.obj' \) | xargs rm
+tar --exclude=.git --exclude=.vs --exclude='*.pdb' --exclude='*.VC.db' --exclude='*.tlog' --exclude='*.obj' --exclude='*.o' \
+ --create --file=dt-source-${DT_VERSION}.tar ./dt.${DT_MAJOR}
 ls -ls dt-source-${DT_VERSION}.tar
 gzip -9 dt-source-${DT_VERSION}.tar
 ls -ls dt-source-${DT_VERSION}.tar.gz

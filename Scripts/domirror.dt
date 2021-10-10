@@ -1,6 +1,11 @@
 enable=scriptverify
 version
 
+# For this test, these are paths to the same LUN!
+# Note: Override defaults with environment variables.
+$WRITER=${WRITER:?'Please set writer device!'}
+$MIRROR=${MIRROR:?'Please set mirror device!'}
+
 # A simple script to demonstrate multiple mirror operations.
 
 logprefix="%et %prog %device (j:%job t:%thread): "
@@ -18,11 +23,6 @@ $DEBUG_OPTIONS=${DEBUG_OPTIONS:enable=debug,hdump,htiming}
 # Cleanup old log files: (as required)
 system rm -rf ${LOGDIR}
 system mkdir ${LOGDIR}
-
-# For this test, these are paths to the same LUN!
-# Note: Override defaults with environment variables.
-$WRITER=${WRITER:/dev/sde}
-$MIRROR=${MIRROR:/dev/sdf}
 
 # Background jobs via &, bg, or enable=async
 # Each job has an ID, but a tag can be specified.

@@ -3,7 +3,7 @@
 #
 #/****************************************************************************
 # *									     *
-# *			  COPYRIGHT (c) 1990 - 2017			     *
+# *			  COPYRIGHT (c) 1990 - 2021			     *
 # *			   This Software Provided			     *
 # *				     By					     *
 # *			  Robin's Nest Software Inc.			     *
@@ -66,6 +66,7 @@ LIBS=
 # Note: Math library required for sio I/O behavior for sqrt()!
 #
 EXTLIBS= -lrt -lpthread -lgcc_s -lm
+# Note: Many systems do NOT have UUID pacakges installed!
 ##EXTLIBS= -lrt -lpthread -lgcc_s -lm -luuid
 
 LINTLIBS=
@@ -74,8 +75,7 @@ LINTLIBS=
 
 PORG      = -O3
 
-CFLAGS= $(PORG) -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0 
-##CFLAGS= $(PORG) -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI
+CFLAGS= $(PORG) -std=c99 -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DSCSI -DHAVE_UUID=0 -DNVME
 # For testing tape and serial line support.
 #CFLAGS= $(PORG) -I.. -DAIO -DMMAP -D__linux__ -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DTAPE
 CPP=	/lib/cpp
@@ -85,15 +85,16 @@ LDFLAGS=
 
 # end of system makefile definitions
 
-HDRS=		dt.h common.h dtmtrand64.h dtunix.h
-SCSI_HDRS=	libscsi.h scsilib.h inquiry.h scsi_cdbs.h
+HDRS=		dt.h common.h dtbtag.h dtmtrand64.h dtunix.h
+SCSI_HDRS=	libscsi.h scsilib.h inquiry.h scsi_cdbs.h nvme_lib.h
 ALL_HDRS=       ${HDRS} ${SCSI_HDRS}
 
 ### MKMF:SOURCES ###
 
 SCSI_CFILES=	libscsi.c	\
 		scsidata.c	\
-		scsilib.c
+		scsilib.c	\
+		nvme_lib.c
 
 CFILES=		\
 		dt.c		\
@@ -109,6 +110,7 @@ CFILES=		\
 		dtmem.c		\
 		dtmmap.c	\
 		dtmtrand64.c	\
+		dtnvme.c	\
 		dtprint.c	\
 		dtprocs.c	\
 		dtread.c	\
@@ -212,6 +214,7 @@ dtprint.o: dtprint.c $(HDRS)
 dtprocs.o: dtprocs.c $(HDRS)
 dtread.o: dtread.c $(HDRS)
 dtwrite.o: dtwrite.c $(HDRS)
+dtnvme.o: dtnvme.c $(HDRS) $(SCSI_HDRS)
 dtscsi.o: dtscsi.c $(HDRS) $(SCSI_HDRS)
 dtstats.o: dtstats.c $(HDRS)
 dttape.o: dttape.c $(HDRS)
@@ -224,3 +227,4 @@ dtworkloads.o: dtworkloads.c $(HDRS)
 libscsi.o: libscsi.c $(HDRS) $(SCSI_HDRS)
 scsidata.o: scsidata.c $(SCSI_HDRS)
 scsilib.o: scsilib.c $(SCSI_HDRS)
+nvme_lib.o: nvme_lib.c nvme_lib.h
