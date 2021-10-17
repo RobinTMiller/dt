@@ -31,6 +31,9 @@
  *
  * Modification History:
  * 
+ * August 5th, 2021 by Robin T. Miller
+ *      Added support for NVMe disks.
+ * 
  * March 21st, 2021 by Robin T. Miller
  *      Add support for forcing FALSE data corruptiong for debugging.
  * 
@@ -1086,7 +1089,9 @@ retry:
     *status = SUCCESS;
 
     ENABLE_NOPROG(dip, READ_OP);
-    if (dip->di_scsi_io_flag == True) {
+    if (dip->di_nvme_io_flag == True) {
+	count = nvmeReadData(dip, buffer, bsize, offset);
+    } else if (dip->di_scsi_io_flag == True) {
 	count = scsiReadData(dip, buffer, bsize, offset);
     } else if (dip->di_random_access == False) {
 	count = os_read_file(dip->di_fd, buffer, bsize);

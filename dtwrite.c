@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2020			    *
+ *			  COPYRIGHT (c) 1988 - 2021			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,9 @@
  *	Write routines for generic data test program.
  * 
  * Modification History:
+ * 
+ * August 5th, 2021 by Robin T. Miller
+ *      Added support for NVMe disks.
  * 
  * March 21st, 2021 by Robin T. Miller
  *      Add support for forcing FALSE data corruptiong for debugging.
@@ -1406,7 +1409,9 @@ write_record(
 retry:
     *status = SUCCESS;
     ENABLE_NOPROG(dip, WRITE_OP);
-    if (dip->di_scsi_io_flag == True) {
+    if (dip->di_nvme_io_flag == True) {
+	count = nvmeWriteData(dip, buffer, bsize, offset);
+    } else if (dip->di_scsi_io_flag == True) {
 	count = scsiWriteData(dip, buffer, bsize, offset);
     } else if (dip->di_random_access == False) {
 	count = os_write_file(dip->di_fd, buffer, bsize);

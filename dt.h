@@ -25,6 +25,9 @@
 /*
  * Modification History:
  * 
+ * July 30th, 2021 by Robin T. Miller
+ *      Adding initial support for NVMe disks.
+ * 
  * May 25th, 2021 by Robin T. Miller
  *      Resetting RETRYDC_LIMIT back to 1, since the delay and extra re-read,
  * is generally undesirable when sending triggers quickly is more important!
@@ -1382,6 +1385,21 @@ typedef struct dinfo {
 	hbool_t	di_iotuning_flag;	/* The iotuning control flag.	*/
 	hbool_t	di_iotuning_active;	/* The iotuning active flag.	*/
 	unsigned int di_iotune_delay;	/* The iotuning retry delay.	*/
+#if defined(NVME)
+        /*
+         * NVMe Information:
+         */
+        uint32_t di_namespace_id;       /* The NVMe namespace ID.       */
+        uint32_t di_nvme_sector_size;   /* The sector size.             */
+        uint64_t di_namespace_size;     /* The namespave size (bytes).  */
+        uint64_t di_namespace_capacity; /* The namespace capacity.      */
+        uint64_t di_namespace_utilization; /* Namespace utilization.    */
+        char    *di_namespace_nguid;    /* Globally Unique Identifier.  */
+        char    *di_namespace_eui64;    /* IEEE Extended Unique Identifier. */
+        char    *di_nvm_subsystem_nqn;  /* Subsystem NVMe Qualified Name. */
+        long double di_total_nvm_capacity; /* Total NVM capacity (bytes). */
+        long double di_unalloc_nvm_capacity; /* Total NVM capacity (bytes). */
+#endif /* defined(NVME) */
 #if defined(SCSI)
 	/*
 	 * SCSI Specific Information:
@@ -1439,8 +1457,10 @@ typedef struct dinfo {
 	unsigned char di_cdb_size;	/* The SCSI CDB size.		*/
 #endif /* defined(SCSI) */
 	/* Always define these SCSI flags to reduce conditionalization. */
+        hbool_t di_nvme_flag;           /* The NVMe control flag.       */
 	hbool_t	di_scsi_flag;		/* The SCSI control flag.	*/
 	hbool_t	di_scsi_io_flag;	/* Flag to control SCSI I/O.	*/
+	hbool_t	di_nvme_io_flag;	/* Flag to control NVMe I/O.	*/
 	/*
 	 * Mounted File System Information:
 	 */
@@ -2159,6 +2179,21 @@ extern ssize_t scsiReadData(dinfo_t *dip, void *buffer, size_t bytes, Offset_t o
 extern ssize_t scsiWriteData(dinfo_t *dip, void *buffer, size_t bytes, Offset_t offset);
 extern void dtReportScsiError(dinfo_t *dip, scsi_generic_t *sgp);
 extern int get_standard_scsi_information(dinfo_t *dip, scsi_generic_t *sgp);
+extern void strip_trailing_spaces(char *bp);
+
+/* Note: Without NVME support, stubs exist for these functions. */
+extern void report_standard_nvme_information(dinfo_t *dip);
+extern ssize_t nvmeReadData(dinfo_t *dip, void *buffer, size_t bytes, Offset_t offset);
+extern ssize_t nvmeWriteData(dinfo_t *dip, void *buffer, size_t bytes, Offset_t offset);
+
+/* dtnvme.c */
+#if defined(NVME) && defined(__linux__)
+extern int init_nvme_info(dinfo_t *dip, char *dsf);
+extern int get_nvme_id_ctrl(dinfo_t *dip, int fd);
+extern int get_nvme_namespace(dinfo_t *dip, int fd);
+extern int do_nvme_write_zeroes(dinfo_t *dip);
+extern void dt_nvme_show_status(dinfo_t *dip, char *op, int status);
+#endif /* defined(NVME) && defined(__linux__) */
 
 #else /* !defined(SCSI) */
 
@@ -2179,6 +2214,8 @@ extern void report_os_information(dinfo_t *dip, hbool_t print_header);
 extern void report_scsi_summary(dinfo_t *dip, hbool_t print_header);
 extern void dt_job_finish(dinfo_t *dip, job_info_t *job);
 extern void gather_thread_stats(dinfo_t *dip, dinfo_t *tdip);
+extern void display_extra_sizes(dinfo_t *dip, char *text, uint64_t blocks, uint32_t block_size);
+extern void display_long_double(dinfo_t *dip, char *text, long double bytes);
 
 /* dtwrite.c */
 extern int prefill_file(dinfo_t *dip, size_t block_size, large_t data_limit, Offset_t starting_offset);

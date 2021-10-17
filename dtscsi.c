@@ -33,6 +33,9 @@
  * 
  * Modification History:
  * 
+ * July 30th, 2021 by Robin T. Miller
+ *      Adding initial support for NVMe disks.
+ * 
  * June 16th, 2021 by Robin T. Miller
  *      Add support for separate SCSI trigger device.
  * 
@@ -68,7 +71,6 @@
  * Forward Reference:
  */ 
 void add_common_spt_options(dinfo_t *dip, char *cmd);
-void strip_trailing_spaces(char *bp);
 ssize_t	scsiRequestSetup(dinfo_t *dip, scsi_generic_t *sgp, void *buffer,
 			 size_t bytes, Offset_t offset, uint64_t *lba, uint32_t *blocks);
 
@@ -134,6 +136,17 @@ clone_scsi_info(dinfo_t *dip, dinfo_t *cdip)
     if (dip->di_spt_options) {
 	cdip->di_spt_options = strdup(dip->di_spt_options);
     }
+#if defined(NVME)
+    if (dip->di_namespace_nguid) {
+	cdip->di_namespace_nguid = strdup(dip->di_namespace_nguid);
+    }
+    if (dip->di_namespace_eui64) {
+	cdip->di_namespace_eui64 = strdup(dip->di_namespace_eui64);
+    }
+    if (dip->di_nvm_subsystem_nqn) {
+	cdip->di_nvm_subsystem_nqn = strdup(dip->di_nvm_subsystem_nqn);
+    }
+#endif /* defined(NVME) */
     return;
 }
 
@@ -203,6 +216,20 @@ free_scsi_info(dinfo_t *dip, scsi_generic_t **sgpp, scsi_generic_t **sgpiop)
 	}
 	*sgpiop = NULL;
     }
+#if defined(NVME)
+    if (dip->di_namespace_nguid) {
+	Free(dip, dip->di_namespace_nguid);
+	dip->di_namespace_nguid = NULL;
+    }
+    if (dip->di_namespace_eui64) {
+	Free(dip, dip->di_namespace_eui64);
+	dip->di_namespace_eui64 = NULL;
+    }
+    if (dip->di_nvm_subsystem_nqn) {
+	Free(dip, dip->di_nvm_subsystem_nqn);
+	dip->di_nvm_subsystem_nqn = NULL;
+    }
+#endif /* defined(NVME) */
     return;
 }
 
@@ -278,6 +305,15 @@ init_scsi_info(dinfo_t *dip, char *scsi_dsf, scsi_generic_t **sgpp, scsi_generic
     scsi_generic_t *sgp;
     int status;
     
+#if defined(__linux__)
+    /* Note: Piggy back on SCSI for the time being. */
+    status = init_nvme_info(dip, scsi_dsf);
+    if (status == SUCCESS) {
+	return(status);
+    }
+    /* Fall through to see if this is a SCSI disk. */
+#endif /* defined(__linux__) */
+
     if ( (sgp = *sgpp) == NULL) {
 	status = init_sg_info(dip, scsi_dsf, sgpp, sgpiop);
 	if (status == FAILURE) {
@@ -285,6 +321,7 @@ init_scsi_info(dinfo_t *dip, char *scsi_dsf, scsi_generic_t **sgpp, scsi_generic
 	}
 	sgp = *sgpp;
     }
+
     status = get_standard_scsi_information(dip, sgp);
 
     /* Note: We leave the SCSI device open on purpose, for faster triggers, etc. */
@@ -420,7 +457,11 @@ report_scsi_information(dinfo_t *dip)
 {
     if (dip->di_scsi_info_flag == False) return;
 
-    report_standard_scsi_information(dip);
+    if (dip->di_nvme_flag) {
+	report_standard_nvme_information(dip);
+    } else if (dip->di_scsi_flag) {
+	report_standard_scsi_information(dip);
+    }
     return;
 }
 
@@ -429,8 +470,7 @@ report_standard_scsi_information(dinfo_t *dip)
 {
     Lprintf(dip, "\nSCSI Information:\n");
 
-    Lprintf (dip, DT_FIELD_WIDTH "%s\n",
-	     "SCSI Device Name", dip->di_sgp->dsf);
+    Lprintf (dip, DT_FIELD_WIDTH "%s\n", "SCSI Device Name", dip->di_sgp->dsf);
     if (dip->di_vendor_id) {
 	Lprintf (dip, DT_FIELD_WIDTH "%s\n", "Vendor Identification", dip->di_vendor_id);
     }
@@ -550,6 +590,13 @@ do_unmap_blocks(dinfo_t *dip)
     unmap_type_t unmap_type = dip->di_unmap_type;
     int status = SUCCESS;
 
+#if defined(NVME)
+    /* TODO: Maybe add Get LBA Status later! */
+    if (dip->di_nvme_flag == True) {
+	status = do_nvme_write_zeroes(dip);
+	return(status);
+    }
+#endif /* defined(NVME) */
     (void)get_transfer_limits(dip, &data_bytes, &offset);
 
     /* We display the LBA status both before and after Unmap operation! */
@@ -709,7 +756,7 @@ scsiRequestSetup(dinfo_t *dip, scsi_generic_t *sgp, void *buffer,
     uint32_t block_length;
     ssize_t iosize = bytes;
 
-    /* Note: This should be set by Read Caoacity when init'ing SCSI! */
+    /* Note: This should be set by Read Capacity when init'ing SCSI! */
     block_length = dip->di_block_length;
     if (block_length == 0) block_length = BLOCK_SIZE;
     /* 
@@ -745,7 +792,7 @@ scsiRequestSetup(dinfo_t *dip, scsi_generic_t *sgp, void *buffer,
 	    iosize = 0;	/* Too far, nothing transferred! */
 	}
     }
-    /* Pass these via sgp to opcodes supported this. */
+    /* Pass these via sgp to opcodes supporting this. */
     sgp->fua = dip->di_fua;
     sgp->dpo = dip->di_dpo;
     return(iosize);
@@ -844,3 +891,35 @@ dtReportScsiError(dinfo_t *dip, scsi_generic_t *sgp)
 }
 
 #endif /* defined(SCSI) */
+
+#if !defined(NVME)
+
+/* Creating stubs to ease conditionalization! */
+
+int
+init_nvme_info(dinfo_t *dip, char *dsf)
+{
+    dip->di_nvme_flag = False;
+    return(FAILURE);
+}
+
+void
+report_standard_nvme_information(dinfo_t *dip)
+{
+    return;
+}
+
+ssize_t
+nvmeWriteData(dinfo_t *dip, void *buffer, size_t bytes, Offset_t offset)
+{
+    return( (ssize_t)FAILURE );
+}
+
+ssize_t
+nvmeReadData(dinfo_t *dip, void *buffer, size_t bytes, Offset_t offset)
+{
+    return( (ssize_t)FAILURE );
+}
+
+#endif /* !defined(NVME) */
+

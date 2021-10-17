@@ -42,6 +42,9 @@
  * October 10th, 2020 by Robin T. Miller
  *      Add megabytes/second to Average Transfer Rates output.
  * 
+ * March 9th, 2019 by Robin T. Miller
+ *      Add displaying Nimble SCSI information.
+ * 
  * December 3rd, 2016 by Robin T. Miller
  *      Expanding job statistics to include the total read/write bytes, and
  * adding Gigabyte since we are using very large and very fast disks nowadays!
@@ -1053,6 +1056,13 @@ report_file_lock_statistics(dinfo_t *dip, hbool_t print_header)
 void
 report_scsi_summary(dinfo_t *dip, hbool_t print_header)
 {
+#if defined(NVME)
+    if (dip->di_nvme_flag) {
+	report_standard_nvme_information(dip);
+	return;
+    }
+#endif /* defined(NVME) */
+
 #if defined(SCSI)
     if (dip->di_scsi_flag == False) return;
     if (dip->di_scsi_info_flag == False) return;
@@ -1156,5 +1166,26 @@ gather_thread_stats(dinfo_t *dip, dinfo_t *tdip)
     dip->di_total_partial += tdip->di_total_partial;
     dip->di_error_count += tdip->di_error_count;
     //dip->di_total_errors += tdip->di_total_errors;
+    return;
+}
+
+void
+display_extra_sizes(dinfo_t *dip, char *text, uint64_t blocks, uint32_t block_size)
+{
+    uint64_t data_bytes = (blocks * block_size);
+    double Mbytes = (double)( (double)data_bytes / (double)MBYTE_SIZE);
+    double Gbytes = (double)( (double)data_bytes / (double)GBYTE_SIZE);
+    Lprintf(dip, DT_FIELD_WIDTH LUF " (%.3f Mbytes, %.3f Gbytes)\n",
+	    text, blocks, Mbytes, Gbytes);
+    return;
+}
+
+void
+display_long_double(dinfo_t *dip, char *text, long double bytes)
+{
+    long double Mbytes = (long double)( (long double)bytes / (long double)MBYTE_SIZE);
+    long double Gbytes = (long double)( (long double)bytes / (long double)GBYTE_SIZE);
+    Lprintf(dip, DT_FIELD_WIDTH "%.0Lf (%.3Lf Mbytes, %.3Lf Gbytes)\n",
+	    text, bytes, Mbytes, Gbytes);
     return;
 }

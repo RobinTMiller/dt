@@ -144,7 +144,7 @@ ConvertDeviceToScsiDevice(char *device)
     scsi_device = strdup(device);
 
 #if defined(__linux__)
-    /* Hack: The logic below is broken for" "/dev/mapper/20ef62e25253404fa6c9ce900ec009227" */
+    /* Hack: The logic below is broken for: "/dev/mapper/20ef62e25253404fa6c9ce900ec009227" */
     /* Therefore, if the wrong (mangled) disk name is returned, SCSI open will fail! */
     if ( NEL(device, DISK_NAME, strlen(DISK_NAME)) ) {
 	return(scsi_device);	/* Return original device name unless "/dev/sd"! */

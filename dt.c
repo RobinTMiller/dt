@@ -1552,11 +1552,11 @@ do_common_startup_logging(dinfo_t *dip)
 	}
 #if defined(SCSI)
 	/* Display SCSI information. */
-	if (dip->di_scsi_flag == True) {
+	if ( (dip->di_nvme_flag == True) || (dip->di_scsi_flag == True) ) {
 	    /* Report for 1st thread or all threads with a log file. */
 	    if ( (dip->di_thread_number == 1) || dip->di_log_file ) {
 		report_scsi_information(dip);
-		if (odip && (odip->di_scsi_flag == True) ) {
+		if (odip && ((odip->di_nvme_flag == True) || (odip->di_scsi_flag == True)) ) {
 		    report_scsi_information(odip);
 		}
 	    }
@@ -2513,8 +2513,8 @@ do_postwrite_processing(dinfo_t *dip)
     int status = SUCCESS;
 
 #if defined(SCSI)
-    if ( (dip->di_dtype->dt_dtype == DT_DISK) &&
-	 dip->di_scsi_flag && dip->di_sgp && dip->di_unmap_flag) {
+    if ( (dip->di_dtype->dt_dtype == DT_DISK) && dip->di_unmap_flag &&
+	 ((dip->di_scsi_flag && dip->di_sgp) || (dip->di_nvme_flag == True)) ) {
 	int rc = SUCCESS;
 	if (dip->di_unmap_frequency) {
 	    if ((dip->di_pass_count % dip->di_unmap_frequency) == 0) {
@@ -3925,7 +3925,8 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		    dip->di_write_delay = dip->di_iops_usecs;
 		}
 	    } else {
-		return ( HandleExit(dip, status) );
+		Fprintf(dip, "Please enter the number of I/O's per second value!\n");
+		return ( HandleExit(dip, FAILURE) );
 	    }
 	    dip->di_sleep_res = SLEEP_USECS;
 	    continue;
@@ -4590,6 +4591,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 		dip->di_scsi_io_flag = True;
 		goto eloop;
 	    }
+	    if ( match(&string, "nvme_io") || match(&string, "nvmeio") ) {
+		dip->di_nvme_io_flag = True;
+		goto eloop;
+	    }
 	    if (match(&string, "scsi")) {
 		dip->di_scsi_flag = True;
 		goto eloop;
@@ -5033,6 +5038,10 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    if ( match(&string, "scsi_io") || match(&string, "scsiio") ) {
 		dip->di_scsi_io_flag = False;
+		goto dloop;
+	    }
+	    if ( match(&string, "nvme_io") || match(&string, "nvmeio") ) {
+		dip->di_nvme_io_flag = False;
 		goto dloop;
 	    }
 	    if (match(&string, "scsi")) {
@@ -8644,6 +8653,10 @@ init_device_defaults(dinfo_t *dip)
     dip->di_scsi_flag = False;
     dip->di_scsi_io_flag = False;
 #endif /* defined(SCSI) */
+    /* Always define these to ease code conditionalization! */
+    dip->di_nvme_flag = False;
+    dip->di_nvme_io_flag = False;
+
     dip->di_verbose_flag = DEFAULT_VERBOSE_FLAG;
     dip->di_verify_flag = DEFAULT_VERIFY_FLAG;
     dip->di_unique_pattern = DEFAULT_UNIQUE_PATTERN;
@@ -9901,12 +9914,14 @@ do_common_device_setup(dinfo_t *dip)
     } else {
 	dip->di_scsi_flag = False;	/* Ok, not doing SCSI operations! */
     }
-    if ( (dip->di_scsi_flag == False) && (dip->di_scsi_io_flag == True) ) {
-	Eprintf(dip, "SCSI operations are disabled, so SCSI I/O is NOT possible!\n");
+    if ( (dip->di_scsi_io_flag == True) &&
+	 ( (dip->di_nvme_flag == False) && (dip->di_scsi_flag == False) ) ) {
+	Eprintf(dip, "NVMe/SCSI operations are disabled, so pass-thru I/O is NOT possible!\n");
 	return(FAILURE);
     }
-    if ( (dip->di_scsi_io_flag == True) && (dip->di_aio_flag == True) ) {
-	Eprintf(dip, "SCSI I/O and Asynchronous I/O (AIO) is NOT supported!\n");
+    if ( (dip->di_aio_flag == True) &&
+	 ( (dip->di_nvme_flag == True) || (dip->di_scsi_flag == True) ) ) {
+	Eprintf(dip, "NVMe/SCSI I/O and Asynchronous I/O (AIO) is NOT supported!\n");
 	return(FAILURE);
     }
     if (dip->di_tscsi_dsf) {

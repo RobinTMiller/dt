@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: June 28th, 2021"VARIANT", Version: 23.33, Author: Robin T. Miller";
+char *version_str = "Date: August 16th, 2021"VARIANT", Version: 24.01, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -548,6 +548,10 @@ dthelp(dinfo_t *dip)
     P (dip, "\tprealloc         Preallocate w/o sparse.    (Default: %s)\n",
 				(dip->di_prealloc_flag) ? enabled_str : disabled_str);   
 #endif /* defined(WIN32) */
+#if defined(NVME)
+    P (dip, "\tnvme_io          NVMe I/O operations.       (Default: %s)\n",
+				(dip->di_nvme_io_flag) ? enabled_str : disabled_str);
+#endif /* defined(NVME) */
 #if defined(SCSI)
     P (dip, "\tscsi             SCSI operations.           (Default: %s)\n",
 				(dip->di_scsi_flag) ? enabled_str : disabled_str);
