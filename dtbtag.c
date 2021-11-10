@@ -31,6 +31,11 @@
  *
  * Modification History:
  * 
+ * November 4th, 2021 by Robin T. Miller
+ *      Switch to using device ID page instead of serial numbers.
+ *      Note: For NVMe disks, use the global unique identifier instead
+ * of the serial number or the device ID.
+ * 
  * March 31st, 2020 by Robin T. Miller
  *      Add function to display block tag verify flags that are set.
  * 
@@ -125,9 +130,20 @@ initialize_btag(dinfo_t *dip, uint8_t opaque_type)
 	free(hostname);
     }
 #if defined(SCSI)
+# if defined(USE_SERIAL_NUMBER)
     if (dip->di_serial_number) {
 	(void)strncpy(btag->btag_serial, dip->di_serial_number, sizeof(btag->btag_serial)-1);
     }
+# else /* !defined(USE_SERIAL_NUMBER) */
+#  if defined(NVME)
+    if (dip->di_nvme_flag && dip->di_namespace_nguid) {
+	(void)strncpy(btag->btag_deviceid, dip->di_namespace_nguid, sizeof(btag->btag_deviceid)-1);
+    } else 
+#  endif /* defined(NVME) */
+    if (dip->di_device_id) {
+	(void)strncpy(btag->btag_deviceid, dip->di_device_id, sizeof(btag->btag_deviceid)-1);
+    }
+# endif /* defined(USE_SERIAL_NUMBER) */
 #endif /* defined(SCSI) */
     if (dip->di_iot_pattern) {
 	btag->btag_pattern_type = PTYPE_IOT;
@@ -397,6 +413,7 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
     }
 
 #if defined(SCSI)
+# if defined(USE_SERIAL_NUMBER)
     btag_index = offsetof(btag_t, btag_serial);
     if ( (ebtag && rbtag) &&
 	 (dip->di_btag_vflags & BTAGV_SERIAL) &&
@@ -415,6 +432,26 @@ report_btag(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, hbool_t raw_flag)
 		"Serial Number", btag_index,
 		copy_string(rbtag->btag_serial, strp, sizeof(rbtag->btag_serial)) );
     }
+# else /* !defined(USE_SERIAL_NUMBER) */
+    btag_index = offsetof(btag_t, btag_deviceid);
+    if ( (ebtag && rbtag) &&
+	 (dip->di_btag_vflags & BTAGV_SERIAL) &&
+	 memcmp(ebtag->btag_deviceid, rbtag->btag_deviceid, sizeof(ebtag->btag_deviceid)) ) {
+	Fprintf(dip, DT_BTAG_FIELD "%s\n",
+		"Device Identifier", btag_index, incorrect_str);
+	Fprintf(dip, DT_FIELD_WIDTH "%s\n",
+		expected_str,
+		copy_string(ebtag->btag_deviceid, strp, sizeof(ebtag->btag_deviceid)) );
+	Fprintf(dip, DT_FIELD_WIDTH "%s\n",
+		received_str,
+		copy_string(rbtag->btag_deviceid, strp, sizeof(rbtag->btag_deviceid)) );
+	btag_errors++;
+    } else if (rbtag->btag_deviceid[0]) {
+	Fprintf(dip, DT_BTAG_FIELD "%s\n",
+		"Device Identifier", btag_index,
+		copy_string(rbtag->btag_deviceid, strp, sizeof(rbtag->btag_deviceid)) );
+    }
+# endif /* defined(USE_SERIAL_NUMBER) */
 #endif /* defined(SCSI) */
 
     btag_index = offsetof(btag_t, btag_hostname);
@@ -1035,6 +1072,7 @@ verify_btags(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, uint32_t *eindex, hbool
     }
 
 #if defined(SCSI)
+# if defined(USE_SERIAL_NUMBER)
     /* Note: Without a serial number, this should be all zeroes! */
     if ( (dip->di_btag_vflags & BTAGV_SERIAL) &&
 	 (memcmp(ebtag->btag_serial, rbtag->btag_serial, sizeof(ebtag->btag_serial))) ) {
@@ -1047,6 +1085,19 @@ verify_btags(dinfo_t *dip, btag_t *ebtag, btag_t *rbtag, uint32_t *eindex, hbool
 	if (eindex && (btag_index < *eindex)) *eindex = btag_index;
 	btag_errors++;
     }
+# else /* !defined(USE_SERIAL_NUMBER) */
+    if ( (dip->di_btag_vflags & BTAGV_SERIAL) &&
+	 (memcmp(ebtag->btag_deviceid, rbtag->btag_deviceid, sizeof(ebtag->btag_deviceid))) ) {
+	if (dip->di_btag_debugFlag) {
+	    Fprintf(dip, "BTAG: Device identifier incorrect, expected %s, received %s\n",
+		    copy_string(ebtag->btag_deviceid, strp, sizeof(ebtag->btag_deviceid)),
+		    copy_string(rbtag->btag_deviceid, strp, sizeof(rbtag->btag_deviceid))  );
+	}
+	btag_index = offsetof(btag_t, btag_deviceid);
+	if (eindex && (btag_index < *eindex)) *eindex = btag_index;
+	btag_errors++;
+    }
+# endif /* defined(USE_SERIAL_NUMBER) */
 #endif /* defined(SCSI) */
 
     if ( (dip->di_btag_vflags & BTAGV_HOSTNAME) &&

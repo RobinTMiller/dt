@@ -2259,6 +2259,11 @@ report_device_informationX(dinfo_t *dip)
     if (dip->di_device_id) {
         PrintAscii(dip, "Device Identifier", dip->di_device_id, PNL);
     }
+# if defined(NVME)
+    if (dip->di_namespace_nguid) {
+        PrintAscii(dip, "Globally Unique Identifier", dip->di_namespace_nguid, PNL);
+    }
+# endif /* defined(NVME) */
 #endif /* defined(SCSI) */
 
     return;

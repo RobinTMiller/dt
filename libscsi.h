@@ -584,6 +584,8 @@ extern int verify_inquiry_header(inquiry_t *inquiry, inquiry_header_t *inqh, uns
 extern char *GetDeviceIdentifier(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
                                  scsi_addr_t *sap, scsi_generic_t **sgpp,
 				 void *inqp, unsigned int timeout);
+extern char *DecodeDeviceIdentifier(void *opaque, inquiry_t *inquiry,
+                                    inquiry_page_t *inquiry_page, hbool_t hyphens);
 extern char *GetSerialNumber(HANDLE fd, char *dsf, hbool_t debug, hbool_t errlog,
                              scsi_addr_t *sap, scsi_generic_t **sgpp,
 			     void *inqp, unsigned int timeout);

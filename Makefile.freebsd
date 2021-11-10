@@ -84,7 +84,7 @@ LDFLAGS="-static"
 
 # end of system makefile definitions
 
-HDRS=		dt.h common.h dtmtrand64.h dtunix.h
+HDRS=		dt.h common.h dtbtag.h dtmtrand64.h dtunix.h
 
 ### MKMF:SOURCES ###
 

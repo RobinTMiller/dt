@@ -6532,7 +6532,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    FreeStr(dip, workload_options);
 	    return ( HandleExit(dip, SUCCESS) );
 	}
-	if (match (&string, "showbtags")) {
+	if (match (&string, "showbtag")) {
 	    /* The user *must* specify the data range. */
 	    dip->di_btag_flag = True;
 	    dip->di_dump_btags = True;

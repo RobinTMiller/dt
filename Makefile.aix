@@ -81,7 +81,7 @@ LINTFLAGS=
 
 # end of system makefile definitions
 
-HDRS=		dt.h common.h dtmtrand64.h dtunix.h
+HDRS=		dt.h common.h dtbtag.h dtmtrand64.h dtunix.h
 SCSI_HDRS=	libscsi.h scsilib.h inquiry.h scsi_cdbs.h
 ALL_HDRS=       ${HDRS} ${SCSI_HDRS}
 

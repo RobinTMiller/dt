@@ -24,7 +24,11 @@
  ****************************************************************************/
 /*
  * Modification History:
- *
+ * 
+ * November 4th, 2021 by Robin T. Miller 
+ *  Conditionally choose either the serial number of the device identifier.
+ *  Switch the default to use the device ID, rather than the serial number.
+ *  
  * September 17th, 2015 by Robin T Miller
  *  Add btag extension for tracking previous writes, for write dependencies.
  */
@@ -43,22 +47,26 @@
  */ 
 #define HOST_SIZE       24
 
+#if !defined(USE_SERIAL_NUMBER)
+#  define USE_DEVICE_IDENTIFIER 1
+#endif /* !defined(USE_SERIAL_NUMBER) */
+
 /* 
- * Note: Please configure this serial number size for your storage devices. 
- * TODO: Plese consider defining the serial number size at compile time! 
+ * Note: Please configure the serial number size for your storage devices. 
+ * TODO: The serial number size can be defined at compile time.
  */
 #if !defined(SERIAL_SIZE) 
-# if defined(Nimble)
-#  define SERIAL_SIZE	34		/* Nimble uses VPD device ID.	*/
-# else /* !defined(Nimble) */
-#  define SERIAL_SIZE	16		/* SAN LUN serial number size.	*/
-# endif /* defined(Nimble) */
+#  define SERIAL_SIZE	36		/* The serial number size.	*/
 #endif /* !defined(SERIAL_SIZE) */
 
 /* 
- * FYI: The device identifier may be more appropriate. than the serial #.
+ * FYI: The device identifier is more appropriate for some storage arrays. 
+ * Note: dt stores this in ASCII, but usually the identifier is a 16 byte 
+ * binary value. Therefore, a future enhancment may be to use the binary ID.
  */
-#define DEVICEID_SIZE   40              /* Device identifier size.    */
+#if !defined(DEVICEID_SIZE) 
+#  define DEVICEID_SIZE   36		/* The device identifier size.	*/
+#endif /* !defined(DEVICEID_SIZE) */
 
 #define BTAG_VERSION_1   1
 
@@ -213,7 +221,6 @@
 /*
  * Block Tag (btag) Definition:
  * Note: Pack carefully to avoid wasted space due to alignment. 
- * BEWARE: The offsets are NOT correct for Nimble w/larger serial number! 
  */
 typedef struct btag {                                             /* Offset */
     union {                         /*                                  0 */
@@ -224,29 +231,34 @@ typedef struct btag {                                             /* Offset */
         uint32_t devid;             /* OS device major/minor.             */
         int64_t inode;              /* FS file i-node number.             */
     } btag_u1;
+#if defined(USE_SERIAL_NUMBER)
     char     btag_serial[SERIAL_SIZE]; /* The SAN LUN serial number.   16 */
+#else /* !defined(USE_SERIAL_NUMBER) */
+    char     btag_deviceid[DEVICEID_SIZE]; /* The device identifier.   16 */
+#endif /* defined(USE_SERIAL_NUMBER) */
     char     btag_hostname[HOST_SIZE]; /* The host name (ASCII).       32 */
-    uint32_t btag_signature;        /* Our unique binary signature.    56 */
-    uint8_t  btag_version;          /* The block type version.         60 */
-    uint8_t  btag_pattern_type;     /* The pattern type.               61 */
-    uint16_t btag_flags;            /* Various information flags.      62 */
-    int32_t  btag_write_start;      /* The write start time (secs).    64 */
-    int32_t  btag_write_secs;       /* This write time stamp (secs).   68 */
-    int32_t  btag_write_usecs;      /* This write time stamp (usecs)   72 */
-    uint32_t btag_pattern;          /* The current pattern.            76 */
-    uint32_t btag_generation;       /* Generation number.              80 */
-    uint32_t btag_process_id;       /* Process ID.                     84 */
-    uint32_t btag_job_id;           /* The job identifier.             88 */
-    uint32_t btag_thread_number;    /* The thread number.              92 */
-    uint32_t btag_device_size;      /* The device/block size.          96 */
-    uint32_t btag_record_index;     /* The record index.              100 */
-    uint32_t btag_record_size;      /* The record size.               104 */
-    uint32_t btag_record_number;    /* The record number.             108 */
-    uint64_t btag_step_offset;      /* The record number.             112 */
-    uint8_t  btag_opaque_data_type; /* The type of opaque data.       120 */
-    uint16_t btag_opaque_data_size; /* The size of the opaque data.   122 */
-    uint32_t btag_crc32;            /* The 32-bit CRC value.          124 */
-    /* Note: Opaque and block data are packed in this order!          128 */
+    uint32_t btag_signature;        /* Our unique binary signature.    76 */
+    uint8_t  btag_version;          /* The block type version.         80 */
+    uint8_t  btag_pattern_type;     /* The pattern type.               81 */
+    uint16_t btag_flags;            /* Various information flags.      82 */
+    int32_t  btag_write_start;      /* The write start time (secs).    84 */
+    int32_t  btag_write_secs;       /* This write time stamp (secs).   88 */
+    int32_t  btag_write_usecs;      /* This write time stamp (usecs)   92 */
+    uint32_t btag_pattern;          /* The current pattern.            96 */
+    uint32_t btag_generation;       /* Generation number.             100 */
+    uint32_t btag_process_id;       /* Process ID.                    104 */
+    uint32_t btag_job_id;           /* The job identifier.            108 */
+    uint32_t btag_thread_number;    /* The thread number.             112 */
+    uint32_t btag_device_size;      /* The device/block size.         116 */
+    uint32_t btag_record_index;     /* The record index.              120 */
+    uint32_t btag_record_size;      /* The record size.               124 */
+    uint32_t btag_record_number;    /* The record number.             128 */
+				    /* Alignment wastes 4 bytes!      132 */
+    uint64_t btag_step_offset;      /* The step offset.	              136 */
+    uint8_t  btag_opaque_data_type; /* The type of opaque data.       144 */
+    uint16_t btag_opaque_data_size; /* The size of the opaque data.   146 */
+    uint32_t btag_crc32;            /* The 32-bit CRC value.          148 */
+    /* Note: Opaque and block data are packed in this order!          152 */
   //uint8_t  btag_opaque_data[0];   /* Opaque data for extensions.        */
   //uint8_t  btag_block_data[0];    /* The actual block data pattern.     */
 } btag_t;

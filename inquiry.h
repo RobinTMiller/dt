@@ -382,31 +382,33 @@ typedef struct inquiry_opdef_page {
 #define IID_CODE_SET_ISO_IEC    0x03    /* Contains ISO/IEC identifier. */
 					/* 0x04-0x0F are reserved.	*/
 
-#define IID_ID_TYPE_VS		0x00	/* ID type is vendor specific.	*/
-#define IID_ID_TYPE_T10_VID	0x01	/* T10 vendor ID based. 	*/
-#define IID_ID_TYPE_EUI64	0x02	/* EUI-64 based identifier.	*/
-#define IID_ID_TYPE_NAA 	0x03	/* Name Address Authority (NAA) */
-#define IID_ID_TYPE_RELTGTPORT  0x04    /* Relative target port ident.  */
-#define IID_ID_TYPE_TGTPORTGRP  0x05    /* Target port group identifier */
-#define IID_ID_TYPE_LOGUNITGRP  0x06    /* Logical unit group ident.    */
-#define IID_ID_TYPE_MD5LOGUNIT  0x07    /* MD5 logical unit identifier. */
-#define IID_ID_TYPE_SCSI_NAME   0x08    /* SCSI name string identifier. */
-					/* 0x09-0x0F are reserved.	*/
+#define IID_ID_TYPE_VS		0x0	/* ID type is vendor specific.	*/
+#define IID_ID_TYPE_T10_VID	0x1	/* T10 vendor ID based. 	*/
+#define IID_ID_TYPE_EUI64	0x2	/* EUI-64 based identifier.	*/
+#define IID_ID_TYPE_NAA 	0x3	/* Name Address Authority (NAA) */
+#define IID_ID_TYPE_RELTGTPORT  0x4	/* Relative target port ident.  */
+#define IID_ID_TYPE_TGTPORTGRP  0x5	/* Target port group identifier */
+#define IID_ID_TYPE_LOGUNITGRP  0x6	/* Logical unit group ident.    */
+#define IID_ID_TYPE_MD5LOGUNIT  0x7	/* MD5 logical unit identifier. */
+#define IID_ID_TYPE_SCSI_NAME   0x8	/* SCSI name string identifier. */
+#define IID_ID_TYPE_PROTOPORT   0x9	/* Protocol specific port ID.   */
+#define IID_ID_TYPE_UUID        0xA	/* UUID identifier.             */
+					/* 0xB-0xF are reserved.        */
 
 /*
  * Association Definitions:
  */
-#define IID_ASSOC_LOGICAL_UNIT  0x00    /* Associated w/logical unit.   */
-#define IID_ASSOC_TARGET_PORT   0x01    /* Associated w/target port.    */
-#define IID_ASSOC_TARGET_DEVICE 0x02    /* Associated w/target device.  */
+#define IID_ASSOC_LOGICAL_UNIT  0x0	/* Associated w/logical unit.   */
+#define IID_ASSOC_TARGET_PORT   0x1	/* Associated w/target port.    */
+#define IID_ASSOC_TARGET_DEVICE 0x2	/* Associated w/target device.  */
 
 /*
  * Name Address Authority (NAA) Definitions:
  */
-#define NAA_IEEE_EXTENDED       0x02    /* IEEE Extended format.        */
-#define NAA_IEEE_REGISTERED     0x05    /* IEEE Registered format.      */
-#define NAA_IEEE_REG_EXTENDED   0x06    /* IEEE Registered Extended.    */
-                                        /* All other values reserved.   */
+#define NAA_IEEE_EXTENDED       0x2	/* IEEE Extended format.        */
+#define NAA_IEEE_REGISTERED     0x5	/* IEEE Registered format.      */
+#define NAA_IEEE_REG_EXTENDED   0x6	/* IEEE Registered Extended.    */
+					/* All other values reserved.   */
 
 typedef struct inquiry_ident_descriptor {
 #if defined(_BITFIELDS_LOW_TO_HIGH_)
