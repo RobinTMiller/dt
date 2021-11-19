@@ -116,6 +116,7 @@ HDRS=		dt.h common.h dtbtag.h dtmtrand64.h dtunix.h
 CFILES=		\
 		dt.c		\
 		dtaio.c		\
+		dtapp.c		\
 		dtbtag.c	\
 		dtfs.c		\
 		dtfmt.c		\
@@ -210,6 +211,7 @@ makedep: ${CFILES}
 
 dt.o: dt.c $(HDRS)
 dtaio.o: dtaio.c $(HDRS)
+dtapp.o: dtapp.c $(HDRS)
 dtbtag.o: dtbtag.c $(HDRS)
 dtfs.o: dtfs.c $(HDRS)
 dtfmt.o: dtfmt.c $(HDRS)

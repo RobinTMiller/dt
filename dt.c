@@ -31,6 +31,9 @@
  *
  * Modification History:
  * 
+ * November 15th, 2021 by Robin T. Miller
+ *      Add support for dtapp, hammer, and sio I/O behaviors.
+ * 
  * June 16th, 2021 by Robin T. Miller
  *      Add support for separate SCSI trigger device.
  * 
@@ -389,9 +392,13 @@ os_tid_t MonitorThreadId;		/* The monitoring thread ID.	*/
 #endif /* defined(WIN32) */
 
 extern iobehavior_funcs_t dtapp_iobehavior_funcs;
+extern iobehavior_funcs_t hammer_iobehavior_funcs;
+extern iobehavior_funcs_t sio_iobehavior_funcs;
 
 iobehavior_funcs_t *iobehavior_funcs_table[] = {
-    //&dtapp_iobehavior_funcs,
+    &dtapp_iobehavior_funcs,
+    &hammer_iobehavior_funcs,
+    &sio_iobehavior_funcs,
     NULL
 };
 
@@ -437,7 +444,6 @@ void *doio(void *arg);
 void do_sleeps(dinfo_t *dip);
 hbool_t	is_stop_on_file(dinfo_t *dip);
 int stop_job_on_stop_file(dinfo_t *mdip, job_info_t *job);
-int create_thread_log(dinfo_t *dip);
 int make_stderr_buffered(dinfo_t *dip);
 int create_unique_thread_log(dinfo_t *dip);
 void report_pass_statistics(dinfo_t *dip);
@@ -3265,7 +3271,9 @@ finish_test_common(dinfo_t *dip, int thread_status)
 
     /* If we've been writing, report command to reread the file data. */
     if (dip->di_logtrailer_flag && (dip->di_ftype == OUTPUT_FILE) ) {
-	report_reread_data(dip, False, reread_file);
+	if ( (dip->di_iobehavior == DT_IO) || (dip->di_iobehavior == DTAPP_IO) ) {
+	    report_reread_data(dip, False, reread_file);
+	}
     }
 
     /*
@@ -5461,19 +5469,27 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    continue;
 	}
 	if ( match(&string, "iob=") || match(&string, "iobehavior=") ) {
-	    /* Sorry, ALL other I/O behaviors removed! */
-	    if ( match(&string, "dt") ) {
+	    if ( match(&string, "dtapp") ) {
+		dip->di_iobehavior = DTAPP_IO;
+		dtapp_set_iobehavior_funcs(dip);
+	    } else if ( match(&string, "dt") ) {
 		dip->di_iobehavior = DT_IO;
 		continue;
-	    } else {
-		Eprintf(dip, "Valid I/O behaviors are: dt\n");
-		return ( HandleExit(dip, FAILURE) );
-	    }
-	    status = (*dip->di_iobf->iob_initialize)(dip);
-	    if (status == FAILURE) {
-		return (HandleExit(dip, status));
-	    }
-	    continue;
+	    } else if (match (&string, "hammer")) {
+		dip->di_iobehavior = HAMMER_IO;
+		hammer_set_iobehavior_funcs(dip);
+	    } else if (match (&string, "sio")) {
+		dip->di_iobehavior = SIO_IO;
+		sio_set_iobehavior_funcs(dip);
+	   } else {
+	       Eprintf(dip, "Valid I/O behaviors are: dti, dtapp, hammer, and sio\n");
+	       return ( HandleExit(dip, FAILURE) );
+	   }
+	   status = (*dip->di_iobf->iob_initialize)(dip);
+	   if (status == FAILURE) {
+	       return (HandleExit(dip, status));
+	   }
+	   continue;
 	}
 	if (match (&string, "iodir=")) {
 	    /* Note: iodir={reverse|vary} are special forms of random I/O! */
@@ -10124,8 +10140,10 @@ do_common_device_setup(dinfo_t *dip)
      * TODO: More cleanup, add I/O behavior specific function! (too messy)
      */
     if ( (dip->di_io_mode == TEST_MODE) &&
-	 (((dip->di_record_limit == 0) &&
-	    ((dip->di_data_limit == 0) || (dip->di_data_limit == INFINITY)))) ) {
+	 ( ( (dip->di_record_limit == 0) &&
+	 ((dip->di_data_limit == 0) || (dip->di_data_limit == INFINITY)) ) ||
+	   ( (dip->di_iobehavior == SIO_IO) &&
+	     ((dip->di_data_limit == INFINITY) && (dip->di_record_limit == INFINITY)) ) ) ) {
 	Eprintf(dip, "You must specify a data limit, a record count, or both.\n");
 	return(FAILURE);
     }

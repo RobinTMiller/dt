@@ -14,7 +14,7 @@ OSs="AIX HPUX SOLARIS_SPARC SOLARIS_X64"
 ##OSs="AIX HPUX LINUX SOLARIS_SPARC SOLARIS_X86 SOLARIS_X64"
 
 OSdir[AIX]='aix-6.1'
-OShost[AIX]='rtp-ibm-dev01p1.rtplab.nimblestorage.com'
+OShost[AIX]='rtp-ps814-dev01p1.rtplab.nimblestorage.com'
 OSuser[AIX]='root'
 
 OSdir[HPUX]='hpux-ia64'
@@ -38,9 +38,7 @@ OShost[SOLARIS_X64]='rtm-rtp-solaris11x86.rtpvlab.nimblestorage.com'
 OSuser[SOLARIS_X64]='root'
 
 ##DTVER='dt.v23'
-##DTDIR="/var/tmp/romiller/GitHub/${DTVER}"
-GITHUB="/auto/home.nas04/romiller/GitHub/dt"
-RGITHUB="/var/tmp/romiller/GitHub/dt"
+DTDIR="/var/tmp/romiller/GitHub/dt/"
 # Please configure ssh keys on each OS server for easier updates!
 
 for os in ${OSs};
@@ -50,6 +48,6 @@ do
     OSUSER=${OSuser[${os}]}
     echo "Host: ${OSHOST}, Directory: ${OSDIR}, User: ${OSUSER}"
     # Copy updated files to each OS build system.
-    scp -p ${DT_FILES} ${OSUSER}@${OSHOST}:${RGITHUB}/
+    scp -p ${DT_FILES} ${OSUSER}@${OSHOST}:${DTDIR}/
     # Note: The actual dt building is done separately.
 done

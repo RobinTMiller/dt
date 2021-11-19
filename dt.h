@@ -49,6 +49,7 @@
 /* Vendor Control Flags: */
 #define HGST	1
 //#define Nimble	1
+//#define TPD     1
 
 #if defined(AIX_WORKAROUND)
 # include "aix_workaround.h"
@@ -173,8 +174,13 @@
 #define DEFAULT_COREDUMP_FLAG	False
 #define DEFAULT_FILEPERTHREAD   True
 #define DEFAULT_LBDATA_FLAG	False
-#define DEFAULT_POISON_FLAG	False
-#define DEFAULT_PREFILL_FLAG	UNINITIALIZED
+#if defined(Nimble)
+#  define DEFAULT_POISON_FLAG	True
+#  define DEFAULT_PREFILL_FLAG	True
+#else /* defined(Nimble */
+#  define DEFAULT_POISON_FLAG	False
+#  define DEFAULT_PREFILL_FLAG	UNINITIALIZED
+#endif /* defined(Nimble) */
 #define DEFAULT_MOUNT_LOOKUP	True
 #define DEFAULT_NATE_FLAG	False
 #define DEFAULT_TIMESTAMP_FLAG	False
@@ -442,7 +448,7 @@ typedef enum dispose {DELETE_FILE, KEEP_FILE, KEEP_ON_ERROR} dispose_t;
 typedef enum file_type {INPUT_FILE, OUTPUT_FILE} file_type_t;
 typedef enum test_mode {READ_MODE, WRITE_MODE} test_mode_t;
 typedef enum onerrors {ONERR_ABORT, ONERR_CONTINUE, ONERR_PAUSE} onerrors_t;
-typedef enum iobehavior { DT_IO, DTAPP_IO, THUMPER_IO } iobehavior_t;
+typedef enum iobehavior { DT_IO, DTAPP_IO, HAMMER_IO, SIO_IO, THUMPER_IO } iobehavior_t;
 typedef enum iodir {FORWARD, REVERSE, NUM_IODIRS = 2} iodir_t;
 typedef enum iomode {COPY_MODE, MIRROR_MODE, TEST_MODE, VERIFY_MODE} iomode_t;
 typedef enum iotype {SEQUENTIAL_IO, RANDOM_IO, NUM_IOTYPES = 2} iotype_t;
@@ -1768,6 +1774,7 @@ extern int MakeArgList(char **argv, char *s);
 
 extern pthread_attr_t *tdattrp, *tjattrp;
 extern pthread_mutex_t print_lock;
+extern int create_thread_log(dinfo_t *dip);
 extern int create_master_log(dinfo_t *dip, char *log_name);
 extern int create_detached_thread(dinfo_t *dip, void *(*func)(void *));
 extern int do_monitor_processing(dinfo_t *mdip, dinfo_t *dip);
@@ -2775,4 +2782,6 @@ extern void show_workloads(dinfo_t *dip, char *workload_name);
  * Other I/O Behaviors:
  */
 extern void dtapp_set_iobehavior_funcs(dinfo_t *dip);
-extern void thumper_set_iobehavior_funcs(dinfo_t *dip);
+extern void hammer_set_iobehavior_funcs(dinfo_t *dip);
+extern int hammer_map_options(dinfo_t *dip, int argc, char **argv);
+extern void sio_set_iobehavior_funcs(dinfo_t *dip);

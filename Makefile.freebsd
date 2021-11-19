@@ -3,7 +3,7 @@
 #
 #/****************************************************************************
 # *									     *
-# *			  COPYRIGHT (c) 1990 - 2017			     *
+# *			  COPYRIGHT (c) 1990 - 2021			     *
 # *			   This Software Provided			     *
 # *				     By					     *
 # *			  Robin's Nest Software Inc.			     *
@@ -79,7 +79,7 @@ AWK=	awk
 CFLAGS+= $(PORG) -DAIO -DFIFO -DMMAP -DFreeBSD -D_BSD_SOURCE
 CPP=	/usr/bin/cpp
 CPPOPTS= 
-# Build *without* shared libraries (for now).
+# Build *without* shared libraries since ONTAP's FreeBSD lacks libpthread.so!
 LDFLAGS="-static"
 
 # end of system makefile definitions
@@ -91,6 +91,9 @@ HDRS=		dt.h common.h dtbtag.h dtmtrand64.h dtunix.h
 CFILES=		\
 		dt.c		\
 		dtaio.c		\
+		dtapp.c		\
+		dthammer.c	\
+		dtsio.c		\
 		dtbtag.c	\
 		dtfs.c		\
 		dtfmt.c		\
@@ -183,6 +186,9 @@ makedep: ${CFILES}
 
 dt.o: dt.c $(HDRS)
 dtaio.o: dtaio.c $(HDRS)
+dtapp.o: dtapp.c $(HDRS)
+dthammer.o: dthammer.c $(HDRS)
+dtsio.o: dtsio.c $(HDRS)
 dtbtag.o: dtbtag.c $(HDRS)
 dtfs.o: dtfs.c $(HDRS)
 dtfmt.o: dtfmt.c $(HDRS)

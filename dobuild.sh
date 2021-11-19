@@ -10,19 +10,15 @@ declare -A OSuser
 OSs="AIX HPUX LINUX SOLARIS_SPARC SOLARIS_X86 SOLARIS_X64"
 
 OSdir[AIX]='aix-6.1'
-OShost[AIX]='rtp-ibm-dev01p1.rtplab.nimblestorage.com'
+OShost[AIX]='rtp-ps814-dev01p1.rtplab.nimblestorage.com'
 OSuser[AIX]='root'
 
 OSdir[HPUX]='hpux-ia64'
 OShost[HPUX]='rh-d8-u24.rtplab.nimblestorage.com'
 OSuser[HPUX]='root'
 
-# Note: We still do Linux builds manually.
 OSdir[LINUX]='linux-rhel6x64'
 OShost[LINUX]='rtm-rtp-centos6'
-# Note: All cycle servers are CentOS 7 now!
-# Actual cycle servers renamed as "duh-access*"
-##OShost[LINUX]='rtpcycl05.rtplab.nimblestorage.com'
 OSuser[LINUX]='romiller'
 
 OSdir[SOLARIS_SPARC]='solaris-sparc'
@@ -37,7 +33,7 @@ OSdir[SOLARIS_X64]='solaris-x64'
 OShost[SOLARIS_X64]='rtm-rtp-solaris11x86.rtpvlab.nimblestorage.com'
 OSuser[SOLARIS_X64]='root'
 
-##DTVER='dt.v24'
+##DTVER='dt.v23'
 GITHUB="/auto/home.nas04/romiller/GitHub/dt"
 DTDIR="/var/tmp/romiller/GitHub/dt"
 ##OSBIN='/usr/bin/'
@@ -48,7 +44,6 @@ do
     OSDIR=${OSdir[${os}]}
     OSHOST=${OShost[${os}]}
     OSUSER=${OSuser[${os}]}
-    # Linux is built in my home directory (a VM)!
     if [[ "${os}" == "LINUX" ]]; then
         BUILD_DIR="${GITHUB}/${OSDIR}"
     else
@@ -64,7 +59,7 @@ do
             if [ "${os}" != "LINUX" ]; then
                 # Update the OS binary directory.
                 ##ssh ${OSUSER}@${OSHOST} cp -p ${BUILD_DIR}/dt ${OSBIN}
-                # Update the build tree in my home directory.
+                # Update the build tree in my home GitHub directory.
                 scp -p ${OSUSER}@${OSHOST}:${BUILD_DIR}/dt ${GITHUB}/${OSDIR}/
             fi
         fi
@@ -77,6 +72,6 @@ done
 
 # Note: Update tools on San Jose Cycle Server: sjccycl.lab.nimblestorage.com
 
-find . \( -name dt -o -name dt.exe \) -ls
-find . \( -name dt -o -name dt.exe \) | xargs file
+find . -name dt -ls
+find . -name dt | xargs file
 

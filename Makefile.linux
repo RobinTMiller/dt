@@ -59,15 +59,12 @@ TR_FLAGS=	-t -P28
 LIBS=
 
 # Libraries considered static
-# Note: Added -lgcc_s to avoid this error running crud:
-# libgcc_s.so.1 must be installed for pthread_cancel to work
-# per: https://bugs.launchpad.net/ubuntu/+source/gcc-3.3/+bug/40285
+# Note: Nimble systems lack uuid development packages! 11/15/2018 by Robin
 #
 # Note: Math library required for sio I/O behavior for sqrt()!
 #
-EXTLIBS= -lrt -lpthread -lgcc_s -lm
-# Note: Many systems do NOT have UUID pacakges installed!
-##EXTLIBS= -lrt -lpthread -lgcc_s -lm -luuid
+EXTLIBS= -lrt -lpthread -lm
+#EXTLIBS= -lrt -lpthread -lgcc_s -lm -luuid
 
 LINTLIBS=
 
@@ -99,6 +96,9 @@ SCSI_CFILES=	libscsi.c	\
 CFILES=		\
 		dt.c		\
 		dtaio.c		\
+		dtapp.c		\
+		dthammer.c	\
+		dtsio.c		\
 		dtbtag.c	\
 		dtfs.c		\
 		dtfmt.c		\
@@ -199,6 +199,9 @@ makedep: ${ALL_CFILES}
 
 dt.o: dt.c $(HDRS)
 dtaio.o: dtaio.c $(HDRS)
+dtapp.o: dtapp.c $(HDRS)
+dthammer.o: dthammer.c $(HDRS)
+dtsio.o: dtsio.c $(HDRS)
 dtbtag.o: dtbtag.c $(HDRS)
 dtfs.o: dtfs.c $(HDRS)
 dtfmt.o: dtfmt.c $(HDRS)

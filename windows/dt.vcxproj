@@ -269,10 +269,12 @@
   <ItemGroup>
     <ClCompile Include="dt.c" />
     <ClCompile Include="dtaio.c" />
+    <ClCompile Include="dtapp.c" />
     <ClCompile Include="dtbtag.c" />
     <ClCompile Include="dtfmt.c" />
     <ClCompile Include="dtfs.c" />
     <ClCompile Include="dtgen.c" />
+    <ClCompile Include="dthammer.c" />
     <ClCompile Include="dthist.c" />
     <ClCompile Include="dtinfo.c" />
     <ClCompile Include="dtiot.c" />
@@ -283,6 +285,7 @@
     <ClCompile Include="dtprocs.c" />
     <ClCompile Include="dtread.c" />
     <ClCompile Include="dtscsi.c" />
+    <ClCompile Include="dtsio.c" />
     <ClCompile Include="dtstats.c" />
     <ClCompile Include="dtusage.c" />
     <ClCompile Include="dtutil.c" />

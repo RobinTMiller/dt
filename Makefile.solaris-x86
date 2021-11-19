@@ -3,7 +3,7 @@
 #
 #/****************************************************************************
 # *									     *
-# *			  COPYRIGHT (c) 1990 - 2017			     *
+# *			  COPYRIGHT (c) 1990 - 2021			     *
 # *			   This Software Provided			     *
 # *				     By					     *
 # *			  Robin's Nest Software Inc.			     *
@@ -79,7 +79,7 @@ AWK=	awk
 # to handle this.  On my Intel Solaris box, I see data compare failures
 # at EOF (zeros returned).  I think something is broken here folks :-)
 #
-CFLAGS= $(PORG) -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF \
+CFLAGS= $(PORG) -std=gnu99 -I.. -DAIO -DMMAP -DSOLARIS -DBrokenEOF \
 	-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
         -DSCSI -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT
 CC=	gcc
@@ -103,6 +103,9 @@ SCSI_CFILES=	libscsi.c	\
 CFILES=		\
 		dt.c		\
 		dtaio.c		\
+		dtapp.c		\
+		dthammer.c	\
+		dtsio.c		\
 		dtbtag.c	\
 		dtfs.c		\
 		dtfmt.c		\
@@ -204,6 +207,9 @@ makedep: ${ALL_CFILES}
 
 dt.o: dt.c $(HDRS)
 dtaio.o: dtaio.c $(HDRS)
+dtapp.o: dtapp.c $(HDRS)
+dthammer.o: dthammer.c $(HDRS)
+dtsio.o: dtsio.c $(HDRS)
 dtbtag.o: dtbtag.c $(HDRS)
 dtfs.o: dtfs.c $(HDRS)
 dtfmt.o: dtfmt.c $(HDRS)

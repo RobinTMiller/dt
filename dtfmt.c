@@ -32,6 +32,9 @@
  *
  * Modification History:
  * 
+ * November 16th, 2021 by Robin T. Miller
+ *      Add %nate for NetApp NATE log prefix format string.
+ * 
  * June 16th, 2021 by Robin T. Miller
  *      Add SCSI format control strings: %sdsf and %tdsf
  *      %sdsf = The SCSI device, %tdsf = the SCSI trigger device.
@@ -875,6 +878,7 @@ FmtPrefix(struct dinfo *dip, char *prefix, int psize)
  *	%iotype = The I/O type.
  *      %iotune - The default I/O tune file path.
  *	%host = The host name.
+ * 	%nate = The NATE timestamp.
  *      %ymd = The year, month, day.
  *      %year = The year.
  *      %month = The month.
@@ -1054,6 +1058,19 @@ FmtString(dinfo_t *dip, char *format, hbool_t filepath_flag)
                 length -= 4;
                 from += 5;
                 continue;
+	    } else if (strncasecmp(key, "nate", 4) == 0) {
+		GetDateTime()
+		if (tmp) {
+		    tmp->tm_year += 1900;
+		    tmp->tm_mon++;
+		    /* NATE Format: yyyymmdd hhmmss */
+		    to += sprintf(to, "%04d%02d%02d %02d%02d%02d",
+				  tmp->tm_year, tmp->tm_mon, tmp->tm_mday,
+				  tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+		}
+		length -= 4;
+		from += 5;
+		continue;
 	    } else if (strncasecmp(key, "nos", 3) == 0) {
 		GetDateTime()
 		if (tmp) {

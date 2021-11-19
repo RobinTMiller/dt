@@ -3,7 +3,7 @@
 #
 #/****************************************************************************
 # *									     *
-# *			  COPYRIGHT (c) 1990 - 2017			     *
+# *			  COPYRIGHT (c) 1990 - 2021			     *
 # *			   This Software Provided			     *
 # *				     By					     *
 # *			  Robin's Nest Software Inc.			     *
@@ -71,8 +71,9 @@ PORG      = -O3
 
 AWK=	awk
 
+# Note: AIX gcc defaults to 32-bit compile!
 CC=	gcc
-CFLAGS= $(PORG) -I.. -DAIO -DMMAP -DRAND48 -DAIX -D_LARGE_FILES -D_ALL_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1 -DSCSI
+CFLAGS= $(PORG) -maix64 -I.. -DAIO -DMMAP -DRAND48 -DAIX -D_LARGE_FILES -D_ALL_SOURCE -D_FILE_OFFSET_BITS=64 -D_BIG_ENDIAN_=1 -DSCSI
 
 CPP=	/usr/local/bin/cpp
 CPPOPTS= -M ${CFLAGS}
@@ -94,6 +95,9 @@ SCSI_CFILES=	libscsi.c	\
 CFILES=		\
 		dt.c		\
 		dtaio.c		\
+		dtapp.c		\
+		dthammer.c	\
+		dtsio.c		\
 		dtbtag.c	\
 		dtfs.c		\
 		dtfmt.c		\
@@ -195,6 +199,9 @@ makedep: ${ALL_CFILES}
 
 dt.o: dt.c $(HDRS)
 dtaio.o: dtaio.c $(HDRS)
+dtapp.o: dtapp.c $(HDRS)
+dthammer.o: dthammer.c $(HDRS)
+dtsio.o: dtsio.c $(HDRS)
 dtbtag.o: dtbtag.c $(HDRS)
 dtfs.o: dtfs.c $(HDRS)
 dtfmt.o: dtfmt.c $(HDRS)

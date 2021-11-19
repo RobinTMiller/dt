@@ -2,6 +2,9 @@
 ln ../dt.h .
 ln ../dt.c .
 ln ../dtaio.c .
+ln ../dtapp.c .
+ln ../dthammer.c .
+ln ../dtsio.c .
 ln ../dtbtag.c .
 ln ../dtgen.c .
 ln ../dtinfo.c .
@@ -26,6 +29,7 @@ ln ../dtworkloads.c .
 ln ../dtfmt.c .
 ln ../dtiot.c .
 ln ../dtmem.c .
+ln ../dtthumper.c .
 ln ../dtverify.c .
 ln ../dtmtrand64.h .
 ln ../common.h .

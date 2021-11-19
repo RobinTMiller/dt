@@ -374,6 +374,7 @@ int
 get_standard_scsi_information(dinfo_t *dip, scsi_generic_t *sgp)
 {
     inquiry_t *inquiry;
+    hbool_t errlog = False;
     int error;
 
     if ( (inquiry = dip->di_inquiry) == NULL) {
@@ -410,18 +411,16 @@ get_standard_scsi_information(dinfo_t *dip, scsi_generic_t *sgp)
 	dip->di_user_capacity = (large_t)(dip->di_block_length * dip->di_device_capacity);
     }
     if (dip->di_idt == IDT_DEVICEID) {
-	dip->di_device_id  = GetDeviceIdentifier(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
+	dip->di_device_id  = GetDeviceIdentifier(sgp->fd, sgp->dsf, dip->di_sDebugFlag, errlog,
 						 NULL, &sgp, inquiry, dip->di_scsi_timeout);
     } else if (dip->di_idt == IDT_SERIALID) {
-	dip->di_serial_number = GetSerialNumber(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
+	dip->di_serial_number = GetSerialNumber(sgp->fd, sgp->dsf, dip->di_sDebugFlag, errlog,
 						NULL, &sgp, inquiry, dip->di_scsi_timeout);
     } else if (dip->di_idt == IDT_BOTHIDS) {
-	dip->di_device_id  = GetDeviceIdentifier(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
+	dip->di_device_id  = GetDeviceIdentifier(sgp->fd, sgp->dsf, dip->di_sDebugFlag, errlog,
 						 NULL, &sgp, inquiry, dip->di_scsi_timeout);
-	dip->di_serial_number = GetSerialNumber(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,
+	dip->di_serial_number = GetSerialNumber(sgp->fd, sgp->dsf, dip->di_sDebugFlag, errlog,
 						NULL, &sgp, inquiry, dip->di_scsi_timeout);
-    /* TODO: Move this to HGST specific function! */
-#if defined(HGST)
 	/*
 	 * Some vendors like HGST and Sandisk right justify their serial number and pad with spaces. 
 	 * Since this causes the btag serial numbers to be truncated, I'm stripping spaces here!
@@ -443,7 +442,6 @@ get_standard_scsi_information(dinfo_t *dip, scsi_generic_t *sgp)
 	    Free(dip, dip->di_serial_number);
 	    dip->di_serial_number = strdup(serial);
 	}
-#endif /* defined(HGST) */
     }
     if ( NEL(dip->di_vendor_id, "HGST", 4) ) {
 	dip->di_mgmt_address = GetMgmtNetworkAddress(sgp->fd, sgp->dsf, dip->di_sDebugFlag, dip->di_scsi_errors,

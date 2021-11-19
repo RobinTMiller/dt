@@ -12,7 +12,7 @@ OSs="AIX HPUX SOLARIS_SPARC SOLARIS_X64"
 ##OSs="AIX HPUX LINUX SOLARIS_SPARC SOLARIS_X86 SOLARIS_X64"
 
 OSdir[AIX]='aix-6.1'
-OShost[AIX]='rtp-ibm-dev01p1.rtplab.nimblestorage.com'
+OShost[AIX]='rtp-ps814-dev01p1.rtplab.nimblestorage.com'
 OSuser[AIX]='root'
 
 OSdir[HPUX]='hpux-ia64'

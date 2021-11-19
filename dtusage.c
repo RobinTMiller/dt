@@ -49,7 +49,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: November 4th, 2021"VARIANT", Version: 24.03, Author: Robin T. Miller";
+char *version_str = "Date: November 18th, 2021"VARIANT", Version: 25.01, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -246,7 +246,8 @@ dthelp(dinfo_t *dip)
     P (dip, "\t  Where type is:\n");
     P (dip, "\t    dt                The dt I/O behavior (default).\n");
     P (dip, "\t    dtapp             The dtapp I/O behavior.\n");
-    P (dip, "\t    thumper           The thumper I/O behavior.\n");
+    P (dip, "\t    hammer            The hammer I/O behavior.\n");
+    P (dip, "\t    sio               The simple I/O (sio) behavior.\n");
     P (dip, "\n    For help on each I/O behavior use: \"iobehavior=type help\"\n");
 
     P (dip, "\n    Block Tag Verify Flags: (prefix with ~ to clear flag)\n");
@@ -766,6 +767,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\t    %%month   = The month of the year. %%day    = The day of the month.\n");
     P (dip, "\t    %%year    = The four digit year.   %%hour   = The hour of the day.\n");
     P (dip, "\t    %%minutes = The minutes of hour.   %%seconds= The seconds of minute.\n");
+    P (dip, "\t    %%nate    = The NATE log prefix.   %%nos    = The Nimble log prefix.\n");
     P (dip, "\n");
     P (dip, "\t    String 'gtod' = \"%%tod (%%etod) %%prog (j:%%job t:%%thread): \"\n");
     P (dip, "\n");

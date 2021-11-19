@@ -1237,7 +1237,8 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
 	dip->di_dtype = dtp = setup_device_type("unknown"); /* Avoid seg faults! */
     }
 
-    if (dip->di_dtype->dt_dtype == DT_DIRECTORY) {
+    /* Note: Hammer is the only I/O behavior requiring a directory path today! */
+    if ( (dip->di_iobehavior != HAMMER_IO) && (dip->di_dtype->dt_dtype == DT_DIRECTORY) ) {
 	Eprintf(dip, "Sorry, directories are not supported at this time!\n");
 	return(FAILURE);
     }

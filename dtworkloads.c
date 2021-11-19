@@ -32,6 +32,9 @@
  *
  * Modification History:
  * 
+ * November 16th, 2021 by Robin T. Miller
+ *	Add hammer and sio worklaods, thanks to Chris @NetApp!
+ *
  * June 14th, 2021 by Robin T. Miller
  *      Add workload templates for define the dedup pattern and stopon file.
  *      This makes it easy for automation to use the default file locations!
@@ -185,6 +188,39 @@ workload_entry_t predefined_workloads[] =
     {	"video_on_demand",
 	"Video on Demand (VOD) Workload",
 	"bs=512k readp=0 randp=100 disable=verify flags=direct"
+    },
+    /* NetApp hammer and sio workloads */
+    {	"hammer",
+	"Standard hammer workload",
+	"iobehavior=hammer"
+    },
+    {	"hammer_bufmodes",
+	"Hammer workload using buffered/unbuffered modes",
+	"iobehavior=hammer bufmodes=buffered,unbuffered"
+    },
+    {	"hammer_locking",
+	"Hammer workload with file logging and stop file",
+	"iobehavior=hammer -lockfiles -onlydelete stopon="TEMP_DIR"stop.hammer"
+    },
+    {	"sio_percentages",
+	"sio workload with percentages, 4k I/O, 1g file, and prefilling",
+	"iobehavior=sio bs=4k readp=25 randp=75 end=1g -prefill runtime=1h"
+    },
+    {	"sio_random",
+	"sio workload with random block sizes, random read/write, 10g file w/verification",
+	"iobehavior=sio bs=random readp=random end=10g -direct -verify threads=10"
+    },
+    {	"sio_many_files",
+	"Populate directory with many files concurrently (write only)",
+	"iobehavior=sio bs=32k end=10m files=100 passes=1"
+    },
+    {	"sio_many_slices",
+	"Populate device or file via many slices (write only)",
+	"iobehavior=sio bs=32k end=10g slices=100 passes=1"
+    },
+    {	"sio_many_threads",
+	"Populate device or file via many threads (write only)",
+	"iobehavior=sio bs=32k end=10g threads=100 passes=1"
     },
     /* Longevity Workloads */
     {	"longevity_common",
