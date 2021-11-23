@@ -1657,15 +1657,20 @@ reopen_after_disconnect(dinfo_t *dip, error_info_t *eip)
 	return(status);
     }
 
-    /* Note: For Windows, these flags are not POSIX, */
-    /*       so, map a few to POSIX flags for now! */
 #if defined(WIN32)
-    if (oflags & OS_READWRITE_MODE) {
-	oflags = O_RDWR;
-    } else if (oflags & OS_READONLY_MODE) {
-	oflags = O_RDONLY;
-    } else if (oflags & OS_WRITEONLY_MODE) {
-	oflags = O_WRONLY;
+    /* Note: For hammer, POSIX open flags are being used and mapped. */
+    if (dip->di_iobehavior != HAMMER_IO) {
+	/* Note: For Windows, these flags are not POSIX, */
+	/*       so, map a few to POSIX flags for now! */
+	if (oflags & OS_READWRITE_MODE) {
+	    oflags = O_RDWR;
+	} else if (oflags & OS_READONLY_MODE) {
+	    oflags = O_RDONLY;
+	} else if (oflags & OS_WRITEONLY_MODE) {
+	    oflags = O_WRONLY;
+	}
+    } else {
+	oflags &= ~(O_APPEND|O_CREAT|O_TRUNC);
     }
 #else /* defined(WIN32) */
     oflags &= ~(O_APPEND|O_CREAT|O_TRUNC);

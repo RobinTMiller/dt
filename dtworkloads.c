@@ -200,7 +200,7 @@ workload_entry_t predefined_workloads[] =
     },
     {	"hammer_locking",
 	"Hammer workload with file logging and stop file",
-	"iobehavior=hammer -lockfiles -onlydelete stopon="TEMP_DIR"stop.hammer"
+	"iobehavior=hammer -lockfiles -onlydelete stopon="STOPON_FILE
     },
     {	"sio_percentages",
 	"sio workload with percentages, 4k I/O, 1g file, and prefilling",
@@ -212,7 +212,7 @@ workload_entry_t predefined_workloads[] =
     },
     {	"sio_many_files",
 	"Populate directory with many files concurrently (write only)",
-	"iobehavior=sio bs=32k end=10m files=100 passes=1"
+	"iobehavior=sio bs=32k end=1g files=100 passes=1"
     },
     {	"sio_many_slices",
 	"Populate device or file via many slices (write only)",
@@ -227,7 +227,7 @@ workload_entry_t predefined_workloads[] =
 	"Longevity Common Options (template)",
 	"min=8k max=1m incr=vary "
 	"enable=raw,reread,log_trailer,syslog "
-	"history=5 history_data=128 enable=history_timing "
+	"history=5 history_data=152 enable=history_timing "
 	"logprefix='%seq %nos %et %prog (j:%job t:%thread): ' "
 	"keepalivet=5m runtime=-1 "
 	"onerr=abort noprogt=30s noprogtt=5m "
@@ -327,7 +327,7 @@ workload_entry_t predefined_workloads[] =
 	"enable=raw,reread,log_trailer,syslog "
 	"history=5 enable=history_timing "
 	"logprefix='%seq %nos %et %prog (j:%job t:%thread): ' "
-	"keepalivet=5m runtime=-1 stopon="STOPON_FILE" "
+	"keepalivet=5m runtime=-1 "
 	"onerr=abort "
 	"noprogt=30s noprogtt=5m notime=close,fsync "
 	"end_delay=60 enable=secsdelay "
@@ -376,7 +376,7 @@ workload_entry_t predefined_workloads[] =
     /* -> End of Deduplication Workloads <- */
     {	"stopon_file",
 	"Stop dt File (template)",
-	"enable=stopimmed stopon="STOPON_FILE" "
+	"enable=stopimmed stopon="STOPON_FILE
     },
     {	"disk_read_after_write",
 	"Direct Disk Read-After-Write w/Rereads",
