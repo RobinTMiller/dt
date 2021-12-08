@@ -1175,7 +1175,7 @@ report_reread_data(dinfo_t *dip, hbool_t corruption_flag, char *reread_file)
 
     /* Note: This won't be perfect since there are so many dt options! */
 
-    if (os_file_exists(dip->di_dname) == False) {
+    if ( isFileSystemFile(dip) && (os_file_exists(dip->di_dname) == False) ) {
 	Wprintf(dip, "File %s does NOT exist!\n", dip->di_dname);
 	Wprintf(dip, "Nonetheless, reporting the reread command line for storage outage testing...\n");
     }

@@ -70,8 +70,7 @@ done
 # millerob@OVCQP3UPGX ~/dt.v23
 # $ scp -p windows/x64/Release/dt.exe romiller@rtm-rtp-rhel7.rtpvlab.nimblestorage.com:Windows/
 
-# Note: Update tools on San Jose Cycle Server: sjccycl.lab.nimblestorage.com
+# Note: Update tools on Colorado (CXO) Server: cxo-access.cxo-access.eng.nimblestorage.com
 
-find . -name dt -ls
-find . -name dt | xargs file
-
+find . \( -name dt -o -name dt.exe \) -ls
+find . \( -name dt -o -name dt.exe \) | xargs file

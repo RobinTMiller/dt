@@ -9936,7 +9936,7 @@ do_common_device_setup(dinfo_t *dip)
 	return(FAILURE);
     }
     if ( (dip->di_aio_flag == True) &&
-	 ( (dip->di_nvme_flag == True) || (dip->di_scsi_flag == True) ) ) {
+	 ( (dip->di_nvme_io_flag == True) || (dip->di_scsi_io_flag == True) ) ) {
 	Eprintf(dip, "NVMe/SCSI I/O and Asynchronous I/O (AIO) is NOT supported!\n");
 	return(FAILURE);
     }
