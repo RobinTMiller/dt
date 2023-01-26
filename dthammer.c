@@ -968,7 +968,12 @@ hammer_doio(dinfo_t *dip)
 	    case OWRITEFILE: {
 		if ( (f = getrndfile(dip)) != NULL) {
 		    status = writefile(dip, f);
-		    if (status == SUCCESS) hmrp->num_iterations++;
+		    if (status == SUCCESS) {
+			hmrp->num_iterations++;
+		    }
+		    else {
+			f = NULL;
+		    }
 		}
 		break;
 	    }
@@ -2060,6 +2065,7 @@ freefile(dinfo_t *dip, hammer_file_t *file)
 	return(FAILURE);
     }
     freestr(file->path);
+    freestr(file->colon);
     freestr(file->fpath);
     memset(file, 0xdd, sizeof(*file));
     free(file);
