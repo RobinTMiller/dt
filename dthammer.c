@@ -29,6 +29,10 @@
  * 
  * Modification History:
  * 
+ * February 4th, 2023 by Robin T. Miller, Chris Nelson, & John Hollowell
+ *      Fix segmentation fault when overwriting a file encounters a file
+ * system full condition, due to writefile() freeing the file structure.
+ * 
  * November 9, 2021 by Chris Nelson (nelc@netapp.com)
  *  Add MIT license, in order to distribute to FOSS community so it can
  *  be used and maintained by a larger audience, particularly for the
@@ -105,7 +109,7 @@
 
 #define COPYRIGHT	"Copyright (c) 2012 Network Appliance, Inc. All rights reserved."
 #ifndef VERSION
-#define VERSION		"$Id: hammer.c#10 $"
+#define VERSION		"$Id: hammer.c#11 $"
 #endif
 
 /*
@@ -403,7 +407,7 @@ static hammer_file_t *findotherstream(dinfo_t *dip, hammer_thread_info_t *tip, h
 uint64_t newrndfilenum(hammer_thread_info_t *tip);
 hammer_file_t *newrndfile(dinfo_t *dip);
 int updatesize(dinfo_t *dip, hammer_file_t *f);
-int writefile(dinfo_t *dip, hammer_file_t *f);
+int writefile(dinfo_t *dip, hammer_file_t **fp);
 int api_writefile(dinfo_t *dip, hammer_file_t *f, int bsize, int64_t fsize, int do_overwrite);
 int readfile(dinfo_t *dip, hammer_file_t *f);
 int api_readfile(dinfo_t *dip, hammer_file_t *f, int bsize);
@@ -961,13 +965,14 @@ hammer_doio(dinfo_t *dip)
 	switch (action) {
 
 	    case CREATEFILE: {
-		status = writefile(dip, NULL);
+                f = NULL;
+		status = writefile(dip, &f);
 		if (status == SUCCESS) hmrp->num_iterations++;
 		break;
 	    }
 	    case OWRITEFILE: {
 		if ( (f = getrndfile(dip)) != NULL) {
-		    status = writefile(dip, f);
+		    status = writefile(dip, &f);
 		    if (status == SUCCESS) hmrp->num_iterations++;
 		}
 		break;
@@ -2246,11 +2251,12 @@ updatesize(dinfo_t *dip, hammer_file_t *f)
 }
 
 int
-writefile(dinfo_t *dip, hammer_file_t *f)
+writefile(dinfo_t *dip, hammer_file_t **fp)
 {
     hammer_information_t *hip = dip->di_opaque;
     hammer_thread_info_t *tip = &hip->hammer_thread_info;
     hammer_parameters_t *hmrp = &hip->hammer_parameters;
+    hammer_file_t *f = *fp;
     int do_overwrite = (f != NULL);
     int bsize;
     int64_t fsize;
@@ -2268,8 +2274,10 @@ writefile(dinfo_t *dip, hammer_file_t *f)
     } else{
 	bsize = hmrp->filebufsize;
     }
+    /* Create a new file. */
     if (f == NULL) {
 	f = newrndfile(dip);
+        *fp = f;
 	fsize = RNDFSIZE(dip, hmrp);
 	if (dip->di_dio_flag || dip->di_bufmode_count) {
 	    fsize = roundup(fsize, dip->di_dsize);
@@ -2382,10 +2390,10 @@ openagain:
 	    return(FAILURE);
 	}
 	/* file was never created */
+        *fp = NULL;
 	freefile(dip, f);
 	return(FAILURE);
     } else if (err == HAMMER_DISK_FULL) {
-	/* TODO: Do we need this message? */
 	Print(dip, " open - %s...\n", disk_full_str);
 	/*
 	 * If it's a stream and nothing else is using the base, then delete the base.
@@ -2441,6 +2449,7 @@ openagain:
 #endif /* defined(WIN32) */
 	if (err == HAMMER_DISK_FULL) {
 	    /* File may not have been created! */
+            *fp = NULL;
 	    freefile(dip, f);
 	    return(FAILURE);
 	}
@@ -2722,7 +2731,7 @@ again:
     f->size = (fsize - nleft);	/* Update the file size based on written. */
 
     /*
-     * If we had disconnects, read the file immediately!
+     * If we had disconnects or read after write, read the file immediately!
      */
     if ( (numdisconnects > 0) || (dip->di_raw_flag == True) ) {
 	int rstatus;
