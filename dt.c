@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2023			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,7 +30,12 @@
  *	Main line code for generic data test program 'dt'.
  *
  * Modification History:
- * 
+ *
+ * August 18th, 2023 by Robin T. Miller
+ *      When a thread is hung, report total statistics before cancelling
+ * the thread. These hangs often occur when all storage connections are lost
+ * and the outstanding I/O is *not* completing (NFS mounts or iSCSI LUN, etc).
+ *
  * November 15th, 2021 by Robin T. Miller
  *      Add support for dtapp, hammer, and sio I/O behaviors.
  * 
@@ -7809,6 +7814,10 @@ do_monitoring(void *arg)
 			    } else if (dip->di_history_dumping == True) {
 				Wprintf(dip, "History is being dumped, so *not* cancelling thread!\n");
 			    } else {
+				/* Report total statistics prior to cancelling threads. */
+				gather_stats(dip);			/* Gather the device statistics. */
+				gather_totals(dip);			/* Update the total statistics.	*/
+				report_stats(dip, TOTAL_STATS);
 				Eprintf(dip, "Thread has NOT terminated for %d seconds, so cancelling thread!\n", elapsed);
 				(void)cancel_thread_threads(mdip, dip);
 				/* Avoid trying to cancel again! */
