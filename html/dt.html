@@ -27,29 +27,46 @@ parallel lines, pipes, and memory mapped files.  In fact, <I>dt</I> can be used
 for any device that allows the standard open, read, write, and close system
 calls.  Special support is necessary for some devices, such as serial lines,
 for setting up the speed, parity, data bits, etc.
-
+<P>
+    Please Note: <i>dt</i> is no longer built with tape or serial line support.
 <H2>Releases</H2>
 The latest Open Source <i>dt</i> is located in GitHub here:</i> <a href="https://github.com/RobinTMiller/dt">Latest <i>dt</i> sources</a>
-
-<h2>
-Release Notes:</h2>
+Executable versions of <i>dt</i> is prebuilt for most OS's up until version 25.02, when I retired.
+<h2>Documentation</h2>
 <dl>
-  <dd> <a href="../ReleaseNotes/ReleaseNotes-v23.13.html">What's New for June 12th, 2020</a> - Version: 23.13
+  <dd> <a href="../Documentation/dt-ToolOverview.pdf">dt Tool Overview</a> (start here if new)
+  <dd> <a href="../Documentation/dt-UsersGuide.pdf">dt User's Guide</a> (<b>dated</b>, <i>to be updated</i>)
+  <dd> <a href="../Documentation/dt-CompressionDeduplication.pdf">dt Compression & Deduplication</a>
+  <dd> <a href="../Documentation/dt-DataCorruptionRetries.pdf">dt Data Corruption Retries</a>
+  <dd> <a href="../Documentation/dt-MapFileSystemOffsets.pdf">dt Map File System Offsets</a>
+  <dd> <a href="../Documentation/dt-PerformanceWorkloads.pdf">dt Performance Workloads</a>
+  <dd> <a href="../Documentation/dt-ZeroBlockCorruption.pdf">dt Zero Block Corruption</a>
+</dl>
+<h2>Release Notes</h2>
+<dl>
+  <dd> <a href="../Documentation/dt+v25.02+Release+Notes.pdf">Release Notes for dt Version 25.02</a>
+  <dd> <a href="../Documentation/dt+v24.01+Release+Notes.pdf">Release Notes for dt Version 24.01</a>
+  <dd> <a href="../ReleaseNotes/ReleaseNotes-v23.13.html">Release Notes for dt Version 23.13</a>
+  <dd> <a href="../Documentation/ReleaseNotes-dtv21.27.txt">Release Notes for dt Version 21.27</a>
+  <dd> <a href="../Documentation/ReleaseNotes-dtv21.11.txt">Release Notes for dt Version 21.11</a>
+  <dd> <a href="../Documentation/ReleaseNotes-dtv20.txt">Release Notes for dt Version 20</a>
 </dl>
 <HR>
 <A HREF="mailto:Robin.T.Miller@gmail.com"><IMG SRC="images/mail_icon.gif" ALT="Mail"></A>
 Send mail to admin of this page: <EM>Robin.T.Miller@gmail.com</EM> 
 <P>
-Last modified: May 4th, 2021
+Last modified: June 9th, 2023
 <HR>
 <PRE>
-% ./dt help
-Usage: dt options...
+% ./dt help (Windows help text, may vary by operating system)
+
+Usage: dt.exe options...
 
     Where options are:
         if=filename           The input file to read.
         of=filename           The output file to write.
         sdsf=filename         The SCSI device special file.
+        tdsf=filename         The SCSI trigger device file.
         pf=filename           The data pattern file to use.
         dir=dirpath           The directory path for files.
         dirp=string           The directory prefix for subdirs.
@@ -57,7 +74,7 @@ Usage: dt options...
         sdirs=value           The number of subdirectories.
         depth=value           The subdirectory depth.
         bs=value              The block size to read/write.
-    or  bs=random             Random size between 512 and 256k.
+    or  bs=random             Random sizes between 512 and 1048576 bytes.
         ibs=value             The read block size. (overrides bs=)
         obs=value             The write block size. (overrides bs=)
         job_log=filename      The job log file name. (alias: jlog=)
@@ -67,6 +84,7 @@ Usage: dt options...
         logprefix=string      The per line logging prefix.
         error_log=filename    The error log file name. (alias: elog=)
         master_log=filename   The master log file name. (alias: mlog=)
+        reread_file=filename  The reread file name.
         aios=value            Set number of AIO's to queue.
         alarm=time            The keepalive alarm time.
         keepalive=string      The keepalive message string.
@@ -113,7 +131,8 @@ Usage: dt options...
         max=value             Set the maximum record size to transfer.
         lba=value             Set starting block used w/lbdata option.
         lbs=value             Set logical block size for lbdata option.
-        limit=value           The number of bytes to transfer.
+        limit=value           The number of bytes to transfer (data limit).
+    or  limit=random          Random data limits between 10485760 and 2147483648 bytes.
         incr_limit=value      Set the data limit increment.
         min_limit=value       Set the minumum data limit.
         max_limit=value       Set the maximum data limit.
@@ -124,7 +143,6 @@ Usage: dt options...
         vflags=flags          Set/clear btag verify flags. {lba,offset,...}
         maxbad=value          Set maximum bad blocks to display. (Default: 25)
         onerr=action          Set error action: {abort, continue, or pause}.
-        nice=value            Apply the nice value to alter our priority.
         noprogt=value         Set the no progress time (in seconds).
         noprogtt=value        Set the no progress trigger time (secs).
         notime=optype         Disable timing of specified operation type.
@@ -190,7 +208,8 @@ Usage: dt options...
           Where type is:
             dt                The dt I/O behavior (default).
             dtapp             The dtapp I/O behavior.
-            thumper           The thumper I/O behavior.
+            hammer            The hammer I/O behavior.
+            sio               The simple I/O (sio) behavior.
 
     For help on each I/O behavior use: "iobehavior=type help"
 
@@ -278,10 +297,14 @@ Usage: dt options...
         retry_delay=value     The retry delay.              (Def: 5 secs)
         retry_limit=value     The retry limit.              (Def: 60)
         retryDC_delay=value   The retry corruptions delay.  (Def: 5)
-        retryDC_limit=value   The retry corruptions limit.  (Def: 2)
+        retryDC_limit=value   The retry corruptions limit.  (Def: 1)
 
     Error Strings Accepted:
-        EIO (5), ENXIO (6), EBUSY (16), ENODEV (19), ENOSPC (28), ESTALE (116)
+        ERROR_BUSY (170), ERROR_DISK_FULL (112)
+        ERROR_IO_DEVICE (1117), ERROR_VC_DISCONNECTED (240)
+        ERROR_UNEXP_NET_ERR (59), ERROR_SEM_TIMEOUT (121)
+        ERROR_BAD_NETPATH (53), ERROR_NETNAME_DELETED (64)
+        ERROR_DEVICE_NOT_CONNECTED (1167), ERROR_NO_SYSTEM_RESOURCES (1450)
             OR
         retry_error='*' or -1 to retry all errors.
 
@@ -337,7 +360,7 @@ Usage: dt options...
         fsincr           File size incrementing.    (Default: disabled)
         fsync            Controls file sync'ing.    (Default: runtime)
         header           Log file header.           (Default: disabled)
-        trailer          Log file trailer.          (Default: disabled)
+        trailer          Log file trailer.          (Default: enabled)
         force-corruption Force a FALSE corruption.  (Default: disabled)
         hdump            History dump.              (Default: disabled)
         htiming          History timing.            (Default: disabled)
@@ -350,7 +373,6 @@ Usage: dt options...
         microdelay       Microsecond delays.        (Default: disabled)
         msecsdelay       Millisecond delays.        (Default: disabled)
         secsdelay        Second delays.             (Default: disabled)
-        mmap             Memory mapped I/O.         (Default: disabled)
         mount_lookup     Mount device lookup.       (Default: enabled)
         multi            Multiple volumes.          (Default: disabled)
         noprog           No progress check.         (Default: disabled)
@@ -371,6 +393,8 @@ Usage: dt options...
         savecorrupted    Save corrupted data.       (Default: enabled)
         scriptverify     Script verify display.     (Default: disabled)
         sighup           Hangup signal control.     (Default: enabled)
+        sparse           Sparse file attribute.     (Default: enabled)
+        prealloc         Preallocate w/o sparse.    (Default: enabled)
         scsi             SCSI operations.           (Default: enabled)
         scsi_info        SCSI information.          (Default: enabled)
         scsi_io          SCSI I/O operations.       (Default: disabled)
@@ -399,14 +423,10 @@ Usage: dt options...
     Common Open Flags:
         none                  Clear all user set flags.
         excl (O_EXCL)         Exclusive open. (don't share)
-        ndelay (O_NDELAY)     Non-delay open. (don't block)
-        nonblock (O_NONBLOCK) Non-blocking open/read/write.
         direct (O_DIRECT)     Direct disk access. (don't cache data).
+        direct (NO_BUFFERING) Direct disk access. (don't cache data).
         nodirect              Cache data (disables Direct I/O).
-        fsync (O_FSYNC)       Sync both read/write data with disk file.
-        rsync (O_RSYNC)       Synchronize read operations.
         sync (O_SYNC)         Sync updates for data/file attributes.
-        large (O_LARGEFILE)   Enable large (64-bit) file system support.
 
     Output Open Flags:
         none                  Clear all user set flags.
@@ -461,7 +481,7 @@ Usage: dt options...
     Keepalive Format Control:
             %b = The bytes read or written.   %B = Total bytes read and written.
             %c = Record count for this pass.  %C = Total records for this test.
-            %d = The device name.             %D = The real device name.
+            %d = The device/file name.        %D = The real device name.
             %e = The number of errors.        %E = The error limit.
             %f = The files read or written.   %F = Total files read and written.
             %h = The host name.               %H = The full host name.
@@ -501,10 +521,11 @@ Usage: dt options...
     Default Pass Keepalive: (when full pass stats are disabled via disable=pstats)
             pkeepalive="%d Stats: mode %i, blocks %L, %M Mbytes, pass %p/%P, elapsed %T"
 
-    Log File/Log Prefix Format Keywords:
+    Common Format Control Keywords:
             %array   = The array name or management IP.
-            %bufmode = The file buffer mode.  %dfs    = The directory separator ('/')
+            %bufmode = The file buffer mode.  %dfs    = The directory separator ('\')
             %dsf     = The device name.       %device = The device path.
+            %sdsf    = The SCSI device name.  %tdsf   = The trigger device name.
             %file    = The file name.         %devnum = The device number.
             %host    = The host name.         %user   = The user name.
             %job     = The job ID.            %tag    = The job tag.
@@ -520,6 +541,7 @@ Usage: dt options...
             %month   = The month of the year. %day    = The day of the month.
             %year    = The four digit year.   %hour   = The hour of the day.
             %minutes = The minutes of hour.   %seconds= The seconds of minute.
+            %nate    = The NATE log prefix.   %nos    = The Nimble log prefix.
 
             String 'gtod' = "%tod (%etod) %prog (j:%job t:%thread): "
 
@@ -545,7 +567,7 @@ Usage: dt options...
             \ddd = Octal Value    \xdd or \Xdd = Hexadecimal Value
 
     Prefix Format Control:
-            %d = The device name.           %D = The real device name.
+            %d = The device/file name.      %D = The real device name.
             %h = The host name.             %H = The full host name.
             %p = The process ID.            %P = The parent PID.
             %s = The device serial number.
@@ -579,7 +601,8 @@ Usage: dt options...
         iodir=forward, iomode=test, iotype=sequential, stats=full
         iotseed=0x01010101, hdsize=32, maxbad=25
 
-    --> Date: April 27th, 2021, Version: 23.30, Author: Robin T. Miller <--
+    --> Date: February 9th, 2023, Version: 25.03, Author: Robin T. Miller <--
+
 % 
 </PRE>
 </BODY>
