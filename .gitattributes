@@ -1,0 +1,5 @@
+*.h eol=lf
+*.c eol=lf
+Makefile* eol=lf
+mklinks eol=lf
+*.sln text eol=crlf

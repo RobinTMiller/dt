@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2023			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,15 @@
  *	Read routines for generic data test program.
  *
  * Modification History:
+ * 
+ * September 20th, 2023 by Robin T. Miller
+ *      For all random access devices, limit the data read to what was
+ * written. Previously this was enabled only for file systems, but it's
+ * possible for direct acces disks to create a premature end of data
+ * condition. For example during retries the disk driver may fail Read
+ * Capacity during error recovery/disk discovery returning an ENOSPC.
+ *     I believe thinly provisioned disks may also return ENOSPC when
+ * there's insufficient backend disk space (over provisioned).
  * 
  * August 5th, 2021 by Robin T. Miller
  *      Added support for NVMe disks.
@@ -211,7 +220,7 @@ read_data(struct dinfo *dip)
     } else {
 	lba = make_lbdata(dip, dip->di_offset);
     }
-    if ( dip->di_last_fbytes_written &&	isFileSystemFile(dip) ) {
+    if ( dip->di_last_fbytes_written && dip->di_random_access ) {
 	if ( dip->di_files_read == (dip->di_last_files_written - 1) ) {
 	    check_write_limit = True;
 	    if (dip->di_eDebugFlag) {
@@ -558,7 +567,6 @@ read_data_iolock(struct dinfo *dip)
     Offset_t lock_offset = 0;
     hbool_t lock_full_range = False;
     hbool_t check_rwbytes = False;
-    hbool_t check_write_limit = False;
     u_long io_record = 0;
     lbdata_t lba;
     iotype_t iotype = dip->di_io_type;

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2023			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,10 @@
  *	Write routines for generic data test program.
  * 
  * Modification History:
+ * 
+ * September 20, 2023 by Robin T. Miller
+ *      Added debug instrumentation to simulate a premature end of data.
+ *      For Linux this is: error = 28 - No space left on device
  * 
  * August 5th, 2021 by Robin T. Miller
  *      Added support for NVMe disks.
@@ -1419,6 +1423,20 @@ retry:
 	count = os_pwrite_file(dip->di_fd, buffer, bsize, offset);
     }
     DISABLE_NOPROG(dip);
+
+#if 0
+    /*DEBUG*/
+    /* 
+     * Force a premature "disk full" error to verify reads are limited.
+     * FYI: I'm leaving this code, since forcing certain error conditions 
+     * may be useful to add in the future, like force corruptions above.
+     */ 
+    if ( dip->di_records_written == 5 ) {
+        os_set_error(OS_ERROR_DISK_FULL);
+        count = FAILURE;
+    }
+    /*DEBUG*/
+#endif /* 0 */
 
     if (dip->di_history_size) {
 	long files, records;

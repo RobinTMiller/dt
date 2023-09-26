@@ -31,6 +31,9 @@
  *
  * Modification History:
  *
+ * September 21th, 2023 by Robin T. Miller
+ *      When specifying retryable errors, honor user specified error limit.
+ * 
  * August 18th, 2023 by Robin T. Miller
  *      When a thread is hung, report total statistics before cancelling
  * the thread. These hangs often occur when all storage connections are lost
@@ -4083,6 +4086,7 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    if (status == FAILURE) {
 		return ( HandleExit(dip, status) );
 	    }
+            dip->di_user_errors = True;
 	    continue;
 	}
 	if (match (&string, "hz=")) {
@@ -9428,17 +9432,20 @@ do_common_validate(dinfo_t *dip)
     /*
      * Special retry handling moved here from parser to avoid option ordering!
      */
-    if (dip->di_retry_entries) {
+    if (dip->di_retry_entries && (dip->di_user_errors == False)) {
 	/*
 	 * Retries are normally logged as errors, so in order to keep I/O
-	 * loops from terminating on retries, we adjust the error limit. 
-	 * Note: Retry warnings exclude this for negative testing. 
+         * loops from terminating on retries, we adjust the error limit. 
+         * Note: Retaining this for historic reasons, backwards compatible.
 	 */
-	if ( (dip->di_error_limit != DEFAULT_ERROR_LIMIT) ||
-	     (dip->di_error_limit < dip->di_retry_limit) ) {
-	    /* Note Session disconnects are logged as warnings! */
+	if ( dip->di_error_limit < dip->di_retry_limit ) {
+	    /* Note Windows session disconnects are logged as warnings. */
 	    if ( (dip->di_retry_warning == False) &&
 		 (dip->di_retry_disconnects == False) ) {
+                if (dip->di_verbose_flag) {
+                    Wprintf(dip, "Setting the error limit to the retry limit of %u.\n",
+                            dip->di_retry_limit);
+                }
 		dip->di_error_limit = dip->di_retry_limit;
 	    }
 	}

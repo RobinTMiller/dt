@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2023			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,12 @@
  *	Functions to handle POSIX Asynchronous I/O requests for 'dt' program.
  *
  * Modification History:
+ * 
+ * September 20th, 2023 by Robin T. Miller
+ *      For all random access devices, limit the data read to what was
+ * written. Previously this was enabled only for file systems, but it's
+ * possible for direct acces disks to create a premature end of data
+ * condition. See dtread.c for further details.
  * 
  * June 5th, 2020 by Robin T. Miller
  *      Fix a case with slices and step option where we went past end of slice,
@@ -701,8 +707,7 @@ dtaio_read_data(struct dinfo *dip)
     }
     dip->di_aio_data_bytes = dip->di_aio_file_bytes = dip->di_aio_record_count = 0;
 
-    if ( dip->di_last_fbytes_written &&
-	 (dip->di_dtype->dt_dtype == DT_REGULAR) ) {
+    if ( dip->di_last_fbytes_written && dip->di_random_access ) {
 	if ( dip->di_files_read == (dip->di_last_files_written - 1) ) {
 	    check_write_limit = True;
 	    if (dip->di_fDebugFlag) {

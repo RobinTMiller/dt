@@ -1,6 +1,6 @@
 /****************************************************************************
  *      								    *
- *      		  COPYRIGHT (c) 1988 - 2021     		    *
+ *      		  COPYRIGHT (c) 1988 - 2023     		    *
  *      		   This Software Provided       		    *
  *      			     By 				    *
  *      		  Robin's Nest Software Inc.    		    *
@@ -31,6 +31,10 @@
  *      Setup device and/or system information for 'dt' program.
  * 
  * Modification History:
+ * 
+ * September 20th, 2023 by Robin T. Miller
+ *      When setting up device information, beware of overwriting the user
+ * specified device type.
  * 
  * February 4th, 2020 by Robin T. Miller
  *      For Windows and existing file, set the filesize like we do for Unix!
@@ -1029,9 +1033,11 @@ setup_device_info(struct dinfo *dip, char *dname, struct dtype *dtp)
      *
      * TODO: Create stub and remove ugly conditionalization!
      */
-    if (True /*dtp == NULL*/) {
+    if (True /*dtp == NULL*/) {     /* Note: Why always do this OS system setup? (CRS) */
 	os_system_device_info(dip);
-	dtp = dip->di_dtype;
+        if ( dip->di_dtype ) {
+            dtp = dip->di_dtype;
+        }
     }
 #endif /* defined(DEC) || defined(HP_UX) || defined(__linux__) || defined(AIX) || defined(WIN32) */
 

@@ -1215,6 +1215,7 @@ typedef struct dinfo {
 	hbool_t	di_prefill_buffer;	/* Prefill read buffers.	*/
 	hbool_t	di_unique_log;		/* Make the log file unique.	*/
 	hbool_t	di_unique_file;		/* Make output file unqiue.	*/
+        hbool_t di_user_errors;         /* User specified error limiet. */
 	hbool_t	di_user_incr;		/* User specified incr count.	*/
 	hbool_t	di_user_min;		/* User specified min size.	*/
 	hbool_t	di_user_max;		/* User specified max size.	*/
