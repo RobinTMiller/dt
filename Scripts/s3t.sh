@@ -9,6 +9,10 @@
 #  This script uses the default profile, aka 's3'.
 #
 # Modification History:
+#   December 18th, 2023 by Robin T. Miller
+#     When reading files, remove the min/max limit options to ensure
+#     the whole file is verified, otherwise only a portion is read.
+#
 #   December 13th, 2023 by Robin T. Miller
 #     Add S3 bucket name to dt prefix string.
 #     Change the default S3 bucket name to "dt-bucket".
@@ -58,7 +62,7 @@ do
     aws s3 cp ${s3uri}/ ${s3dir} --recursive
     check_error
     echo "--> Verifying downloaded S3 dt files <<-"
-    ${dtpath}  if=${s3dir}/dt.data bs=random workload=high_validation min_limit=4k max_limit=1m incr_limit=vary vflags=~inode threads=${threads} files=${files} iotpass=${pass} disable=verbose prefix="%d@%h@${bucket}"
+    ${dtpath}  if=${s3dir}/dt.data bs=random workload=high_validation vflags=~inode threads=${threads} files=${files} iotpass=${pass} disable=verbose prefix="%d@%h@${bucket}"
     check_error
     echo "--> Removing S3 dt files <--"
     aws s3 rm --recursive ${s3uri}
