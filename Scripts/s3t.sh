@@ -9,6 +9,9 @@
 #  This script uses the default profile, aka 's3'.
 #
 # Modification History:
+#   April 19th, 2024
+#     Minor updates, fix bash error redirection.
+#
 #   December 18th, 2023 by Robin T. Miller
 #     When reading files, remove the min/max limit options to ensure
 #     the whole file is verified, otherwise only a portion is read.
@@ -39,9 +42,10 @@ passes=${PASSES:-3}
 threads=${THREADS:-5}
 s3uri="s3://${bucket}"
 
-# See if the desired bucket exists:
-aws s3 ls ${s3uri} 2>&1 >/dev/null
+echo "--> Verify Bucket ${s3uri} Exists <--"
+aws s3 ls ${s3uri} 2>/dev/null >/dev/null
 if [[ $? -ne 0 ]]; then
+    echo "--> Making Bucket ${s3uri} <--"
     aws s3 mb ${s3uri}
     check_error
 fi
@@ -61,7 +65,7 @@ do
     echo "--> Downloading S3 dt files <--"
     aws s3 cp ${s3uri}/ ${s3dir} --recursive
     check_error
-    echo "--> Verifying downloaded S3 dt files <<-"
+    echo "--> Verifying downloaded S3 dt files <--"
     ${dtpath}  if=${s3dir}/dt.data bs=random workload=high_validation vflags=~inode threads=${threads} files=${files} iotpass=${pass} disable=verbose prefix="%d@%h@${bucket}"
     check_error
     echo "--> Removing S3 dt files <--"
