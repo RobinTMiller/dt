@@ -1,0 +1,4 @@
+iobehavior=dt bs=64k dispose=keep enable=lockfiles of=./rsap limit=1m enable=debug,noprog,retrydisc noprogt=60 noprogtt=120 retry_error=5 retry_error=2 oflags=trunc pattern=iot
+iobehavior=dt bs=64k dispose=keep of=./rsap limit=1m offset=1m enable=debug,noprog,retrydisc noprogt=60 noprogtt=120 retry_error=5 retry_error=2 oflags=append pattern=iot
+iobehavior=dt bs=64k dispose=keep if=./rsap enable=debug,noprog,retrydisc noprogt=60 noprogtt=120 retry_error=5 retry_error=2 pattern=iot
+shell ls -ls rsap

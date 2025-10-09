@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2023			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,9 +31,12 @@
  * 
  * Modification History:
  * 
- * September 20, 2023 by Robin T. Miller
- *      Added debug instrumentation to simulate a premature end of data.
- *      For Linux this is: error = 28 - No space left on device
+ * October 1st, 2025 by Robin T. Miller
+ *      With random read percentages, ensure the random data limit is set
+ * accordingly with file systems to avoid premature EOF of reads past end
+ * of file. Also ensure the I/O mode is reset to write mode if previously
+ * reading, otherwise the next file will not be created for writing and
+ * will fail trying to open an existing file for read.
  * 
  * August 5th, 2021 by Robin T. Miller
  *      Added support for NVMe disks.
@@ -288,6 +291,18 @@ write_data(struct dinfo *dip)
     if (dip->di_read_percentage || dip->di_random_percentage ||
 	dip->di_random_rpercentage || dip->di_random_wpercentage) {
 	percentages_flag = True;
+        /* Don't allow random percentages to exceed the data limit set above. */
+        /* Note: Reading past the end of file results in a premature EOF! */
+	if (dip->di_random_rpercentage || dip->di_random_wpercentage) {
+            if ( isFileSystemFile(dip) ) {
+                /* Prime for multiple files/dirs. */
+                dip->di_rdata_limit = max(dip->di_data_limit, dip->di_max_limit);
+                if (data_limit < dip->di_rdata_limit) {
+                    /* Limit random offsets to this limit. */
+                    dip->di_rdata_limit = data_limit;
+                }
+            }
+        }
     }
 
     /*
@@ -327,7 +342,6 @@ write_data(struct dinfo *dip)
 
 	    if ( ((dip->di_fbytes_read + dip->di_fbytes_written) >= data_limit) ||
 		 ((dip->di_records_read + dip->di_records_written) >= dip->di_record_limit) ) {
-		dip->di_mode = WRITE_MODE;
 		set_Eof(dip);
 		break;
 	    }
@@ -666,6 +680,10 @@ write_data(struct dinfo *dip)
 				LOCK_TYPE_UNLOCK, lock_offset, (Offset_t)data_limit);
 	if (rc == FAILURE) status = rc;
     }
+    /* This may happen with read percentages. */
+    if (dip->di_mode == READ_MODE) {
+        dip->di_mode = WRITE_MODE;
+    }
     return(status);
 }
 
@@ -865,6 +883,18 @@ write_data_iolock(struct dinfo *dip)
     if (dip->di_read_percentage || dip->di_random_percentage ||
 	dip->di_random_rpercentage || dip->di_random_wpercentage) {
 	percentages_flag = True;
+        /* Don't allow random percentages to exceed the data limit set above. */
+        /* Note: Reading past the end of file results in a premature EOF! */
+	if (dip->di_random_rpercentage || dip->di_random_wpercentage) {
+            if ( isFileSystemFile(dip) ) {
+                /* Prime for multiple files/dirs. */
+                dip->di_rdata_limit = max(dip->di_data_limit, dip->di_max_limit);
+                if (data_limit < dip->di_rdata_limit) {
+                    /* Limit random offsets to this limit. */
+                    dip->di_rdata_limit = data_limit;
+                }
+            }
+        }
     }
 
     /*
@@ -918,7 +948,6 @@ write_data_iolock(struct dinfo *dip)
 
 	    if ( ((iogp->io_bytes_read + iogp->io_bytes_written) >= data_limit) ||
 		 ((iogp->io_records_read + iogp->io_records_written) >= dip->di_record_limit) ) {
-		dip->di_mode = WRITE_MODE;
 		set_Eof(dip);
 		iogp->io_end_of_file = dip->di_end_of_file;
 		(void)dt_release_iolock(dip, iogp);
@@ -1265,6 +1294,10 @@ write_data_iolock(struct dinfo *dip)
 				LOCK_TYPE_UNLOCK, lock_offset, (Offset_t)data_limit);
 	if (rc == FAILURE) status = rc;
     }
+    /* This may happen with read percentages. */
+    if (dip->di_mode == READ_MODE) {
+        dip->di_mode = WRITE_MODE;
+    }
     return (status);
 }
 
@@ -1423,20 +1456,6 @@ retry:
 	count = os_pwrite_file(dip->di_fd, buffer, bsize, offset);
     }
     DISABLE_NOPROG(dip);
-
-#if 0
-    /*DEBUG*/
-    /* 
-     * Force a premature "disk full" error to verify reads are limited.
-     * FYI: I'm leaving this code, since forcing certain error conditions 
-     * may be useful to add in the future, like force corruptions above.
-     */ 
-    if ( dip->di_records_written == 5 ) {
-        os_set_error(OS_ERROR_DISK_FULL);
-        count = FAILURE;
-    }
-    /*DEBUG*/
-#endif /* 0 */
 
     if (dip->di_history_size) {
 	long files, records;

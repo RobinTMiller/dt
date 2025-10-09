@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2023			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,10 @@
  *
  * Modification History:
  *
+ * October 8th, 2025 by Robin T. Miller
+ *      Fix issues with creating top level directories with multiple threads
+ * and multiple directories.
+ * 
  * September 21th, 2023 by Robin T. Miller
  *      When specifying retryable errors, honor user specified error limit.
  * 
@@ -3191,6 +3195,16 @@ setup_base_name(dinfo_t *dip, char *file)
     return(status);
 }
 
+/*
+ * setup_thread_names() - Setup Thread Specific Directory/File Names. 
+ *  
+ * Description: 
+ *      This function is invoked in thread context to finish setting up
+ * directory and file names as appropriate specifically for file systems. 
+ * Please refer to do_filesystem_setup() for the initial setup, which 
+ * handles the file path parsing into a directory name and base name and 
+ * creates the top level directory. 
+ */
 int
 setup_thread_names(dinfo_t *dip)
 {
@@ -3220,27 +3234,22 @@ setup_thread_names(dinfo_t *dip)
 	return(status);
     }
 
-    /*
-     * Make the directory name or file name unique per thread.
+    /* 
+     * Multiple threads, make directory and/or files unique per thread. 
      */ 
     if (dip->di_multiple_files) {
 	char *path;
 	/* Create a unique directory for each thread. */
 	if (dip->di_dir) {
-	    /* Note: The top level directory was already added, usually "d0". */
-	    /* This naming matches the current dt, other than older dt appends PID. */
-#if 1
-	    /* Create a unique subdirectory for each thread. */
-	    /* Note: Especially important when top level directory is a moount point! */
+            if (dip->di_multiple_dirs) {
+                /* Ensure the directory, like "d0" has been created. */
+                status = create_directory(dip, dip->di_dir);
+                if (status == WARNING) status = SUCCESS;
+                if (status == FAILURE) return(status);
+            }
+	    /* Create a unique subdirectory for each thread, default is "j%jobt%thread" */
+	    /* Note: Especially important when top level directory is a mount point! */
 	    (void)sprintf(filefmt, "%s%c%s", dip->di_dir, dip->di_dir_sep, dip->di_file_postfix);
-#else
-	    if (dip->di_multiple_dirs) {
-		(void)sprintf(filefmt, "%s%s%s", dip->di_dir, dip->di_file_sep, dip->di_file_postfix);
-	    } else {
-		/* Create a unique subdirectory for each thread. */
-		(void)sprintf(filefmt, "%s%c%s", dip->di_dir, dip->di_dir_sep, dip->di_file_postfix);
-	    }
-#endif /* 1 */
 	} else {
 	    strcpy(filefmt, dip->di_file_postfix);
 	}
@@ -3249,6 +3258,7 @@ setup_thread_names(dinfo_t *dip)
 	FreeStr(dip, dip->di_dir);
 	dip->di_dir = strdup(path);
 	dip->di_unique_file = False;
+        /* Create the subdirectory (as required). */
 	status = setup_directory_info(dip);
 	FreeStr(dip, path);
     } else {	/* Single file setup. */
@@ -3280,7 +3290,10 @@ finish_test_common(dinfo_t *dip, int thread_status)
     /* If we've been writing, report command to reread the file data. */
     if (dip->di_logtrailer_flag && (dip->di_ftype == OUTPUT_FILE) ) {
 	if ( (dip->di_iobehavior == DT_IO) || (dip->di_iobehavior == DTAPP_IO) ) {
-	    report_reread_data(dip, False, reread_file);
+            if (dip->di_dispose_mode != DELETE_FILE) {
+                /* Don't report if files were deleted, avoid warning! */
+                report_reread_data(dip, False, reread_file);
+            }
 	}
     }
 
@@ -10343,8 +10356,8 @@ do_filesystem_setup(dinfo_t *dip)
 	    *p++ = dip->di_dir_sep;
 	    dip->di_bname = strdup(p);
 	    if (dip->di_debug_flag || dip->di_fDebugFlag) {
-		Printf(dip, "Directory: %s, File: %s, Base Name: %s\n",
-		       dip->di_dir, file, dip->di_bname);
+		Printf(dip, "File: %s, Directory: %s, Base Name: %s\n",
+		       file, dip->di_dir, dip->di_bname);
 	    }
 	} else {
 	    /* Note: Don't wish long file paths, if user did not specify! */
@@ -10419,7 +10432,7 @@ do_filesystem_setup(dinfo_t *dip)
     }
 
     /*
-     * With multiple files, we'll create a top level directory "d0",
+     * With multiple dirs, we'll create a top level directory "d0",
      * by default, to place files. This allows multiple threads with
      * just a mount point to work properly (helps out automation).
      */

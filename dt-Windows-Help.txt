@@ -1,0 +1,542 @@
+Usage: dt.exe options...
+
+    Where options are:
+	if=filename           The input file to read.
+	of=filename           The output file to write.
+	sdsf=filename         The SCSI device special file.
+	tdsf=filename         The SCSI trigger device file.
+	pf=filename           The data pattern file to use.
+	dir=dirpath           The directory path for files.
+	dirp=string           The directory prefix for subdirs.
+	filepostfix=str       The file postfix. (D: j%jobt%thread)
+	sdirs=value           The number of subdirectories.
+	depth=value           The subdirectory depth.
+	bs=value              The block size to read/write.
+    or	bs=random             Random sizes between 512 and 1048576 bytes.
+	ibs=value             The read block size. (overrides bs=)
+	obs=value             The write block size. (overrides bs=)
+	job_log=filename      The job log file name. (alias: jlog=)
+	logdir=filename       The log directory name.
+	log[atu]=filename     The thread log file name to write.
+	                      a=append, t=truncate, u=unique (w/tid)
+	logprefix=string      The per line logging prefix.
+	error_log=filename    The error log file name. (alias: elog=)
+	master_log=filename   The master log file name. (alias: mlog=)
+	reread_file=filename  The reread file name.
+	aios=value            Set number of AIO's to queue.
+	alarm=time            The keepalive alarm time.
+	keepalive=string      The keepalive message string.
+	keepalivet=time       The keepalive message frequency.
+	pkeepalive=str        The pass keepalive message string.
+	tkeepalive=str        The totals keepalive message string.
+	align=offset          Set offset within page aligned buffer.
+    or	align=rotate          Rotate data address through sizeof(ptr).
+	capacity=value        Set the device capacity in bytes.
+    or	capacity=max          Set maximum capacity from disk driver.
+	capacityp=value       Set capacity by percentage (range: 0-100).
+	bufmodes={buffered,unbuffered,cachereads,cachewrites}
+	                      Set one or more buffering modes. (Default: none)
+	boff=string           Set the buffer offsets to: dec or hex. (Default: hex)
+	dfmt=string           Set the data format to: byte or word. (Default: word)
+	dispose=mode          Set file dispose to: {delete, keep, or keeponerror}.
+	dlimit=value          Set the dump data buffer limit.
+	dtype=string          Set the device type being tested.
+	idtype=string         Set input device type being tested.
+	odtype=string         Set output device type being tested.
+	dsize=value           Set the device block (sector) size.
+	errors=value          The number of errors to tolerate.
+	files=value           Set number of disk/tape files to process.
+	maxfiles=value        The maximum files for all directories.
+	ffreq=value           The frequency (in records) to flush buffers.
+	fstrim_freq=value     The file system trim frequency (in files).
+	fill_pattern=value    The write fill pattern (32 bit hex).
+	prefill_pattern=value The read prefill pattern (32 bit hex).
+	flow=type             Set flow to: none, cts_rts, or xon_xoff.
+	incr=value            Set number of record bytes to increment.
+    or	incr=variable         Enables variable I/O request sizes.
+	iops=value            Set I/O per second (this is per thread).
+	iodir=direction       Set I/O direction to: {forward, reverse, or vary}.
+	iomode=mode           Set I/O mode to: {copy, mirror, test, or verify}.
+	iotype=type           Set I/O type to: {random, sequential, or vary}.
+	iotpass=value         Set the IOT pattern for specified pass.
+	iotseed=value         Set the IOT pattern block seed value.
+	iotune=filename       Set I/O tune delay parameters via file.
+	history=value         Set the number of history request entries.
+	history_bufs=value    Set the history data buffers (per request).(or hbufs)
+	history_bsize=value   Set the history block data size increment. (or hbsize)
+	history_data=value    Set the history data size (bytes to save). (or hdsize)
+	min=value             Set the minumum record size to transfer.
+	max=value             Set the maximum record size to transfer.
+	lba=value             Set starting block used w/lbdata option.
+	lbs=value             Set logical block size for lbdata option.
+	limit=value           The number of bytes to transfer (data limit).
+    or	limit=random          Random data limits between 10485760 and 2147483648 bytes.
+	incr_limit=value      Set the data limit increment.
+	min_limit=value       Set the minumum data limit.
+	max_limit=value       Set the maximum data limit.
+	maxdata=value         The maximum data limit (all files).
+	maxdatap=value        The maximum data percentage (range: 0-100).
+	flags=flags           Set open flags:   {excl,sync,...}
+	oflags=flags          Set output flags: {append,trunc,...}
+	vflags=flags          Set/clear btag verify flags. {lba,offset,...}
+	maxbad=value          Set maximum bad blocks to display. (Default: 25)
+	onerr=action          Set error action: {abort, continue, or pause}.
+	noprogt=value         Set the no progress time (in seconds).
+	noprogtt=value        Set the no progress trigger time (secs).
+	notime=optype         Disable timing of specified operation type.
+	parity=string         Set parity to: {even, odd, or none}.
+	pass_cmd=string       The per pass command to execute.
+	passes=value          The number of passes to perform.
+	pattern=value         The 32 bit hex data pattern to use.
+    or	pattern=iot           Use DJ's IOT test pattern.
+    or	pattern=incr          Use an incrementing data pattern.
+    or	pattern=string        The string to use for the data pattern.
+	position=offset       Position to offset before testing.
+	oposition=offset      The output file position (copy/verify).
+	prefix=string         The data pattern prefix string.
+	procs=value           The number of processes to create.
+	ralign=value          The random I/O offset alignment.
+	rlimit=value          The random I/O data byte limit.
+	rseed=value           The random number generator seed.
+	records=value         The number of records to process.
+	readp=value           Percentage of accesses that are reads. Range [0,100].
+	                      'random' keyword makes the read/write percentage random.
+	randp=value           Percentage of accesses that are random. Range [0,100].
+	                      Sequential accesses = 0%, else random percentage
+	rrandp=value          Percentage of read accesses that are random. Range [0,100].
+	wrandp=value          Percentage of write accesses that are random. Range [0,100].
+	runtime=time          The number of seconds to execute.
+	script=filename       The script file name to execute.
+	slices=value          The number of disk slices.
+	slice=value           Choose a specific disk slice.
+	soffset=value         The starting slice offset.
+	skip=value            The number of records to skip past.
+	seek=value            The number of records to seek past.
+	step=value            The number of bytes seeked after I/O.
+	stats=level           The stats level: {brief, full, or none}
+	stopon=filename       Watch for file existence, then stop.
+	sleep=time            The sleep time (in seconds).
+	msleep=value          The msleep time (in milliseconds).
+	usleep=value          The usleep time (in microseconds).
+	showbtags opts...     Show block tags and btag data.
+	showfslba             Show file system offset to physical LBA.
+	showfsmap             Show file system map extent information.
+	showtime=value        Show time value in ctime() format.
+	showvflags=value      Show block tag verify flags set.
+	threads=value         The number of threads to execute.
+	trigger={br, bdr, lr, seek, cdb:bytes, cmd:str, and/or triage}
+	                      The triggers to execute on errors.
+	trigger_action=value  The trigger action (for noprogs).
+	trigger_on={all, errors, miscompare, or noprogs} (Default: all)
+	                      The trigger control (when to execute).
+	volumes=value         The number of volumes to process.
+	vrecords=value        The record limit for the last volume.
+	enable=flag           Enable one or more of the flags below.
+	disable=flag          Disable one or more of the flags below.
+	help                  Display this help text.
+	eval EXPR             Evaluate expression, show values.
+	system CMD            Execute a system command.
+	!CMD                  Same as above, short hand.
+	shell                 Startup a system shell.
+	usage                 Display the program usage.
+	version               Display the version information.
+
+    I/O Behaviors:
+	iobehavior=type       Specify the I/O behavior. (alias: iob=)
+	  Where type is:
+	    dt                The dt I/O behavior (default).
+	    dtapp             The dtapp I/O behavior.
+	    hammer            The hammer I/O behavior.
+	    sio               The simple I/O (sio) behavior.
+
+    For help on each I/O behavior use: "iobehavior=type help"
+
+    Block Tag Verify Flags: (prefix with ~ to clear flag)
+	lba,offset,devid,inode,serial,hostname,signature,version
+	pattern_type,flags,write_start,write_secs,write_usecs,
+	pattern,generation,process_id,thread_number,device_size
+	record_index,record_size,record_number,step_offset,
+	opaque_data_type,opaque_data_size,crc32
+
+	default Disk: lba,devid,serial + common
+	default File: offset,inode + common flags
+	common Flags: hostname,signature,write_start,generation,
+	              prcoess_id,job_id,thread_number,crc32
+
+	Example: verifyFlags= or vflags=~all,lba,crc32
+
+    Force Corruption Options:
+	corrupt_index=value   The corruption index. (Default: random)
+	corrupt_length=value  The corruption length. (Default: 4 bytes)
+	corrupt_pattern=value The corruption pattern. (Default: 0xfeedface)
+	corrupt_step=value    Corruption buffer step. (Default: 0 bytes)
+	corrupt_reads=value   Corrupt at read records. (Default: 13)
+	corrupt_writes=value  Corrupt at write records. (Default: 0)
+
+    Job Start Options:
+	istate={paused,running} (Default: running)
+	                      Initial state after thread created.
+	tag=string            Specify job tag when starting tests.
+
+    Job Control Options:
+	jobs[:full][={jid|tag}] | [job=value] | [tag=string]
+	                      Show all jobs or specified job.
+	cancelall             Cancel all jobs.
+	cancel={jid|tag} | [job=value] | [tag=string]
+	                      Cancel the specified job ID.
+	modify[={jid|tag}] | [job=value] | [tag=string] [modify_options]
+	                      Modify all jobs or specified job.
+	pause[={jid|tag}] | [job=value] | [tag=string]
+	                      Pause all jobs or specified job.
+	query[={jid|tag}] | [job=value] | [tag=string] [query_string]
+	                      Query all jobs or specified job.
+	resume[={jid|tag}] | [job=value] | [tag=string]
+	                      Resume all jobs or specified job.
+	stopall               Stop all jobs.
+	stop={jid|tag} | [job=value] | [tag=string]
+	                      Stop the specified job.
+	wait[={jid|tag}] | [job=value] | [tag=string]
+	                      Wait for all jobs or specified job.
+
+    File System Map Format:
+	showfslba [bs=value] [count=value] [limit=value] [offset=value]
+	                      Show FS offset(s) mapped to physical LBA(s)
+	                      The default is to show LBA for specified offset.
+	showfsmap [bs=value] [count=value] [limit=value] [offset=value]
+	                      Show the file system map extent information.
+	                      The default is to show the full extent map.
+
+    File Locking Options:
+	enable=lockfiles      Enables file locks (locks & unlocks)
+	lockmode={mixed | full | partial}
+	                      Chance of full or partial file locks (default: mixed).
+	unlockchance=[0-100]  Probability of keeping locks and skipping unlocking.
+	Examples:
+	    unlockchance=100  100% chance of unlocking, ALL files unlocked. [default]
+	    unlockchance=50    50% chance of unlocking each file.
+	    unlockchance=0      0% chance of unlocking, NO files are unlocked.
+
+    Workload Options:
+	define workloadName options...
+	                      Define a workload with options.
+	workloads [substr]
+	                      Display the valid workloads.
+	workload=name         Select the specified workload.
+
+    File System Full Options:
+	fsfree_delay=value    FS free space sleep delay.    (Def: 3 secs)
+	fsfree_retries=value  FS free space wait retries.   (Def: 10)
+
+	Please consider adding the truncate flag or enable=deleteperpass,
+	to free space between passes or with multiple threads to same FS.
+
+    Retry Related Options:
+	retry_error=value     The error code to retry.
+	retry_delay=value     The retry delay.              (Def: 5 secs)
+	retry_limit=value     The retry limit.              (Def: 60)
+	retryDC_delay=value   The retry corruptions delay.  (Def: 5)
+	retryDC_limit=value   The retry corruptions limit.  (Def: 1)
+
+    Error Strings Accepted:
+	ERROR_BUSY (170), ERROR_DISK_FULL (112)
+	ERROR_IO_DEVICE (1117), ERROR_VC_DISCONNECTED (240)
+	ERROR_UNEXP_NET_ERR (59), ERROR_SEM_TIMEOUT (121)
+	ERROR_BAD_NETPATH (53), ERROR_NETNAME_DELETED (64)
+	ERROR_DEVICE_NOT_CONNECTED (1167), ERROR_NO_SYSTEM_RESOURCES (1450)
+	    OR
+	retry_error='*' or -1 to retry all errors.
+
+    SCSI Specific Options:
+	idt=string            The Inquiry device type. (both, device, or serial)
+	spt_path=string       Path to SCSI (spt) tool.
+	spt_options=string    Additional spt options.
+	readtype=string       The SCSI read type (read8, read10, read16).
+	writetype=string      The SCSI write type (write8, write10, write16, writev16).
+	scsi_recovery_delay=value The SCSI recovery delay.  (Def: 2 secs)
+	scsi_recovery_retries=value The SCSI recovery retries.(Def: 60)
+	scsi_timeout=value    The SCSI timeout (in ms).     (Def: 0ms)
+	unmap_freq=value      The SCSI unmap frequency.     (Def: 0)
+	unmap=type            The SCSI unmap type.
+	 Valid types are: random, unmap, write_same, zerorod.
+
+    Flags to enable/disable:
+	aio              POSIX Asynchronous I/O.    (Default: disabled)
+	async            Asynchronous job control.  (Default: disabled)
+	btags            Block tag control flag.    (Default: disabled)
+	compare          Data comparison flag.      (Default: enabled)
+	xcompare         Extra btag prefix compare. (Default: disabled)
+	coredump         Core dump on errors.       (Default: disabled)
+	deleteerrorlog   Delete error log file.     (Default: enabled)
+	deleteperpass    Delete files per pass.     (Default: disabled)
+	debug            Debug output.              (Default: disabled)
+	Debug            Verbose debug output.      (Default: disabled)
+	btag_debug       Block tag (btag) debug.    (Default: disabled)
+	edebug           End of file debug.         (Default: disabled)
+	fdebug           File operations debug.     (Default: disabled)
+	jdebug           Job control debug.         (Default: disabled)
+	ldebug           File locking debug.        (Default: disabled)
+	mdebug           Memory related debug.      (Default: disabled)
+	mntdebug         Mount device lookup debug. (Default: disabled)
+	pdebug           Process related debug.     (Default: disabled)
+	rdebug           Random debug output.       (Default: disabled)
+	tdebug           Thread debug output.       (Default: disabled)
+	timerdebug       Timer debug output.        (Default: disabled)
+	dump             Dump data buffer.          (Default: enabled)
+	dumpall          Dump all blocks.           (Default: disabled)
+	dump_btags       Dump block tags (btags).   (Default: disabled)
+	dump_context     Dump good context block.   (Default: enabled)
+	errors           Report errors flag.        (Default: disabled)
+	xerrors          Report extended errors.    (Default: enabled)
+	eof              EOF/EOM exit status.       (Default: disabled)
+	fileperthread    File per thread.           (Default: enabled)
+	fill_always      Always fill files.         (Default: disabled)
+	fill_once        Fill the file once.        (Default: disabled)
+	fsalign          File system align.         (Default: disabled)
+	fsmap            File system map control.   (Default: enabled)
+	fstrim           File system trim.          (Default: disabled)
+	funique          Unique output file.        (Default: disabled)
+	fsincr           File size incrementing.    (Default: disabled)
+	fsync            Controls file sync'ing.    (Default: runtime)
+	header           Log file header.           (Default: disabled)
+	trailer          Log file trailer.          (Default: enabled)
+	force-corruption Force a FALSE corruption.  (Default: disabled)
+	hdump            History dump.              (Default: disabled)
+	htiming          History timing.            (Default: disabled)
+	image            Image mode copy (disks).   (Default: disabled)
+	iolock           I/O lock control.          (Default: disabled)
+	lbdata           Logical block data.        (Default: disabled)
+	logpid           Log process ID.            (Default: disabled)
+	lockfiles        Lock files.                (Default: disabled)
+	looponerror      Loop on error.             (Default: disabled)
+	microdelay       Microsecond delays.        (Default: disabled)
+	msecsdelay       Millisecond delays.        (Default: disabled)
+	secsdelay        Second delays.             (Default: disabled)
+	mount_lookup     Mount device lookup.       (Default: enabled)
+	multi            Multiple volumes.          (Default: disabled)
+	noprog           No progress check.         (Default: disabled)
+	pipes            Pipe mode control flag.    (Default: disabled)
+	poison           Poison read buffer flag.   (Default: disabled)
+	prefill          Prefill read buffer flag.  (Default: runtime)
+	job_stats        The job statistics flag.   (Default: disabled)
+	pstats           The per pass statistics.   (Default: enabled)
+	total_stats      The total statistics.      (Default: enabled)
+	raw              Read after write.          (Default: disabled)
+	reread           Re-read after raw.         (Default: disabled)
+	resfsfull        Restart file system full.  (Default: enabled)
+	readcache        Read cache control.        (Default: enabled)
+	writecache       Write cache control.       (Default: enabled)
+	retryDC          Retry data corruptions.    (Default: enabled)
+	retrydisc        Retry session disconnects. (Default: disabled)
+	retrywarn        Retry logged as warning.   (Default: disabled)
+	savecorrupted    Save corrupted data.       (Default: enabled)
+	scriptverify     Script verify display.     (Default: disabled)
+	sighup           Hangup signal control.     (Default: enabled)
+	sparse           Sparse file attribute.     (Default: enabled)
+	prealloc         Preallocate w/o sparse.    (Default: enabled)
+	scsi             SCSI operations.           (Default: enabled)
+	scsi_info        SCSI information.          (Default: enabled)
+	scsi_io          SCSI I/O operations.       (Default: disabled)
+	sdebug           SCSI debug output.         (Default: disabled)
+	scsi_errors      SCSI error logging.        (Default: disabled)
+	scsi_recovery    SCSI recovery control.     (Default: enabled)
+	unmap            SCSI unmap per pass.       (Default: disabled)
+	get_lba_status   SCSI Get LBA Status.       (Default: disabled)
+	fua              SCSI Force unit access.    (Default: disabled)
+	dpo              SCSI Disable page out.     (Default: disabled)
+	stats            Display statistics.        (Default: enabled)
+	stopimmed        Stop immediate w/stop file.(Default: enabled)
+	syslog           Log errors to syslog.      (Default: disabled)
+	terminate_on_signals Terminate on signals.  (Default: disabled)
+	timestamp        Timestamp each block.      (Default: disabled)
+	trigargs         Trigger cmd arguments.     (Default: enabled)
+	trigdefaults     Automatic trigger defaults.(Default: enabled)
+	trigdelay        Delay mismatch triggers.   (Default: enabled)
+	unique           Unique pattern.            (Default: enabled)
+	uuid_dashes      Dashes in UUID strings.    (Default: enabled)
+	verbose          Verbose output.            (Default: enabled)
+	verify           Verify data written.       (Default: enabled)
+
+	Example: enable=debug disable=compare,pstats
+
+    Common Open Flags:
+	none                  Clear all user set flags.
+	excl (O_EXCL)         Exclusive open. (don't share)
+	direct (O_DIRECT)     Direct disk access. (don't cache data).
+	direct (NO_BUFFERING) Direct disk access. (don't cache data).
+	nodirect              Cache data (disables Direct I/O).
+	sync (O_SYNC)         Sync updates for data/file attributes.
+
+    Output Open Flags:
+	none                  Clear all user set flags.
+	append (O_APPEND)     Append data to end of existing file.
+	dsync (O_DSYNC)       Sync data to disk during write operations.
+	trunc (O_TRUNC)       Truncate an existing file before writing.
+
+    Delays (Values are seconds, unless micro/msecs delay is enabled):
+	open_delay=value      Delay before opening the file.    (Default: 0)
+	close_delay=value     Delay before closing the file.    (Default: 0)
+	delete_delay=value    Delay after deleting files.       (Default: 0 secs)
+	end_delay=value       Delay between multiple passes.    (Default: 0 secs)
+	forced_delay=value    Force random I/O delay (noprog).  (Default: 0 secs)
+	start_delay=value     Delay before starting the test.   (Default: 0 secs)
+	read_delay=value      Delay before reading each record. (Default: 0)
+	verify_delay=value    Delay before verifying data.      (Default: 0)
+	write_delay=value     Delay before writing each record. (Default: 0)
+	term_delay=value      Delay before terminating.         (Default: 0 secs)
+	term_wait=time        Thread termination wait time.     (Default: 180 secs)
+
+	The delay options accept 'random' for random delays.
+	Please Note: For disk devices, microseconds is the default!:
+
+    Numeric Input:
+	For options accepting numeric input, the string may contain any
+	combination of the following characters:
+
+	Special Characters:
+	    w = words (4 bytes)            q = quadwords (8 bytes)
+	    b = blocks (512 bytes)         k = kilobytes (1024 bytes)
+	    m = megabytes (1048576 bytes)  p = page size (4096 bytes)
+	    g = gigabytes (1073741824 bytes)
+	    t = terabytes (1099511627776 bytes)
+	    d = device size (set via dsize=value option)
+	    inf or INF = infinity (18446744073709551615 bytes)
+
+	Arithmetic Characters:
+	    + = addition                   - = subtraction
+	    * or x = multiplcation         / = division
+	    % = remainder
+
+	Bitwise Characters:
+	    ~ = complement of value       >> = shift bits right
+	   << = shift bits left            & = bitwise 'and' operation
+	    | = bitwise 'or' operation     ^ = bitwise exclusive 'or'
+
+	The default base for numeric input is decimal, but you can override
+	this default by specifying 0x or 0X for hexadecimal conversions, or
+	a leading zero '0' for octal conversions.  NOTE: Evaluation is from
+	right to left without precedence, and parenthesis are not permitted.
+
+    Keepalive Format Control:
+	    %b = The bytes read or written.   %B = Total bytes read and written.
+	    %c = Record count for this pass.  %C = Total records for this test.
+	    %d = The device/file name.        %D = The real device name.
+	    %e = The number of errors.        %E = The error limit.
+	    %f = The files read or written.   %F = Total files read and written.
+	    %h = The host name.               %H = The full host name.
+	    %k = The kilobytes this pass.     %K = Total kilobytes for this test.
+	    %l = Blocks read or written.      %L = Total blocks read and written.
+	    %m = The megabytes this pass.     %M = Total megabytes for this test.
+	    %p = The pass count.              %P = The pass limit.
+	    %r = Records read this pass.      %R = Total records read this test.
+	    %s = The seconds this pass.       %S = The total seconds this test.
+	    %t = The pass elapsed time.       %T = The total elapsed time.
+	    %i = The I/O mode (read/write)    %u = The user (login) name.
+	    %w = Records written this pass.   %W = Total records written this test.
+
+    Performance Keywords:
+	    %bps  = The bytes per second.     %lbps = Logical blocks per second.
+	    %kbps = Kilobytes per second.     %mbps = The megabytes per second.
+	    %iops = The I/O's per second.     %spio = The seconds per I/O.
+
+	    Lowercase means per pass stats, while uppercase means total stats.
+
+    I/O Keywords:
+	    %iodir = The I/O direction.       %iotype = The I/O type.
+	    %lba = The current logical block. %offset = The current file offset.
+	    %elba = The error logical block.  %eoffset = The error file offset.
+	    %bufmode = The file buffer mode.  %status = The thread exit status.
+
+    Job Control Keywords:
+	    %job  = The job ID.               %tag    = The job tag.
+	    %tid  = The thread ID.            %thread = The thread number.
+
+    Misc Keywords:
+	    %keepalivet = The keepalive time.
+
+    Default Keepalive:
+	    keepalive="%d Stats: mode %i, blocks %l, %m Mbytes, pass %p/%P, elapsed %t"
+
+    Default Pass Keepalive: (when full pass stats are disabled via disable=pstats)
+	    pkeepalive="%d Stats: mode %i, blocks %L, %M Mbytes, pass %p/%P, elapsed %T"
+
+    Common Format Control Keywords:
+	    %array   = The array name or management IP.
+	    %bufmode = The file buffer mode.  %dfs    = The directory separator ('\')
+	    %dsf     = The device name.       %device = The device path.
+	    %sdsf    = The SCSI device name.  %tdsf   = The trigger device name.
+	    %file    = The file name.         %devnum = The device number.
+	    %host    = The host name.         %user   = The user name.
+	    %job     = The job ID.            %tag    = The job tag.
+	    %jlog    = The job log.           %tlog   = The Thread log.
+	    %tid     = The thread ID.         %thread = The thread number.
+	    %pid     = The process ID.        %prog   = The program name.
+	    %ymd     = The year,month,day.    %hms    = The hour,day,seconds.
+	    %date    = The date string.       %et     = The elapsed time.
+	    %tod     = The time of day.       %etod   = Elapsed time of day.
+	    %secs    = Seconds since start.   %seq    = The sequence number.
+	    %script  = The script file name.  %tmpdir = The temporary directory.
+	    %uuid    = The UUID string.       %workload = The workload name.
+	    %month   = The month of the year. %day    = The day of the month.
+	    %year    = The four digit year.   %hour   = The hour of the day.
+	    %minutes = The minutes of hour.   %seconds= The seconds of minute.
+	    %nate    = The NATE log prefix.   %nos    = The Nimble log prefix.
+
+	    String 'gtod' = "%tod (%etod) %prog (j:%job t:%thread): "
+
+	Example: log=dt_%host_%user_%iodir_%iotype-%uuid.log
+	         logprefix="%seq %ymd %hms %et %prog (j:%job t:%thread): "
+
+    SCSI Format Keywords:
+	    %capacity = The disk capacity.    %blocklen = The disk block length.
+	    %vendor = The Inquiry vendor ID.  %product = The Inquiry product ID.
+	    %revision = The Inquiry revision. %devid = The device identifier.
+	    %serial = The disk serial number. %mgmtaddr = The management address.
+
+    I/O Tune File Format Keywords:
+	    %iotune = The I/O tune path.      %tmpdir = The temporary directory.
+	    %host   = The host name.          %user   = The user (login) name.
+
+	Example: iotune=%iotune OR %tmpdir%host_MyIOtune_file
+
+    Pattern String Input:
+	    \\ = Backslash   \a = Alert (bell)   \b = Backspace
+	    \f = Formfeed    \n = Newline        \r = Carriage Return
+	    \t = Tab         \v = Vertical Tab   \e or \E = Escape
+	    \ddd = Octal Value    \xdd or \Xdd = Hexadecimal Value
+
+    Prefix Format Control:
+	    %d = The device/file name.      %D = The real device name.
+	    %h = The host name.             %H = The full host name.
+	    %p = The process ID.            %P = The parent PID.
+	    %s = The device serial number.
+	    %u = The user name.             %U = A unique UUID.
+	    %j = The job ID.                %J = The job tag.
+	    %t = The thread number.         %T = The thread ID.
+
+	Example: prefix="%U %d@%h" OR prefix="%d(%s)@%h"
+
+    Time Input:
+	    d = days (86400 seconds),      h = hours (3600 seconds)
+	    m = minutes (60 seconds),      s = seconds (the default)
+
+	Arithmetic characters are permitted, and implicit addition is
+	performed on strings of the form '1d5h10m30s'.
+
+    Trigger Types:
+	    br = Execute a bus reset.
+	    bdr = Execute a bus device reset.
+	    lr = Execute a device lun reset.
+	    seek = Issue a seek to the failing lba.
+	    triage = Issue SCSI triage commands.
+	    cmd:string = Execute command with these args:
+	      string dname op dsize offset position lba errno noprogt
+	      args following cmd:string get appended to above args.
+
+    Defaults:
+	errors=1, files=0, passes=1, records=0, bs=512, log=stderr
+	pattern=0x39c39c39, dispose=delete, align=0 (page aligned)
+	aios=8, dlimit=512, onerr=continue, volumes=0, vrecords=1
+	iodir=forward, iomode=test, iotype=sequential, stats=full
+	iotseed=0x01010101, hdsize=32, maxbad=25
+
+    --> Date: October 8th, 2025, Version: 25.06, Author: Robin T. Miller <--

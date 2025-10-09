@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,7 +31,11 @@
  *	File system operations.
  *
  * Modification History:
- *
+ * 
+ * October 6th, 2025 by Robin T. Miller
+ *      Remove Windows drive letter check in dt_create_directory(), which
+ * keeps multiple directories from being created.
+ * 
  * May 5th, 2015 by Robin T. Miller
  * 	When checking for file/path existance, on Windows expect an
  * additional error (ERROR_PATH_NOT_FOUND) when a portion of the path
@@ -1153,11 +1157,6 @@ dt_create_directory(dinfo_t *dip, char *dir,
     if (isDiskFull) *isDiskFull = False;
     if (isFileExists) *isFileExists = False;
 
-#if defined(WIN32)
-    if ( IsDriveLetter(dir) ) {
-        return(status);		/* Cannot create a directory on drive letter only! */
-    }
-#endif /* defined(WIN32) */
     /*
      * Ensure user specified a directory, or create as necessary.
      */

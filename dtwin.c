@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2021			    *
+ *			  COPYRIGHT (c) 2006 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,9 @@
  *	This module contains *unix OS specific functions.
  * 
  * Modification History:
+ * 
+ * October 8th, 2025 by Robin T. Miller
+ *      If trying to open the volume handle fails, disable file system mapping.
  * 
  * June 5th, 2020 by Robin T. Miller
  *      Update os_pread_file() to detecting overlapped I/O, then wait for
@@ -3368,7 +3371,7 @@ initFileTranslation(dinfo_t *dip, char *filename, HANDLE fileHandle, BOOL verify
         result = GetVolumePathName(filename, volumeName, sizeof(volumeName));
 
         if (result == False) {
-	    if (dip->di_fDebugFlag) {
+           if (dip->di_fDebugFlag) {
 		os_perror(dip, "GetVolumePathName() failed on %s", filename);
 	    }
             break;
@@ -3462,9 +3465,16 @@ initFileTranslation(dinfo_t *dip, char *filename, HANDLE fileHandle, BOOL verify
 					  FILE_ATTRIBUTE_NORMAL, NULL);
 
         if (transaction->hVolume == INVALID_HANDLE_VALUE) {
-	    if (dip->di_fDebugFlag) {
+            DWORD error = GetLastError();
+            if ( os_isAccessDenied(error) ) {
+                if ( dip->di_verbose_flag ) {
+                    Wprintf(dip, "Unable to open volume handle %s, disabling file system mapping!\n",
+                            transaction->fullVolName);
+                }
+            } else if (dip->di_fDebugFlag) {
 		os_perror(dip, "CreateFile()/GENERIC_READ failed on %s", transaction->fullVolName);
 	    }
+            dip->di_fsmap_flag = False;
 	    result = False;
             break;
         }
