@@ -1,0 +1,188 @@
+Valid Workloads:
+
+    dt_acid: File System Acid Workload (requires ~2.37g space)
+	limit=25m maxdatap=75 onerr=abort disable=pstats oflags=trunc incr=var min=1k max=256k dispose=keep pattern=iot prefix='%d@%h' noprogt=15s noprogtt=130s alarm=6 notime=fsync,close enable=syslog history=5 hdsize=128 enable=htiming iodir=vary iotype=vary enable=deleteperpass,fsincr,timestamp,aio dirp=DT_ sdirs=8 files=6 depth=4 bufmodes=cachereads,buffered,unbuffered,cachewrites runtime=24h stopon=C:\temp\stopit trigger=cmd:"C:\tools\dt_noprog_script.bat" keepalivet=300
+
+    dt_dedup: Deduplication Pattern
+	workload=dt_file_system_dedup bufmodes=cachereads,buffered,unbuffered,cachewrites
+
+    dt_hammer: dt Hammer File System Workload (requires ~6.20g space)
+	bs=random min_limit=b max_limit=5m incr_limit=vary files=250 maxdatap=75 iodir=vary iotype=vary onerr=abort enable=btags,deleteperpass prefix='%d@%h' pattern=iot bufmodes=buffered,cachereads,cachewrites,unbuffered history=5 hdsize=128 enable=htiming alarm=3 noprogt=15 noprogtt=3m disable=pstats keepalivet=5m threads=10
+
+    many_files: Populate directory with many files (requires ~1g space)
+	min=b max=1m incr=4k limit=1m files=100 sdirs=3 depth=3 dispose=keep prefix='%d@%h' enable=lbdata disable=pstats
+
+    incr_files: Create incrementing file sizes (requires ~1.36g space)
+	files=256 min=b max=1m limit=64m prefix=%d@%h pattern=iot enable=fsincr dispose=keep
+
+    file_percentages: Single file with read/write and random/sequential percentages
+	bs=random limit=1g enable=btags flags=direct onerr=abort slices=10 readp=-1 randp=50 dispose=keep
+
+    file_performance: Single file performance
+	bs=32k limit=1g flags=direct slices=10 disable=pstats disable=compare dispose=keep
+
+    fill_once: Fill a file or disk once (write only)
+	bs=64k slices=25 disable=compare,stats,verify dispose=keep
+
+    vary_file_sizes: Create files with varying sizes (requires ~2.41g space)
+	bs=random min_limit=b max_limit=5m incr_limit=vary files=100 sdirs=3 depth=3 maxdatap=75 dispose=keeponerror prefix='%d@%h' enable=lbdata,deleteperpass disable=pstats
+
+    terabyte_lun: Terabyte LUN
+	slices=16 step=4g aios=4 bs=random pattern=iot prefix='%d@%h' enable=pstats
+
+    terabyte_file: Single terabyte file
+	limit=15t slices=15 step=1g aios=4 bs=random pattern=iot prefix='%d@%h' enable=pstats dispose=keep
+
+    sparse_files: Sparse files test
+	bs=16k step=32k disable=pstats enable=lbdata dispose=keep
+
+    web_file_server: Web File Server Workload
+	bs=64k readp=95 randp=5 disable=verify flags=direct
+
+    dss_db: Decision Support System Database Workload
+	bs=1m readp=100 randp=100 disable=compare,verify flags=direct
+
+    media_streaming: Media Streaming Workload
+	bs=64k readp=98 randp=0 disable=verify flags=direct
+
+    sql_Server_log: SQL Server Log Workload
+	bs=64k readp=0 randp=0 disable=verify flags=direct
+
+    os_paging: OS Paging Workload
+	bs=64k readp=90 randp=0 disable=verify flags=direct
+
+    web_server_log: Web Server Log
+	bs=8k readp=0 randp=0 disable=verify flags=direct
+
+    oltp_db: Online Transaction Processing (OLTP) Workload
+	bs=8k readp=70 randp=100 disable=verify flags=direct
+
+    exchange_server: Exchange Server Workload
+	bs=4k readp=67 randp=100 disable=verify flags=direct
+
+    workstation: Workstation Workload
+	bs=8k readp=80 randp=80 disable=verify flags=direct
+
+    video_on_demand: Video on Demand (VOD) Workload
+	bs=512k readp=0 randp=100 disable=verify flags=direct
+
+    hammer: Standard hammer workload
+	iobehavior=hammer
+
+    hammer_bufmodes: Hammer workload using buffered/unbuffered modes
+	iobehavior=hammer bufmodes=buffered,unbuffered
+
+    hammer_locking: Hammer workload with file logging and stop file
+	iobehavior=hammer -lockfiles -onlydelete stopon=C:\temp\stopit
+
+    sio_percentages: sio workload with percentages, 4k I/O, 1g file, and prefilling
+	iobehavior=sio bs=4k readp=25 randp=75 end=1g -prefill runtime=1h
+
+    sio_random: sio workload with random block sizes, random read/write, 10g file w/verification
+	iobehavior=sio bs=random readp=random end=10g -direct -verify threads=10
+
+    sio_many_files: Populate directory with many files concurrently (write only)
+	iobehavior=sio bs=32k end=1g files=100 passes=1
+
+    sio_many_slices: Populate device or file via many slices (write only)
+	iobehavior=sio bs=32k end=10g slices=100 passes=1
+
+    sio_many_threads: Populate device or file via many threads (write only)
+	iobehavior=sio bs=32k end=10g threads=100 passes=1
+
+    longevity_common: Longevity Common Options (template)
+	min=8k max=1m incr=vary enable=raw,reread,log_trailer,syslog history=5 history_data=152 enable=history_timing logprefix='%seq %nos %et %prog (j:%job t:%thread): ' keepalivet=5m runtime=-1 onerr=abort noprogt=30s noprogtt=5m stopon=C:\temp\stopit
+
+    longevity_file_dedup: Longevity File System w/Dedup Workload
+	workload=longevity_common min_limit=1m max_limit=2g incr_limit=vary dispose=keep flags=direct notime=close,fsync oflags=trunc maxdatap=75 threads=4 pf=x:\noarch\dtdata\pattern_dedup
+
+    longevity_disk_dedup: Longevity Direct Disk w/Dedup Workload
+	workload=longevity_common capacityp=75 slices=4 pf=x:\noarch\dtdata\pattern_dedup
+
+    longevity_file_system: Longevity File System Workload
+	workload=longevity_common workload=high_validation min_limit=1m max_limit=2g incr_limit=vary dispose=keep flags=direct notime=close,fsync oflags=trunc maxdatap=75 threads=4
+
+    longevity_disk_unmap: Longevity Direct Disk w/SCSI UNMAP Workload
+	workload=longevity_common workload=high_validation capacityp=75 slices=4 unmap=unmap
+
+    longevity_disk: Longevity Direct Disk Workload
+	workload=longevity_common workload=high_validation capacityp=75 slices=4
+
+    longevity_disk_write_only: Longevity Direct Disk Write Only
+	workload=longevity_disk disable=raw,reread,verify
+
+    longevity_file_write_only: Longevity File System Write Only
+	workload=longevity_file_system disable=raw,reread,verify
+
+    san_file_system: SAN File System Workload
+	bs=random limit=2g dispose=keeponerror iodir=vary iotype=vary keepalivet=5m workload=keepalive pattern=iot prefix='%d@%h' enable=btags onerr=abort disable=pstats notime=close,fsync oflags=trunc threads=4 enable=noprog noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=htiming enable=syslog runtime=12h stopon=C:\temp\stopit bufmodes=buffered,cachereads,cachewrites,unbuffered
+
+    san_disk: SAN Direct Disk Workload
+	bs=random slices=4 pattern=iot prefix='%d@%h' enable=btags iodir=vary iotype=vary keepalivet=5m workload=keepalive onerr=abort disable=pstats noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=htiming enable=syslog runtime=12h enable=stopimmed stopon=C:\temp\stopit 
+
+    keepalive: Keepalive Message (template)
+	keepalive='%d stats: Mode: %i, Blocks: %l, %m Mbytes, MB/sec: %mbps, IO/sec: %iops, Pass %p, Elapsed: %T'
+
+    dt_dedup_common: Deduplication Common Options (template)
+	dsize=4k min=8k max=1m incr=vary enable=raw,reread,log_trailer,syslog history=5 enable=history_timing logprefix='%seq %nos %et %prog (j:%job t:%thread): ' keepalivet=5m runtime=-1 onerr=abort noprogt=30s noprogtt=5m notime=close,fsync end_delay=60 enable=secsdelay stopon=C:\temp\stopit
+
+    dt_dedup_pattern_file: Deduplication Pattern File (template)
+	pf=x:\noarch\dtdata\pattern_dedup
+
+    dt_dedup_data_pattern: Deduplication Data Pattern (template)
+	pattern=iot prefix='%U@%h'
+
+    dt_disk_dedup: Direct Disk Deduplication Workload
+	workload=dt_dedup_common,dt_dedup_pattern_file capacityp=75 slices=4 iodir=vary prefix='%s@%h'
+
+    dt_file_system_dedup: File System Deduplication Workload 2x Data Factor
+	workload=dt_dedup_common,dt_dedup_data_pattern dispose=keep flags=direct maxdatap=75 files=2 limit=2g maxdatap=75 threads=4 pattern=iot prefix='%U@%h'
+
+    stopon_file: Stop dt File (template)
+	enable=stopimmed stopon=C:\temp\stopit
+
+    disk_read_after_write: Direct Disk Read-After-Write w/Rereads
+	workload=san_disk enable=read_immed,reread slices=8
+
+    disk_aligned_io: Direct Disk Aligned I/O (assumes 4k blocks)
+	workload=san_disk dsize=4k
+
+    disk_unaligned_io: Direct Disk Aligned I/O (assumes 4k blocks)
+	workload=san_disk dsize=4k offset=4k-3b
+
+    disk_dedup: Direct Disk Deduplication
+	workload=dt_disk_dedup
+
+    disk_unmaps: Direct Disk with Unmaps
+	workload=san_disk unmap=unmap
+
+    disk_write_only: Direct Disk Write Only
+	workload=san_disk disable=raw,reread,verify
+
+    file_system_write_only: File System Write Only
+	workload=san_file_system disable=raw,reread,verify
+
+    high_validation: Define Highest Data Validation Options (template)
+	enable=btags pattern=iot prefix='%d@%h'
+
+    job_stats_only: Define options to display job statistics only (template)
+	disable=stats enable=job_stats
+
+    disable_corruption_behavior: Define options to disable corruption behavior (template)
+	disable=retryDC,savecorrupted,trigdefaults
+
+    all_logs: Define options for creating all logs (template)
+	job_log='dt_job%job.log' log='dt_thread-j%jobt%thread-%dsf.log'
+
+    job_logs: Define options for creating job logs (template)
+	job_log='dt_job%job.log'
+
+    thread_logs: Define options for creating thread logs (template)
+	log='dt_thread-j%jobt%thread-%dsf.log'
+
+    reread_thread_logs: Define options for creating reread thread logs (template)
+	log='dt_thread-j%jobt%thread-%dsf.log-reread'
+
+    log_timestamps: Define options for adding log file timestamps (template)
+	logprefix='%date %et %prog (j:%job t:%thread): '
+
