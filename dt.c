@@ -31,6 +31,9 @@
  *
  * Modification History:
  *
+ * October 12th, 2025 by Robin T. Miller
+ *      Windows _istty() has stopped working, do adjusted accordingly.
+ *
  * October 8th, 2025 by Robin T. Miller
  *      Fix issues with creating top level directories with multiple threads
  * and multiple directories.
@@ -888,15 +891,28 @@ main(int argc, char **argv)
 #endif /* defined(OSFMK) || defined(__QNX_NTO__) defined(WIN32) */
 
     CmdInterruptedFlag = False;
+    CmdInterruptedFlag = False;
+    /*
+     * Note: Recent versions of Windows _isatty() is not working, 
+     * yet older versions of dt it did work. Not sure what happened, 
+     * but below it affects the log trailer flag, so adjusted!
+     */
     StdinIsAtty = isatty(fileno(stdin));
     StdoutIsAtty = isatty(fileno(stdout));
     StderrIsAtty = isatty(fileno(stderr));
-    if (StdoutIsAtty == True) {
+  
+#if defined(WIN32)
+    dip->di_logheader_flag = False;
+    dip->di_logtrailer_flag = False;
+#else /* !defined(WIN32) */
+    if (StdoutIsAtty) {
 	dip->di_logheader_flag = False;
 	dip->di_logtrailer_flag = False;
     } else {
+        /* Additional logging when not a terminal. */
 	dip->di_logtrailer_flag = True;
     }
+#endif /* !defined(WIN32) */
 
     (void)make_stderr_buffered(dip);
     (void)init_pthread_attributes(dip);
