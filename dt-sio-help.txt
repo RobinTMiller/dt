@@ -1,0 +1,86 @@
+Usage: dt.exe iobehavior=sio [options...]
+
+sio (Simple I/O Load Generator) - NetApp
+A tool to generate artificial I/O workloads against any device
+Supports numerous configuration variables (reads vs writes, etc)
+Supports multiple devices and multiple threads. Collects a wide
+variety of statistics on I/O client machines and/or I/O servers.
+
+Basic Usage: 
+dt iobehavior=sio readp=<read%> randp=<rand%> bs=<blksz> starting=<start> \
+       end=<end> runtime=<secs> threads=<threads> devs=<dev>,[devs,...]
+
+readp=<read>          Percentage of accesses that are reads. Range [0,100].
+                      'random' keyword makes the read/write percentage random.
+                      BEWARE, writing to a file is unchecked and will trash files.
+randp=<rand>          Percentage of acceses that are random. Range [0,100].
+                      Sequential accesses = 0%, else random percentage
+bs=<blksz>            Size of I/O's. Example: 2k, 4k, 1m
+                      'random' keyword makes the I/O size random 512 bytes to 262144 bytes.
+ibs=<blksz>           Size of read requests. (overrides bs= option)
+obs=<blksz>           Size of write requests.
+start=<strt_byte>     Lower bound for access location in each file.
+end=<file_size>       Total bytes accessed in each file (e.g. 100m, 2g, 1000k).
+runtime=<seconds>     Runtime for test. Counting starts AFTER all threads have started.
+threads=<numthreads>  Concurrent I/O generators. Uses real individual threads.
+dev=<dev>             Device to access. May be file (foo.out) or device (/dev/dsk/etc).
+ or devs=<dev>[,...]  Multiple devices and/or files can be specified, comma separated.
+ or file=<paths>      One or more paths to files to access (synonym for 'devs' option).
+
+Examples:
+ 1) Random 4k I/O with 25% reads/75% writes, 75% random/sequential for 10 minutes.
+    Accessing a total of 250 megabytes in each file, after prefilling the file.
+
+    % dt iobehavior=sio file=a.file,b.file bs=4k readp=25 randp=75 end=250m -prefill runtime=10m
+
+ 2) Random reads and writes with random block sizes via 10 threads to the same file.
+    This test will run infinitely without -numops or runtime options.
+
+    % dt iobehavior=sio file=a.file bs=random readp=random end=1g -direct -verify threads=100
+
+Options:
+    Options are divided into four categories:
+        Basic Features, Advanced Features,
+        Q/A Features, and Esoteric Stuff.
+
+Basic Features:
+    -help                 List this sio help, then exit.
+    -version              Display this detailed version log.
+    -noflock              Do NOT lock files.  Locking affects caching on some OS's.
+    -noheader             Suppress single line header output. (Good for multiple runs).
+    -debug                Output detailed debug info. Be prepared for a lot of info.
+    -Debug                Very verbose debug information. Be prepared for a lot of info!
+    -niceoutput           Print output in single column, human-readable format.
+    -prettyprint          Pretty print the output (this is dt's format).
+    -no_dsync             Do NOT open files with O_DSYNC. Allows async writes.
+    -noperf               Do NOT display performance statistics.
+
+Advanced Features:
+    -stop=<fname>         Watch for existance of file 'fname' and terminate.
+    -think=<msec>         Each thread waits 'ms' MS before issuing each I/O.
+    -iops=<rate>          Target IOPS for each thread.
+    -lockall              Lock the complete file as opposed to a single byte.
+    -truncate:            IFF pure sequential writes, then when I/O wraps to
+                          beginning of file, the file is truncated.
+    -max_blksize=<bytes>  Set maximum block size to 'bytes'.
+    -max_latency=(ms)     Maximum allowed latency (in milliseconds) of an IO.
+    -direct               Disable filesystem caching.
+    -align=(size)         Alignment to be used with random block size.
+    -break_on_dc          Exit upon detecting data corruption ASAP.
+
+Q/A Features:
+    -verify               Read back written data and verify content.
+    -verify_retry=<n>     Retry failed verifies 'n' times.
+    -instrumentation      Special pattern insertion technique.
+    -fixedfill=<value>    Fill the file with 8 bit value.
+
+Esoteric Stuff:
+    -numops=<num_ops>     Run for 'num_ops' I/O's and stop. Beware stats.
+    -fileperthread        Open one file per thread. Special names.
+    -blockno              Prints out the I/O block numbers.
+    -iofailok             Allow I/O failures (do not access file again).
+    -iomutex              Use mutex to synchronize multiple threads.
+    -fillonce             Write all files once, then stop.
+    -prefill              Write all files prior to test I/O.
+    -partition_among_threads Partition the file among threads.
+

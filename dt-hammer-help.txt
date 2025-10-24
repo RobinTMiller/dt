@@ -1,0 +1,74 @@
+Usage: dt.exe iobehavior=hammer [dir=DirectoryPath] [options...]
+
+    Options:
+	-help                    Show this help text, then exit.
+	dir=DirectoryPath        Directory path for hammer files.
+	                         If omitted, current directory is the default.
+	-api win32               The only API supported for Windows is WIN32.
+	-bg                      Don't use stdin or stdout (output to log file).
+	-checkinodes             File system reusing inodes?
+	-filercore=FILERNAME     Coredump the filer upon corruption.
+	-nofilercore             Disable coredumping the filer.
+	-direct                  Disable filesystem caching.
+	-fill                    Fill disk and then keep it full.
+	-interactive             Use interactive mode (not supported).
+	-iterations NUMBER       The number of iterations to execute.
+	-logfile FILE            Use logfile FILE. (Default is none).
+	-mode={mixed | creates | overwrites} (Default: mixed)
+	                         Use the specified mode.
+	-nocleanup               Don't remove files upon completion.
+	-noflush                 Don't use flush buffers (write through).
+	-onlydelete              When exiting, only delete files.
+	-onlyflush               Always use async I/O and flush buffers.
+	-nostreams               Don't use NT stream files.
+	-noretrydisc             Don't retry session disconnects.
+	-retrydisc               Retry session disconnects.
+	-runtime=N               Stop hammering after N seconds.
+	-threads=value           The number of hammer threads.
+	-seed=value              Set the random seed to use.
+	-version                 Print the version, then exit.
+
+    Blocksize Options:
+	-blocksize=NBYTES        Use blocksize NBYTES.
+	-blocksize=random        Use a random blocksize. (Default: True)
+	-minbsize=NBYTES         Set minimum block size to NBYTES. (Default: 512)
+	-maxbsize=NBYTES         Set maximum block size to NBYTES. (Default: 131072)
+	-minfsize=NBYTES         Set minimum file  size to NBYTES. (Default: 1)
+	-maxfsize=NBYTES         Set maximum file  size to NBYTES. (Default: 5242880)
+
+    Error Control Options:
+	-ignorelockerrors        Don't halt on file locking errors, continue.
+	-ignorefileerrors        Don't halt on file operation errors, continue.
+	-ignoredatacorruption    Don't halt on data corruption errors, continue.
+	-ignoreallerrors         Don't halt on any of the above errors, continue.
+	                         [NOTE: hammer will stop on other critical errors.
+	                          that can prevent it from functioning properly].
+
+    Lock Control Options:
+	-nolockdebug             Exclude file lock/unlock debug output (it's chatty).
+	-lockfiles               Include file locks (locks & unlocks) using defaults for the lock options below.
+	-lockmode={mixed | full | partial}
+	                         More chance of full or partial file locks (default: mixed).
+	-unlockchance=[0-100]    Probability of keeping locks and skipping unlocking, 0-100 percent.
+	Examples:
+	   if -unlockchance=100  100% chance of unlocking, ALL files unlocked. [default]
+	   if -unlockchance=50    50% chance of unlocking each file.
+	   if -unlockchance=0      0% chance of unlocking, NO files are unlocked.
+
+    dt Options Supported:
+	bufmodes={buffered,unbuffered,cachereads,cachewrites}
+	                         Set one or more buffering modes (Default: none)
+	maxdata=value            The maximum data limit (all files).
+	maxdatap=value           The maximum data percentage (range: 0-100).
+	maxfiles=value           The maximum files for all directories.
+	stopon=filename          Watch for file existance, then stop.
+	enable=raw               The read after write flag.
+
+    Also know, I/O monitoring (noprog*= options), keepalive, and trigger= options
+    are also supported with hammer.
+
+Examples:
+    % dt iobehavior=hammer dir=/mnt/hammer maxdatap=25 runtime=1h
+    % dt iobehavior=hammer dir=/mnt/hammer bufmodes=buffered,unbuffered stopon=stopfile
+    % dt iobehavior=hammer dir=/mnt/hammer -lockfiles -onlydelete -threads=3 log=hammer.log
+
