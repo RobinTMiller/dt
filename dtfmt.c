@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,9 @@
  *	File system operations.
  *
  * Modification History:
+ * 
+ * October 30th, 2025 by Robin T. Miller
+ *      Add latency keepalive format control string parsing.
  * 
  * November 16th, 2021 by Robin T. Miller
  *      Add %nate for NetApp NATE log prefix format string.
@@ -121,6 +124,17 @@ static char *not_available = "NA";
  * 
  * Misc Keywords:
  * 	%keepalivet = The keepalive time.
+ * 
+ * Latency Ketwords:
+ *      %latency = The average total latency.
+ *      $latmin = The minimum total latency.
+ *      $latmax = The maximum total latency.
+ *      %rlatency = The average read latency.
+ *      $rlatmin = The minimum read latency.
+ *      $rlatmax = The maximum read latency.
+ *      %wlatency = The average write latency.
+ *      $wlatmin = The minimum write latency.
+ *      $wlatmax = The maximum write latency.
  * 
  * See FmtCommon() for common format control strings.
  *
@@ -283,6 +297,107 @@ FmtKeepAlive(struct dinfo *dip, char *keepalivefmt, char *buffer)
 		length -= 10;
 		from += 11;
 		continue;
+            /* 
+             * Latency Keywords:
+             */
+	    } else if (strncasecmp(key, "latency", 7) == 0) {
+                if ( dip->di_total_latency_ios ) {
+                    double latency, scaled;
+                    char *suffix;
+                    int precision = 0;
+                    latency = (double)dip->di_total_latency / (double)dip->di_total_latency_ios;
+                    scale_timer_value(latency, &scaled, &suffix, &precision);
+                    to += Sprintf(to, "%.*f%s", precision, scaled, suffix);
+                }
+		length -= 7;
+		from += 8;
+		continue;
+	    } else if (strncasecmp(key, "latmin", 6) == 0) {
+                if ( dip->di_min_latency ) {
+                    double scaled_min;
+                    char *suffix;
+                    int precision = 0;
+                    scale_timer_value((double)dip->di_min_latency, &scaled_min, &suffix, &precision);
+                    to += Sprintf(to, "%.*f%s", precision, scaled_min, suffix);
+                }
+		length -= 6;
+		from += 7;
+		continue;
+	    } else if (strncasecmp(key, "latmax", 6) == 0) {
+                if ( dip->di_max_latency ) {
+                    double scaled_max;
+                    char *suffix;
+                    int precision = 0;
+                    scale_timer_value((double)dip->di_max_latency, &scaled_max, &suffix, &precision);
+                    to += Sprintf(to, "%.*f%s", precision, scaled_max, suffix);
+                }
+		length -= 6;
+		from += 7;
+		continue;
+	    } else if (strncasecmp(key, "rlatency", 8) == 0) {
+                if ( dip->di_read_latency_ios ) {
+                    double latency, scaled;
+                    char *suffix;
+                    int precision = 0;
+                    latency = (double)dip->di_read_latency / (double)dip->di_read_latency_ios;
+                    scale_timer_value(latency, &scaled, &suffix, &precision);
+                    to += Sprintf(to, "%.*f%s", precision, scaled, suffix);
+                }
+		length -= 8;
+		from += 9;
+		continue;
+            } else if (strncasecmp(key, "rlatmin", 7) == 0) {
+                if ( dip->di_read_latency_ios ) {
+                    double scaled_min;
+                    char *suffix;
+                    int precision = 0;
+                    scale_timer_value((double)dip->di_min_read_latency, &scaled_min, &suffix, &precision);
+                    to += Sprintf(to, "%.*f%s", precision, scaled_min, suffix);
+                }
+                length -= 7;
+                from += 8;
+                continue;
+            } else if (strncasecmp(key, "rlatmax", 7) == 0) {
+                if ( dip->di_max_read_latency ) {
+                    double scaled_max;
+                    char *suffix;
+                    int precision = 0;
+                    scale_timer_value((double)dip->di_max_read_latency, &scaled_max, &suffix, &precision);
+                    to += Sprintf(to, "%.*f%s", precision, scaled_max, suffix);
+                }
+                length -= 7;
+                from += 8;
+                continue;
+            } else if (strncasecmp(key, "wlatency", 8) == 0) {
+                if ( dip->di_write_latency_ios ) {
+                    double latency, scaled;
+                    char *suffix;
+                    int precision = 0;
+                    latency = (double)dip->di_write_latency / (double)dip->di_write_latency_ios;
+                    scale_timer_value(latency, &scaled, &suffix, &precision);
+                    to += Sprintf(to, "%.*f%s", precision, scaled, suffix);
+                }
+		length -= 8;
+		from += 9;
+		continue;
+            } else if (strncasecmp(key, "wlatmin", 7) == 0) {
+                double scaled_min;
+                char *suffix;
+                int precision = 0;
+                scale_timer_value((double)dip->di_min_write_latency, &scaled_min, &suffix, &precision);
+                to += Sprintf(to, "%.*f%s", precision, scaled_min, suffix);
+                length -= 7;
+                from += 8;
+                continue;
+            } else if (strncasecmp(key, "wlatmax", 7) == 0) {
+                double scaled_max;
+                char *suffix;
+                int precision = 0;
+                scale_timer_value((double)dip->di_max_write_latency, &scaled_max, &suffix, &precision);
+                to += Sprintf(to, "%.*f%s", precision, scaled_max, suffix);
+                length -= 7;
+                from += 8;
+                continue;
 	    } else {
 		int len = FmtCommon(dip, key, &to);
 		if (len) {

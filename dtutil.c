@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,9 @@
  *	Utility routines for generic data test program.
  * 
  * Modification History:
+ * 
+ * October 24th, 2025 by Robin T. Miller
+ *      Add scale_timer_value() function to scale microsecond values.
  * 
  * June 16th, 2021 by Robin T. Miller
  *      Update execute triggers to handle the SCSI trigger device.
@@ -226,6 +229,39 @@ SleepSecs(dinfo_t *dip, unsigned int sleep_time)
 	if ( PROGRAM_TERMINATING || THREAD_TERMINATING(dip) ) break;
 	timeout -= ms;
     } while (timeout);
+    return;
+}
+
+void
+scale_timer_value(double value, double *scaled, char **suffix, int *precision)
+{
+    /* 
+     * Scale microsecond value and define suffix:
+     *  values >= 1000000 scale down to seconds.
+     *  values >= 1000 scale down to microseconds.
+     *  otherwise no scaling, leave as microseconds.
+     */
+    if ( value >= uSECS_PER_SEC ) {
+        *scaled = (value / (double)uSECS_PER_SEC);
+        *suffix = "s";
+        if ( (uint64_t)value % uSECS_PER_SEC == 0 ) {
+            *precision = 0;
+        } else {
+            *precision = 2;
+        }
+    } else if ( value >= mSECS_PER_SEC ) {
+        *scaled = (value / (double)mSECS_PER_SEC);
+        *suffix = "ms";
+        if ( (uint64_t)value % mSECS_PER_SEC == 0 ) {
+            *precision = 0;
+        } else {
+            *precision = 2;
+        }
+    } else {
+        *scaled = value;
+        *suffix = "us";
+        *precision = 0;
+    }
     return;
 }
 

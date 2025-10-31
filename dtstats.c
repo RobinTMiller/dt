@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -30,6 +30,9 @@
  *	Display statistics information for generic data test program.
  *
  * Modification History:
+ * 
+ * October 23rd, 2025 by Robin T. Miller
+ *      Add reporting of latency statistics.
  * 
  * March 31st, 2021 by Robin T. Miller
  *      Add report_file_system_common() to report common information.
@@ -742,6 +745,44 @@ report_stats(struct dinfo *dip, enum stats stats_type)
     }
 #endif /* defined(AIO) */
 
+    /*  Latency Statistics */
+    if ( (stats_type == JOB_STATS) || (stats_type == TOTAL_STATS) ) {
+        double latency, scaled, scaled_min, scaled_max;
+        char *suffix;
+        int precision = 0;
+
+        if ( dip->di_read_latency_ios ) {
+            latency = (double)dip->di_read_latency / (double)dip->di_read_latency_ios;
+            scale_timer_value(latency, &scaled, &suffix, &precision);
+            Lprintf(dip, DT_FIELD_WIDTH "%.*f%s", "Average read latency",
+                    precision, scaled, suffix);
+            scale_timer_value((double)dip->di_min_read_latency, &scaled_min, &suffix, &precision);
+            Lprintf(dip, " (min %.*f%s", precision, scaled_min, suffix);
+            scale_timer_value((double)dip->di_max_read_latency, &scaled_max, &suffix, &precision);
+            Lprintf(dip, ", max %.*f%s)\n", precision, scaled_max, suffix);
+        }
+        if ( dip->di_write_latency_ios ) {
+            latency = (double)dip->di_write_latency / (double)dip->di_write_latency_ios;
+            scale_timer_value(latency, &scaled, &suffix, &precision);
+            Lprintf(dip, DT_FIELD_WIDTH "%.*f%s", "Average write latency",
+                    precision, scaled, suffix);
+            scale_timer_value((double)dip->di_min_write_latency, &scaled_min, &suffix, &precision);
+            Lprintf(dip, " (min %.*f%s", precision, scaled_min, suffix);
+            scale_timer_value((double)dip->di_max_write_latency, &scaled_max, &suffix, &precision);
+            Lprintf(dip, ", max %.*f%s)\n", precision, scaled_max, suffix);
+        }
+        if ( dip->di_total_latency_ios ) {
+            latency = (double)dip->di_total_latency / (double)dip->di_total_latency_ios;
+            scale_timer_value(latency, &scaled, &suffix, &precision);
+            Lprintf(dip, DT_FIELD_WIDTH "%.*f%s", "Average total latency",
+                    precision, scaled, suffix);
+            scale_timer_value((double)dip->di_min_latency, &scaled_min, &suffix, &precision);
+            Lprintf(dip, " (min %.*f%s", precision, scaled_min, suffix);
+            scale_timer_value((double)dip->di_max_latency, &scaled_max, &suffix, &precision);
+            Lprintf(dip, ", max %.*f%s)\n", precision, scaled_max, suffix);
+        }
+    }
+
     if (elapsed && xfer_records) {
 	double records = (double)(xfer_records + xfer_partial);
 	double secs = elapsed;
@@ -1166,6 +1207,32 @@ gather_thread_stats(dinfo_t *dip, dinfo_t *tdip)
     dip->di_total_partial += tdip->di_total_partial;
     dip->di_error_count += tdip->di_error_count;
     //dip->di_total_errors += tdip->di_total_errors;
+
+    /* Accumulate Latency */
+    dip->di_total_latency += tdip->di_total_latency;
+    dip->di_total_latency_ios += dip->di_total_latency_ios;
+    if ( tdip->di_min_latency < dip->di_min_latency ) {
+        dip->di_min_latency = tdip->di_min_latency;
+    }
+    if ( tdip->di_max_latency > dip->di_max_latency ) {
+        dip->di_max_latency = tdip->di_max_latency;
+    }
+   dip->di_read_latency += tdip->di_read_latency;
+    dip->di_read_latency_ios += dip->di_read_latency_ios;
+    if ( tdip->di_min_read_latency < dip->di_min_read_latency ) {
+        dip->di_min_read_latency = tdip->di_min_read_latency;
+    }
+    if ( tdip->di_max_read_latency > dip->di_max_read_latency ) {
+        dip->di_max_read_latency = tdip->di_max_read_latency;
+    }
+    dip->di_write_latency += tdip->di_write_latency;
+    dip->di_write_latency_ios += dip->di_write_latency_ios;
+    if ( tdip->di_min_write_latency < dip->di_min_write_latency ) {
+        dip->di_min_write_latency = tdip->di_min_write_latency;
+    }
+    if ( tdip->di_max_write_latency > dip->di_max_write_latency ) {
+        dip->di_max_write_latency = tdip->di_max_write_latency;
+    }
     return;
 }
 

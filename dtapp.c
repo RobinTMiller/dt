@@ -29,6 +29,9 @@
  * 
  * Modification History: 
  *  
+ * October 30th, 2025 by Robin T. Miller
+ *      Convert microsecond variables from 32-bits to 64 bits.
+ * 
  * November 9, 2021 by Chris Nelson (nelc@netapp.com)
  *    Add MIT license, in order to distribute to FOSS community so it can
  *    be used and maintained by a larger audience, particularly for the
@@ -1800,7 +1803,7 @@ dtapp_read_data(dinfo_t *dip)
     Offset_t lock_offset = 0;
     hbool_t lock_full_range = False;
     lbdata_t lba = 0;
-    uint32_t loop_usecs;
+    uint64_t loop_usecs;
     large_t data_limit;
     large_t fbytes_read = 0, records_read = 0;
     struct timeval loop_start_time, loop_end_time;
@@ -2042,7 +2045,7 @@ dtapp_read_data(dinfo_t *dip)
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
 	    highresolutiontime(&loop_end_time, NULL);
-	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
+	    loop_usecs = timer_diff(&loop_start_time, &loop_end_time);
             dip->di_target_total_usecs += dip->di_iops_usecs; 
             dip->di_actual_total_usecs += loop_usecs;
             if (dip->di_target_total_usecs > dip->di_actual_total_usecs) {
@@ -2075,7 +2078,7 @@ dtapp_write_data(dinfo_t *dip)
     hbool_t lock_full_range = False;
     hbool_t partial = False;
     lbdata_t lba = 0;
-    uint32_t loop_usecs;
+    uint64_t loop_usecs;
     large_t fbytes_written = 0, records_written = 0;
     struct timeval loop_start_time, loop_end_time;
     unsigned long error_count = 0;
@@ -2412,7 +2415,7 @@ dtapp_write_data(dinfo_t *dip)
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
 	    highresolutiontime(&loop_end_time, NULL);
-	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
+	    loop_usecs = timer_diff(&loop_start_time, &loop_end_time);
             odip->di_target_total_usecs += dip->di_iops_usecs;
 	    if (odip->di_raw_flag == True) {
 		odip->di_target_total_usecs += dip->di_iops_usecs; /* Two I/O's! */

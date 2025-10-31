@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,9 @@
  *	Support for dt workloads.
  *
  * Modification History:
+ * 
+ * October 30th, 2025 by Robin T. Miller
+ *      Add latency keepalive workload templates.
  * 
  * November 16th, 2021 by Robin T. Miller
  *	Add hammer and sio worklaods, thanks to Chris @NetApp!
@@ -301,6 +304,21 @@ workload_entry_t predefined_workloads[] =
 	"Keepalive Message (template)",
 	"keepalive='%d stats: Mode: %i, Blocks: %l, %m Mbytes, "
 	"MB/sec: %mbps, IO/sec: %iops, Pass %p, Elapsed: %T'"
+    },
+    {   "latency_brief",
+        "Latency Brief Keepalive Message (template)",
+        "keepalive='avg/min/max Total Latency: %latency/%latmin/%latmax, "
+        "Read Latency: %rlatency/%rlatmin/%rlatmax, Write Latency: %wlatency/%wlatmin/%wlatmax'"
+    },
+    {   "latency_verbose",
+        "Latency Verbose Keepalive (template)",
+        "keepalive='\\n"
+        "    Total Latency: "
+        "Average: %latency, Minimum: %latmin, Maximum: %latmax\\n"
+        "     Read Latency: "
+        "Average: %rlatency, Minimum: %rlatmin, Maximum: %rlatmax\\n"
+        "    Write Latency: "
+        "Average: %wlatency, Minimum: %wlatmin, Maximum: %wlatmax'"
     },
     /* -> Start of Deduplication Workloads <- */
     /* 

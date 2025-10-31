@@ -72,6 +72,7 @@ Usage: dt options...
 	limit=value           The number of bytes to transfer (data limit).
     or	limit=random          Random data limits between 10485760 and 2147483648 bytes.
 	incr_limit=value      Set the data limit increment.
+    or	incr_limit=variable   Enables variable file sizes.
 	min_limit=value       Set the minumum data limit.
 	max_limit=value       Set the maximum data limit.
 	maxdata=value         The maximum data limit (all files).
@@ -151,6 +152,12 @@ Usage: dt options...
 	    sio               The simple I/O (sio) behavior.
 
     For help on each I/O behavior use: "iobehavior=type help"
+
+    Latency Options:
+	latfreq=value         Report latency frequency (in records).
+	                      Note: This reports per I/O latency.
+	latmin=value          The minimum latency (in microseconds).
+	latmax=value          The maximum latency (in microseconds).
 
     Block Tag Verify Flags: (prefix with ~ to clear flag)
 	lba,offset,devid,inode,serial,hostname,signature,version
@@ -434,6 +441,16 @@ Usage: dt options...
 	    %i = The I/O mode (read/write)    %u = The user (login) name.
 	    %w = Records written this pass.   %W = Total records written this test.
 
+    Latency Keywords:
+	    %latency = The average total latency.
+	    %latmin = The min total latency.  %latmax = The max total latency.
+	    %rlatency = The average read latency.
+	    %rlatmin = The min read latency.  %rlatmax = The max read latency.
+	    %wlatency = The average write latency.
+	    %wlatmin = The min write latency. %wlatmax = The max write latency.
+
+	Please see the latency_keepalive workload template for an example.
+
     Performance Keywords:
 	    %bps  = The bytes per second.     %lbps = Logical blocks per second.
 	    %kbps = Kilobytes per second.     %mbps = The megabytes per second.
@@ -540,4 +557,4 @@ Usage: dt options...
 	iodir=forward, iomode=test, iotype=sequential, stats=full
 	iotseed=0x01010101, hdsize=32, maxbad=25
 
-    --> Date: October 6th, 2025, Version: 25.06, Author: Robin T. Miller <--
+    --> Date: October 30th, 2025, Version: 25.08, Author: Robin T. Miller <--

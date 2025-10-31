@@ -31,6 +31,9 @@
  *
  * Modification History:
  *
+ * October 29th, by Robin T. Miller
+ *      Adding parsing of latency options.
+ * 
  * October 12th, 2025 by Robin T. Miller
  *      Windows _istty() has stopped working, do adjusted accordingly.
  *
@@ -891,7 +894,6 @@ main(int argc, char **argv)
 #endif /* defined(OSFMK) || defined(__QNX_NTO__) defined(WIN32) */
 
     CmdInterruptedFlag = False;
-    CmdInterruptedFlag = False;
     /*
      * Note: Recent versions of Windows _isatty() is not working, 
      * yet older versions of dt it did work. Not sure what happened, 
@@ -920,10 +922,6 @@ main(int argc, char **argv)
     initialize_workloads_data();
 
     status = ProcessStartupScripts(dip);
-
-    //if (tools_directory = NULL) {
-    //	tools_directory = strdup(TOOLS_DIR);
-    //}
 
     if (argc == 0) {
 	/* This must be done *after* processing startup files. */
@@ -1516,19 +1514,6 @@ do_common_thread_startup(dinfo_t *dip)
 
     status = do_common_file_system_setup(dip);
     if (status == FAILURE) return(status);
-#if 0    
-    /* Format the file & directory path based on user control strings. */
-    if (dip->di_fsfile_flag == True) {
-	if ( strchr(dip->di_dname, '%') ) {
-	    status = format_device_name(dip, dip->di_dname);
-	}
-	if (dip->di_dir && strchr(dip->di_dir, '%') ) {
-	    /* Format the directory based on user control strings. */
-	    status = setup_directory_info(dip);
-	}
-	if (status == FAILURE) return(status);
-    }
-#endif /* 0 */
 
     if (dip->di_log_file) {
 	if ( (status = create_unique_thread_log(dip)) == FAILURE) {
@@ -3162,15 +3147,22 @@ report_pass_statistics(dinfo_t *dip)
 }
 
 /*
- * Note: This setup of directories, base name, and device names,
- * needs to be cleaned up. It's a left over hack from the original
- * port, but is messy as heck, and misleading even to the author!
+ * format_device_name() -  Set up directories, base name, and device names. 
+ *  
+ * Description: 
+ *      This needs to be cleaned up. It's a left over hack from original
+ * port, but is messy as heck, and misleading even to the author! :(
+ *  
+ * The idea is to expand directories and/or file names of the form: 
+ *     dt-%user-%uuid.data
+ * Since UUID's are thread specific, this must be done in thread context.
  */
 int
 format_device_name(dinfo_t *dip, char *format)
 {
     int status = SUCCESS;
     char *path = FmtFilePath(dip, format, True);
+
     if (path) {
 	FreeStr(dip, dip->di_dname);
 	dip->di_dname = path;
@@ -3196,9 +3188,16 @@ setup_base_name(dinfo_t *dip, char *file)
 {
     int status = SUCCESS;
     char *p;
+
+    /* 
+     * Separate the directory from the file path (if any).
+     */
     if (p = strrchr(file, dip->di_dir_sep)) {
-	*p = '\0';	/* Separate the directory from the file name. */
+	*p = '\0';
+        /* The directory path may have been setup already. */
+        if ( dip->di_dir == NULL ) {
 	dip->di_dir = strdup(file);
+        }
 	*p++ = dip->di_dir_sep;
 	FreeStr(dip, dip->di_bname);
 	dip->di_bname = strdup(p);
@@ -3229,8 +3228,8 @@ setup_thread_names(dinfo_t *dip)
     int status = SUCCESS;
 
     if ( dip->di_fsfile_flag == False ) return(status);
-    *bp = '\0';
 
+    *bp = '\0';
     /*
      * Special handling for a single thread or same file (slices).
      */
@@ -5375,6 +5374,28 @@ parse_args(dinfo_t *dip, int argc, char **argv)
 	    }
 	    continue;
 	}
+        /* Latency Options: */
+	if (match (&string, "latfreq=")) {
+	    dip->di_latency_frequency = (uint32_t)number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    continue;
+	}
+	if (match (&string, "latmin=")) {
+            dip->di_latency_minimum = large_number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    continue;
+        }
+	if (match (&string, "latmax=")) {
+            dip->di_latency_maximum = large_number(dip, string, ANY_RADIX, &status, True);
+	    if (status == FAILURE) {
+		return ( HandleExit(dip, status) );
+	    }
+	    continue;
+        }
 	if ( match(&string, "jlog=") || match(&string, "job_log=") ) {
 	    if (dip->di_job_log) {
 		FreeStr(dip, dip->di_job_log);
@@ -8886,6 +8907,10 @@ init_device_defaults(dinfo_t *dip)
     dip->di_max_data = 0;
     dip->di_max_files = 0;
     
+    dip->di_min_latency = UINT32_MAX;
+    dip->di_min_read_latency = UINT32_MAX;
+    dip->di_min_write_latency = UINT32_MAX;
+    
     /* Initialize random I/O variables: */
     dip->di_rdata_limit = 0;
     dip->di_random_align = 0;
@@ -10140,22 +10165,6 @@ do_common_device_setup(dinfo_t *dip)
 	return(FAILURE);
     }
 
-#if 0
-    /* This is no longer a valid sanity check due to changes in FindCapacity() for file position! */
-    /*
-     * Sanity check the random I/O data limits.
-     */
-    if ( (dip->di_io_type == RANDOM_IO) &&
-	 ((large_t)(dip->di_file_position + dip->di_block_size + dip->di_random_align) > dip->di_rdata_limit)) {
-	Eprintf(dip, "The max block size is too large for random data limits!\n");
-	if (dip->di_Debug_flag) {
-	    Printf (dip, "file position " FUF ", bs=%ld, ralign=" FUF ", rlimit=" LUF "\n",
-		    dip->di_file_position, dip->di_block_size, dip->di_random_align, dip->di_rdata_limit);
-	}
-	return(FAILURE);
-    }
-#endif /* 0 */
-
     /*
      * Special handling for step option:
      *
@@ -10341,6 +10350,8 @@ do_maxdata_percentage(dinfo_t *dip, large_t data_bytes, int data_percentage)
  * files with threads, as a full path is constructed using this info.
  * This function also creates the top level directory, if it does not
  * already exist, and sets flags for deleting the directory later.
+ * 
+ * Note: This is invoked for all I/O behaviors from the main thread.
  *
  * Input:
  * 	dip = The device information pointer.
@@ -10348,18 +10359,12 @@ do_maxdata_percentage(dinfo_t *dip, large_t data_bytes, int data_percentage)
  *
  * Return Value:
  *	Returns Success/Failure.
- *
  */
 int
 do_filesystem_setup(dinfo_t *dip)
 {
     char *file = dip->di_dname;
     int status = SUCCESS;
-
-    /*
-     * Note: Do NOT setup the directory name (di_dir) for non-file system 
-     *       devices, without updating all places where this is referenced. 
-     */
 
     /*
      * Setup the directory name, and create the top directory (as required).
@@ -10376,8 +10381,6 @@ do_filesystem_setup(dinfo_t *dip)
 		       file, dip->di_dir, dip->di_bname);
 	    }
 	} else {
-	    /* Note: Don't wish long file paths, if user did not specify! */
-	    //dip->di_dir = os_getcwd();
 	    dip->di_bname = strdup(file);
 	}
     } else {
@@ -10389,43 +10392,17 @@ do_filesystem_setup(dinfo_t *dip)
      * Create the top directory, if it does not exist.
      */
     if (dip->di_dir && dip->di_output_file) {
-	dip->di_topdir_created = False;
-	if ( dt_file_exists(dip, dip->di_dir) == False ) {
-	    os_error_t error = os_get_error();
-	    /* Note: We only expect "file/path not found" errors! */
-	    if ( (os_isFileNotFound(error) == False) &&
-		 (os_isDirectoryNotFound(error) == False) ) {
-		 return(FAILURE);
-	    }
-	    /* Don't create the directory if format strings exist! */
-	    if ( strchr(dip->di_dir, '%') == NULL ) {
-		/* We must create the directory to obtain FS info below. */
-		status = create_directory(dip, dip->di_dir);
-		if (status == SUCCESS) {
-		    dip->di_topdir_created = True;
-		} else if (status == FAILURE) {
+        status = setup_top_level_directory(dip);
+        if (status != SUCCESS) {
 		    return(status);
-		} else if(status == WARNING) {
-		    status = SUCCESS;	/* Directory already exists. */
-		}
-		/* Must Keep top directory if multiple threads are using it! */
-		if ( (dip->di_topdir_created == True) && (dip->di_threads > 1) ) {
-		    dip->di_topdir_created = False;
-		    if (dip->di_verbose_flag) {
-			Wprintf(dip, "Top level directory %s, will *not* be deleted!\n",
-				dip->di_dir);
-		    }
-		}
-	    }
-	}
-	dip->di_topdirpath = strdup(dip->di_dir);
+        }
     }
 
     /*
      * Note: This must be done *after* the top directory is created!
      */
-    if (dip->di_fDebugFlag == True) {
-	Printf(dip, "Requesting file system information...\n");
+    if (dip->di_dir && dip->di_fDebugFlag == True) {
+	Printf(dip, "Requesting file system information for directory %s...\n", dip->di_dir);
     }
     /*
      * Note: This is Mickey Mouse, but we cannot expand the directory
@@ -10464,6 +10441,48 @@ do_filesystem_setup(dinfo_t *dip)
     }
     return(status);
 }
+
+int
+setup_top_level_directory(dinfo_t *dip)
+{
+    int status = SUCCESS;
+
+    /* 
+     * Create the top directory, if it does not exist.
+     */
+    dip->di_topdir_created = False;
+    if ( dt_file_exists(dip, dip->di_dir) == False ) {
+        os_error_t error = os_get_error();
+        /* Note: We only expect "file/path not found" errors! */
+        if ( (os_isFileNotFound(error) == False) &&
+             (os_isDirectoryNotFound(error) == False) ) {
+             return(FAILURE);
+        }
+        /* Don't create the directory if format strings exist! */
+        if ( strchr(dip->di_dir, '%') == NULL ) {
+            /* We must create the directory to obtain FS info below. */
+            status = create_directory(dip, dip->di_dir);
+            if (status == SUCCESS) {
+                dip->di_topdir_created = True;
+            } else if (status == FAILURE) {
+                return(status);
+            } else if(status == WARNING) {
+                status = SUCCESS;	/* Directory already exists. */
+            }
+            /* Must Keep top directory if multiple threads are using it! */
+            if ( (dip->di_topdir_created == True) && (dip->di_threads > 1) ) {
+                dip->di_topdir_created = False;
+                if (dip->di_verbose_flag) {
+                    Wprintf(dip, "Top level directory %s, will *not* be deleted!\n",
+                            dip->di_dir);
+                }
+            }
+        }
+    }
+    dip->di_topdirpath = strdup(dip->di_dir);
+    return(status);
+}
+
 
 /*
  * do_monitor_processing() - Handle Monitor Related Options/Setup.

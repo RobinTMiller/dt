@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2023			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,14 +31,8 @@
  *
  * Modification History:
  * 
- * September 20th, 2023 by Robin T. Miller
- *      For all random access devices, limit the data read to what was
- * written. Previously this was enabled only for file systems, but it's
- * possible for direct acces disks to create a premature end of data
- * condition. For example during retries the disk driver may fail Read
- * Capacity during error recovery/disk discovery returning an ENOSPC.
- *     I believe thinly provisioned disks may also return ENOSPC when
- * there's insufficient backend disk space (over provisioned).
+ * October 24th, 2025 by Robin T. Miller
+ *      Add I/O latency support.
  * 
  * August 5th, 2021 by Robin T. Miller
  *      Added support for NVMe disks.
@@ -190,7 +184,7 @@ read_data(struct dinfo *dip)
     hbool_t check_write_limit = False;
     lbdata_t lba;
     iotype_t iotype = dip->di_io_type;
-    uint32_t loop_usecs;
+    uint64_t loop_usecs;
     struct timeval loop_start_time, loop_end_time;
     int probability_random = 0;
     int random_percentage = (dip->di_random_rpercentage) ? dip->di_random_rpercentage : dip->di_random_percentage;
@@ -220,7 +214,7 @@ read_data(struct dinfo *dip)
     } else {
 	lba = make_lbdata(dip, dip->di_offset);
     }
-    if ( dip->di_last_fbytes_written && dip->di_random_access ) {
+    if ( dip->di_last_fbytes_written &&	isFileSystemFile(dip) ) {
 	if ( dip->di_files_read == (dip->di_last_files_written - 1) ) {
 	    check_write_limit = True;
 	    if (dip->di_eDebugFlag) {
@@ -524,7 +518,7 @@ read_data(struct dinfo *dip)
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
 	    highresolutiontime(&loop_end_time, NULL);
-	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
+	    loop_usecs = timer_diff(&loop_start_time, &loop_end_time);
             dip->di_target_total_usecs += dip->di_iops_usecs; 
             dip->di_actual_total_usecs += loop_usecs;
             if (dip->di_target_total_usecs > dip->di_actual_total_usecs) {
@@ -567,10 +561,11 @@ read_data_iolock(struct dinfo *dip)
     Offset_t lock_offset = 0;
     hbool_t lock_full_range = False;
     hbool_t check_rwbytes = False;
+    hbool_t check_write_limit = False;
     u_long io_record = 0;
     lbdata_t lba;
     iotype_t iotype = dip->di_io_type;
-    uint32_t loop_usecs;
+    uint64_t loop_usecs;
     struct timeval loop_start_time, loop_end_time;
     int probability_random = 0;
     int random_percentage = (dip->di_random_rpercentage) ? dip->di_random_rpercentage : dip->di_random_percentage;
@@ -857,7 +852,7 @@ read_data_iolock(struct dinfo *dip)
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
 	    highresolutiontime(&loop_end_time, NULL);
-	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
+	    loop_usecs = timer_diff(&loop_start_time, &loop_end_time);
             dip->di_target_total_usecs += dip->di_iops_usecs; 
             dip->di_actual_total_usecs += loop_usecs;
             if (dip->di_target_total_usecs > dip->di_actual_total_usecs) {
@@ -1077,6 +1072,8 @@ read_record (	struct dinfo	*dip,
 		Offset_t	offset,
 		int		*status )
 {
+    struct timeval start_time, end_time;
+    uint64_t latency;
     ssize_t count;
 
     /*
@@ -1097,6 +1094,7 @@ retry:
     *status = SUCCESS;
 
     ENABLE_NOPROG(dip, READ_OP);
+    highresolutiontime(&start_time, NULL);
     if (dip->di_nvme_io_flag == True) {
 	count = nvmeReadData(dip, buffer, bsize, offset);
     } else if (dip->di_scsi_io_flag == True) {
@@ -1107,6 +1105,8 @@ retry:
 	count = os_pread_file(dip->di_fd, buffer, bsize, offset);
     }
     DISABLE_NOPROG(dip);
+    highresolutiontime(&end_time, NULL);
+    latency = timer_diff(&start_time, &end_time);
 
     if (dip->di_history_size && (dip->di_retrying == False)) {
 	/* Note: We may be in write mode, used during read-after-write! */
@@ -1167,9 +1167,45 @@ retry:
 	    dip->di_partial_reads++;
 	}
     }
-
     *status = check_read(dip, count, bsize);
 
+    /* Latency */
+    if ( latency < dip->di_min_latency ) {
+        dip->di_min_latency = latency;
+    }
+    if ( latency > dip->di_max_latency ) {
+        dip->di_max_latency = latency;
+    }
+    dip->di_total_latency_ios++;
+    dip->di_total_latency += latency;
+    dip->di_read_latency_ios++;
+    dip->di_read_latency += latency;
+    if ( latency < dip->di_min_read_latency ) {
+        dip->di_min_read_latency = latency;
+    }
+    if ( latency > dip->di_max_read_latency ) {
+        dip->di_max_read_latency = latency;
+    }
+    if ( dip->di_latency_frequency || dip->di_latency_minimum || dip->di_latency_maximum ) {
+        char *text;
+        if ( dip->di_latency_minimum && (latency < dip->di_latency_minimum) ) {
+            text = " (fast)";
+        } else if (dip->di_latency_maximum && (latency > dip->di_latency_maximum) ) {
+            text = " (slow)";
+        } else {
+            text = "";
+        }
+        if ( strlen(text) ||
+             ( dip->di_latency_frequency &&
+               ((dip->di_read_latency_ios % dip->di_latency_frequency) == 0)) ) {
+            double scaled;
+            char *suffix;
+            int precision = 0;
+            scale_timer_value((double)latency, &scaled, &suffix, &precision);
+            Printf(dip, "Record #"LUF", Read Latency: %.*f%s%s\n",
+                   dip->di_read_latency_ios, precision, scaled, suffix, text);
+        }
+    }
     return (count);
 }
 

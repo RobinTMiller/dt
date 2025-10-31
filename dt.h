@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2021			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -1019,6 +1019,25 @@ typedef struct dinfo {
 	lbdata_t di_lbdata_size;	/* Logical block data size.	*/
 	lbdata_t di_iot_seed;		/* The default IOT seed value.	*/
 	lbdata_t di_iot_seed_per_pass;	/* The per pass IOT seed value.	*/
+        /*
+         * I/O Latency Information:
+         */
+        uint32_t di_latency_frequency;  /* Latency reporting frequency. */
+        uint64_t di_latency_minimum;    /* The user minimum latency.    */
+        uint64_t di_latency_maximum;    /* The user maximum latency.    */
+        uint64_t di_total_latency;      /* Accumulated latency (us).    */
+        uint64_t di_total_latency_ios;  /* The total latency I/O's.     */
+        uint64_t di_max_latency;        /* Maximum observed latency.    */
+        uint64_t di_min_latency;        /* Minimum observed latency.    */
+        uint64_t di_read_latency;       /* Accumulated read latency.    */
+        uint64_t di_read_latency_ios;   /* The read latency I/O's.      */
+        uint64_t di_max_read_latency;   /* Maximum read latency.        */
+        uint64_t di_min_read_latency;   /* Minimum read latency.        */
+        uint64_t di_write_latency;      /* Accumulated write latency.   */
+        uint64_t di_write_latency_ios;  /* The write latency I/O's.     */
+        uint64_t di_max_write_latency;  /* Maximum write latency.       */
+        uint64_t di_min_write_latency;  /* Minimum write latency.       */
+
 	/*
 	 * No-progress (noprog) Information:
 	 */
@@ -1804,6 +1823,7 @@ extern int format_device_name(dinfo_t *dip, char *format);
 extern char *make_options_string(dinfo_t *dip, int argc, char **argv, hbool_t quoting);
 extern int setup_log_directory(dinfo_t *dip, char *path, char *log);
 extern int setup_thread_names(dinfo_t *dip);
+extern int setup_top_level_directory(dinfo_t *dip);
 extern void handle_file_dispose(dinfo_t *dip);
 extern int handle_file_system_full(dinfo_t *dip, hbool_t delete_flag);
 extern int HandleExit(dinfo_t *dip, int status);
@@ -2251,6 +2271,7 @@ extern int acquire_print_lock(void);
 extern int release_print_lock(void);
 extern void mySleep(dinfo_t *dip, unsigned int sleep_time);
 extern void SleepSecs(dinfo_t *dip, unsigned int sleep_time);
+extern void scale_timer_value(double value, double *scaled, char **suffix, int *precision);
 extern uint64_t	timer_diff(struct timeval *start, struct timeval *end);
 extern uint64_t	timer_diffsecs(struct timeval *start, struct timeval *end);
 extern uint64_t	timer_now(struct timeval *timer);

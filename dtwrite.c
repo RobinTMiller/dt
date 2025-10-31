@@ -31,6 +31,9 @@
  * 
  * Modification History:
  * 
+ * October 24th, 2025 by Robin T. Miller
+ *      Add I/O latency support.
+ * 
  * October 1st, 2025 by Robin T. Miller
  *      With random read percentages, ensure the random data limit is set
  * accordingly with file systems to avoid premature EOF of reads past end
@@ -239,7 +242,7 @@ write_data(struct dinfo *dip)
     hbool_t compare_flag = dip->di_compare_flag;
     hbool_t percentages_flag = False;
     hbool_t read_after_write_flag = dip->di_raw_flag;
-    uint32_t loop_usecs;
+    uint64_t loop_usecs;
     struct timeval loop_start_time, loop_end_time;
 
 #if defined(DT_IOLOCK)
@@ -663,7 +666,7 @@ write_data(struct dinfo *dip)
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
 	    highresolutiontime(&loop_end_time, NULL);
-	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
+	    loop_usecs = timer_diff(&loop_start_time, &loop_end_time);
             dip->di_target_total_usecs += dip->di_iops_usecs;
 	    if (read_after_write_flag == True) {
 		dip->di_target_total_usecs += dip->di_iops_usecs; /* Two I/O's! */
@@ -835,7 +838,7 @@ write_data_iolock(struct dinfo *dip)
     hbool_t compare_flag = dip->di_compare_flag;
     hbool_t percentages_flag = False;
     hbool_t read_after_write_flag = dip->di_raw_flag;
-    uint32_t loop_usecs;
+    uint64_t loop_usecs;
     u_long io_record = 0;
     struct timeval loop_start_time, loop_end_time;
 
@@ -1271,7 +1274,7 @@ write_data_iolock(struct dinfo *dip)
 	/* For IOPS, track usecs and delay as necessary. */
 	if (dip->di_iops && (dip->di_iops_type == IOPS_MEASURE_EXACT) ) {
 	    highresolutiontime(&loop_end_time, NULL);
-	    loop_usecs = (uint32_t)timer_diff(&loop_start_time, &loop_end_time);
+	    loop_usecs = timer_diff(&loop_start_time, &loop_end_time);
             dip->di_target_total_usecs += dip->di_iops_usecs;
 	    if (read_after_write_flag == True) {
 		dip->di_target_total_usecs += dip->di_iops_usecs; /* Two I/O's! */
@@ -1437,6 +1440,8 @@ write_record(
 	Offset_t	offset,
 	int		*status )
 {
+    struct timeval start_time, end_time;
+    uint64_t latency;
     ssize_t count;
 
     /* Force a FALSE corruption (if requested), and records match! */
@@ -1446,6 +1451,7 @@ write_record(
 retry:
     *status = SUCCESS;
     ENABLE_NOPROG(dip, WRITE_OP);
+    highresolutiontime(&start_time, NULL);
     if (dip->di_nvme_io_flag == True) {
 	count = nvmeWriteData(dip, buffer, bsize, offset);
     } else if (dip->di_scsi_io_flag == True) {
@@ -1456,6 +1462,8 @@ retry:
 	count = os_pwrite_file(dip->di_fd, buffer, bsize, offset);
     }
     DISABLE_NOPROG(dip);
+    highresolutiontime(&end_time, NULL);
+    latency = timer_diff(&start_time, &end_time);
 
     if (dip->di_history_size) {
 	long files, records;
@@ -1495,6 +1503,43 @@ retry:
 	    }
 	}
 	*status = check_write(dip, count, bsize, offset);
+    }
+    /* Latency */
+    if ( latency < dip->di_min_latency ) {
+        dip->di_min_latency = latency;
+    }
+    if ( latency > dip->di_max_latency ) {
+        dip->di_max_latency = latency;
+    }
+    dip->di_total_latency_ios++;
+    dip->di_total_latency += latency;
+    dip->di_write_latency_ios++;
+    dip->di_write_latency += latency;
+    if ( latency < dip->di_min_write_latency ) {
+        dip->di_min_write_latency = latency;
+    }
+    if ( latency > dip->di_max_write_latency ) {
+        dip->di_max_write_latency = latency;
+    }
+    if ( dip->di_latency_frequency || dip->di_latency_minimum || dip->di_latency_maximum ) {
+        char *text;
+        if ( dip->di_latency_minimum && (latency < dip->di_latency_minimum) ) {
+            text = " (fast)";
+        } else if (dip->di_latency_maximum && (latency > dip->di_latency_maximum) ) {
+            text = " (slow)";
+        } else {
+            text = "";
+        }
+        if ( strlen(text) ||
+             ( dip->di_latency_frequency &&
+               ((dip->di_write_latency_ios % dip->di_latency_frequency) == 0)) ) {
+            double scaled;
+            char *suffix;
+            int precision = 0;
+            scale_timer_value((double)latency, &scaled, &suffix, &precision);
+            Printf(dip, "Record #"LUF", Write Latency: %.*f%s%s\n",
+                   dip->di_write_latency_ios, precision, scaled, suffix, text);
+        }
     }
     return(count);
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2023			    *
+ *			  COPYRIGHT (c) 1988 - 2025			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,9 @@
  *
  * Modification History:
  *
+ * October 25th, 2025 by Robin T. Miller
+ *      Add options and keepalive format control strings for latency support.
+ * 
  * June 20th, 2013 by Robin T Miller
  * 	Mostly a rewrite for multithreaded I/O, so starting with new history!
  */
@@ -49,7 +52,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: October 8th, 2025"VARIANT", Version: 25.06, Author: Robin T. Miller";
+char *version_str = "Date: October 31st, 2025"VARIANT", Version: 25.08, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)
@@ -138,7 +141,6 @@ dthelp(dinfo_t *dip)
     P (dip, "\tfill_pattern=value    The write fill pattern (32 bit hex).\n");
     P (dip, "\tprefill_pattern=value The read prefill pattern (32 bit hex).\n");
     P (dip, "\tflow=type             Set flow to: none, cts_rts, or xon_xoff.\n");
-/*  P (dip, "\thz=value              Set number of clock ticks per second.\n");	*/
     P (dip, "\tincr=value            Set number of record bytes to increment.\n");
     P (dip, "    or\tincr=variable         Enables variable I/O request sizes.\n");
     P (dip, "\tiops=value            Set I/O per second (this is per thread).\n");
@@ -161,6 +163,7 @@ dthelp(dinfo_t *dip)
     P (dip, "\tlimit=random          Random data limits between "LUF" and "LUF" bytes.\n",
        MIN_DATA_LIMIT, MAX_DATA_LIMIT);
     P (dip, "\tincr_limit=value      Set the data limit increment.\n");
+    P (dip, "    or\tincr_limit=variable   Enables variable file sizes.\n");
     P (dip, "\tmin_limit=value       Set the minumum data limit.\n");
     P (dip, "\tmax_limit=value       Set the maximum data limit.\n");
     P (dip, "\tmaxdata=value         The maximum data limit (all files).\n");
@@ -249,6 +252,28 @@ dthelp(dinfo_t *dip)
     P (dip, "\t    hammer            The hammer I/O behavior.\n");
     P (dip, "\t    sio               The simple I/O (sio) behavior.\n");
     P (dip, "\n    For help on each I/O behavior use: \"iobehavior=type help\"\n");
+
+    P (dip, "\n    Latency Options:\n");
+    P (dip, "\tlatfreq=value         Report latency frequency (in records).\n");
+    P (dip, "\t                      Note: This reports per I/O latency.\n");
+    P (dip, "\tlatmin=value          The minimum latency (in microseconds).\n");
+    P (dip, "\tlatmax=value          The maximum latency (in microseconds).\n");
+
+#if defined(Nimble)
+    P (dip, "\n    DSD Core Actions:\n");
+    P (dip, "\tcore                  Restart DSD with core.\n");
+    P (dip, "\tnocore                Restart DSD without core.\n");
+    P (dip, "\tfailover_core         Failover to other controller with core.\n");
+    P (dip, "\tfailover_nocore       Failover to other controller.\n");
+    P (dip, "\treboot_core           Reboot the controller with core.\n");
+    P (dip, "\treboot_nocore         Reboot the controller without core.\n");
+    P (dip, "\toffline_core          Stop DSD with core (DSD is DEAD).\n");
+    P (dip, "\toffline_nocore        Stop DSD without core. (DSD is DEAD)\n");
+    P (dip, "\tstop_nocore           Send SIGSTOP to DSD without core (DSD is STOPPED)\n");
+    P (dip, "\n");
+    P (dip, "\tExample: trigger=dsdcore dsdaction=stop_nocore dsdinfo=0xdeadbeef\n");
+    P (dip, "\t  Sends: cdb=f1,03,23,b1,de,ad,be,ef,09,00,00,00,00,00,00,00\n");
+#endif /* defined(Nimble) */
 
     P (dip, "\n    Block Tag Verify Flags: (prefix with ~ to clear flag)\n");
     P (dip, "\tlba,offset,devid,inode,serial,hostname,signature,version\n");
@@ -725,6 +750,16 @@ dthelp(dinfo_t *dip)
     P (dip, "\t    %%t = The pass elapsed time.       %%T = The total elapsed time.\n");
     P (dip, "\t    %%i = The I/O mode (read/write)    %%u = The user (login) name.\n");
     P (dip, "\t    %%w = Records written this pass.   %%W = Total records written this test.\n");
+
+    P (dip, "\n    Latency Keywords:\n");
+    P (dip, "\t    %%latency = The average total latency.\n");
+    P (dip, "\t    %%latmin = The min total latency.  %%latmax = The max total latency.\n");
+    P (dip, "\t    %%rlatency = The average read latency.\n");
+    P (dip, "\t    %%rlatmin = The min read latency.  %%rlatmax = The max read latency.\n");
+    P (dip, "\t    %%wlatency = The average write latency.\n");
+    P (dip, "\t    %%wlatmin = The min write latency. %%wlatmax = The max write latency.\n");
+    P (dip, "\n\tPlease see the latency_keepalive workload template for an example.\n");
+
     P (dip, "\n    Performance Keywords:\n");
     P (dip, "\t    %%bps  = The bytes per second.     %%lbps = Logical blocks per second.\n");
     P (dip, "\t    %%kbps = Kilobytes per second.     %%mbps = The megabytes per second.\n");

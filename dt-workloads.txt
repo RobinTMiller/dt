@@ -1,7 +1,7 @@
 Valid Workloads:
 
     dt_acid: File System Acid Workload (requires ~2.37g space)
-	limit=25m maxdatap=75 onerr=abort disable=pstats oflags=trunc incr=var min=1k max=256k dispose=keep pattern=iot prefix='%d@%h' noprogt=15s noprogtt=130s alarm=6 notime=fsync,close enable=syslog history=5 hdsize=128 enable=htiming iodir=vary iotype=vary enable=deleteperpass,fsincr,timestamp,aio dirp=DT_ sdirs=8 files=6 depth=4 bufmodes=cachereads,buffered,unbuffered,cachewrites runtime=24h stopon=C:\temp\stopit trigger=cmd:"C:\tools\dt_noprog_script.bat" keepalivet=300
+	limit=25m maxdatap=75 onerr=abort disable=pstats oflags=trunc incr=var min=1k max=256k dispose=keep pattern=iot prefix='%d@%h' noprogt=15s noprogtt=130s alarm=6 notime=fsync,close enable=syslog history=5 hdsize=128 enable=htiming iodir=vary iotype=vary enable=deleteperpass,fsincr,timestamp,aio dirp=DT_ sdirs=8 files=6 depth=4 bufmodes=cachereads,buffered,unbuffered,cachewrites runtime=24h stopon=/var/tmp/stopit trigger=cmd:"/usr/software/test/noarch/dt_noprog_script.ksh" keepalivet=300
 
     dt_dedup: Deduplication Pattern
 	workload=dt_file_system_dedup bufmodes=cachereads,buffered,unbuffered,cachewrites
@@ -73,7 +73,7 @@ Valid Workloads:
 	iobehavior=hammer bufmodes=buffered,unbuffered
 
     hammer_locking: Hammer workload with file logging and stop file
-	iobehavior=hammer -lockfiles -onlydelete stopon=C:\temp\stopit
+	iobehavior=hammer -lockfiles -onlydelete stopon=/var/tmp/stopit
 
     sio_percentages: sio workload with percentages, 4k I/O, 1g file, and prefilling
 	iobehavior=sio bs=4k readp=25 randp=75 end=1g -prefill runtime=1h
@@ -91,13 +91,13 @@ Valid Workloads:
 	iobehavior=sio bs=32k end=10g threads=100 passes=1
 
     longevity_common: Longevity Common Options (template)
-	min=8k max=1m incr=vary enable=raw,reread,log_trailer,syslog history=5 history_data=152 enable=history_timing logprefix='%seq %nos %et %prog (j:%job t:%thread): ' keepalivet=5m runtime=-1 onerr=abort noprogt=30s noprogtt=5m stopon=C:\temp\stopit
+	min=8k max=1m incr=vary enable=raw,reread,log_trailer,syslog history=5 history_data=152 enable=history_timing logprefix='%seq %nos %et %prog (j:%job t:%thread): ' keepalivet=5m runtime=-1 onerr=abort noprogt=30s noprogtt=5m stopon=/var/tmp/stopit
 
     longevity_file_dedup: Longevity File System w/Dedup Workload
-	workload=longevity_common min_limit=1m max_limit=2g incr_limit=vary dispose=keep flags=direct notime=close,fsync oflags=trunc maxdatap=75 threads=4 pf=x:\noarch\dtdata\pattern_dedup
+	workload=longevity_common min_limit=1m max_limit=2g incr_limit=vary dispose=keep flags=direct notime=close,fsync oflags=trunc maxdatap=75 threads=4 pf=/usr/software/test/noarch/dtdata/pattern_dedup
 
     longevity_disk_dedup: Longevity Direct Disk w/Dedup Workload
-	workload=longevity_common capacityp=75 slices=4 pf=x:\noarch\dtdata\pattern_dedup
+	workload=longevity_common capacityp=75 slices=4 pf=/usr/software/test/noarch/dtdata/pattern_dedup
 
     longevity_file_system: Longevity File System Workload
 	workload=longevity_common workload=high_validation min_limit=1m max_limit=2g incr_limit=vary dispose=keep flags=direct notime=close,fsync oflags=trunc maxdatap=75 threads=4
@@ -115,19 +115,25 @@ Valid Workloads:
 	workload=longevity_file_system disable=raw,reread,verify
 
     san_file_system: SAN File System Workload
-	bs=random limit=2g dispose=keeponerror iodir=vary iotype=vary keepalivet=5m workload=keepalive pattern=iot prefix='%d@%h' enable=btags onerr=abort disable=pstats notime=close,fsync oflags=trunc threads=4 enable=noprog noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=htiming enable=syslog runtime=12h stopon=C:\temp\stopit bufmodes=buffered,cachereads,cachewrites,unbuffered
+	bs=random limit=2g dispose=keeponerror iodir=vary iotype=vary keepalivet=5m workload=keepalive pattern=iot prefix='%d@%h' enable=btags onerr=abort disable=pstats notime=close,fsync oflags=trunc threads=4 enable=noprog noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=htiming enable=syslog runtime=12h stopon=/var/tmp/stopit bufmodes=buffered,cachereads,cachewrites,unbuffered
 
     san_disk: SAN Direct Disk Workload
-	bs=random slices=4 pattern=iot prefix='%d@%h' enable=btags iodir=vary iotype=vary keepalivet=5m workload=keepalive onerr=abort disable=pstats noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=htiming enable=syslog runtime=12h enable=stopimmed stopon=C:\temp\stopit 
+	bs=random slices=4 pattern=iot prefix='%d@%h' enable=btags iodir=vary iotype=vary keepalivet=5m workload=keepalive onerr=abort disable=pstats noprogt=15s noprogtt=130s alarm=3s history=5 hdsize=128 enable=htiming enable=syslog runtime=12h enable=stopimmed stopon=/var/tmp/stopit 
 
     keepalive: Keepalive Message (template)
 	keepalive='%d stats: Mode: %i, Blocks: %l, %m Mbytes, MB/sec: %mbps, IO/sec: %iops, Pass %p, Elapsed: %T'
 
+    latency_brief: Latency Brief Keepalive Message (template)
+	keepalive='avg/min/max Total Latency: %latency/%latmin/%latmax, Read Latency: %rlatency/%rlatmin/%rlatmax, Write Latency: %wlatency/%wlatmin/%wlatmax'
+
+    latency_verbose: Latency Verbose Keepalive (template)
+	keepalive='\n    Total Latency: Average: %latency, Minimum: %latmin, Maximum: %latmax\n     Read Latency: Average: %rlatency, Minimum: %rlatmin, Maximum: %rlatmax\n    Write Latency: Average: %wlatency, Minimum: %wlatmin, Maximum: %wlatmax'
+
     dt_dedup_common: Deduplication Common Options (template)
-	dsize=4k min=8k max=1m incr=vary enable=raw,reread,log_trailer,syslog history=5 enable=history_timing logprefix='%seq %nos %et %prog (j:%job t:%thread): ' keepalivet=5m runtime=-1 onerr=abort noprogt=30s noprogtt=5m notime=close,fsync end_delay=60 enable=secsdelay stopon=C:\temp\stopit
+	dsize=4k min=8k max=1m incr=vary enable=raw,reread,log_trailer,syslog history=5 enable=history_timing logprefix='%seq %nos %et %prog (j:%job t:%thread): ' keepalivet=5m runtime=-1 onerr=abort noprogt=30s noprogtt=5m notime=close,fsync end_delay=60 enable=secsdelay stopon=/var/tmp/stopit
 
     dt_dedup_pattern_file: Deduplication Pattern File (template)
-	pf=x:\noarch\dtdata\pattern_dedup
+	pf=/usr/software/test/noarch/dtdata/pattern_dedup
 
     dt_dedup_data_pattern: Deduplication Data Pattern (template)
 	pattern=iot prefix='%U@%h'
@@ -139,7 +145,7 @@ Valid Workloads:
 	workload=dt_dedup_common,dt_dedup_data_pattern dispose=keep flags=direct maxdatap=75 files=2 limit=2g maxdatap=75 threads=4 pattern=iot prefix='%U@%h'
 
     stopon_file: Stop dt File (template)
-	enable=stopimmed stopon=C:\temp\stopit
+	enable=stopimmed stopon=/var/tmp/stopit
 
     disk_read_after_write: Direct Disk Read-After-Write w/Rereads
 	workload=san_disk enable=read_immed,reread slices=8
