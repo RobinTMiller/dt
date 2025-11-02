@@ -9,6 +9,9 @@ Valid Workloads:
     dt_hammer: dt Hammer File System Workload (requires ~6.20g space)
 	bs=random min_limit=b max_limit=5m incr_limit=vary files=250 maxdatap=75 iodir=vary iotype=vary onerr=abort enable=btags,deleteperpass prefix='%d@%h' pattern=iot bufmodes=buffered,cachereads,cachewrites,unbuffered history=5 hdsize=128 enable=htiming alarm=3 noprogt=15 noprogtt=3m disable=pstats keepalivet=5m threads=10
 
+    many_dirs: Create many directories (~100k dirs, takes time, please be patient!)
+	bs=1 records=1 sdirs=100 depth=100 threads=10 dispose=keep
+
     many_files: Populate directory with many files (requires ~1g space)
 	min=b max=1m incr=4k limit=1m files=100 sdirs=3 depth=3 dispose=keep prefix='%d@%h' enable=lbdata disable=pstats
 
@@ -123,11 +126,17 @@ Valid Workloads:
     keepalive: Keepalive Message (template)
 	keepalive='%d stats: Mode: %i, Blocks: %l, %m Mbytes, MB/sec: %mbps, IO/sec: %iops, Pass %p, Elapsed: %T'
 
-    latency_brief: Latency Brief Keepalive Message (template)
+    latency_keepalive: Latency Brief Keepalive Message (template)
 	keepalive='avg/min/max Total Latency: %latency/%latmin/%latmax, Read Latency: %rlatency/%rlatmin/%rlatmax, Write Latency: %wlatency/%wlatmin/%wlatmax'
 
-    latency_verbose: Latency Verbose Keepalive (template)
-	keepalive='\n    Total Latency: Average: %latency, Minimum: %latmin, Maximum: %latmax\n     Read Latency: Average: %rlatency, Minimum: %rlatmin, Maximum: %rlatmax\n    Write Latency: Average: %wlatency, Minimum: %wlatmin, Maximum: %wlatmax'
+    platency_keepalive: Pass Latency Keepalive Message (template)
+	disable=pstats pkeepalive='Pass %p, avg/min/max Total Latency: %latency/%latmin/%latmax, Read Latency: %rlatency/%rlatmin/%rlatmax, Write Latency: %wlatency/%wlatmin/%wlatmax'
+
+    tlatency_keepalive: Total Latency Keepalive (template)
+	workload=platency_keepalive stats=brief tkeepalive='\n    Latency Statistics:\n\tTotal Latency: Average: %latency, Minimum: %latmin, Maximum: %latmax\n\t Read Latency: Average: %rlatency, Minimum: %rlatmin, Maximum: %rlatmax\n\tWrite Latency: Average: %wlatency, Minimum: %wlatmin, Maximum: %wlatmax'
+
+    vlatency_keepalive: Latency Verbose Keepalive (template)
+	keepalive='\n    Latency Statistics:\n\tTotal Latency: Average: %latency, Minimum: %latmin, Maximum: %latmax\n\t Read Latency: Average: %rlatency, Minimum: %rlatmin, Maximum: %rlatmax\n\tWrite Latency: Average: %wlatency, Minimum: %wlatmin, Maximum: %wlatmax'
 
     dt_dedup_common: Deduplication Common Options (template)
 	dsize=4k min=8k max=1m incr=vary enable=raw,reread,log_trailer,syslog history=5 enable=history_timing logprefix='%seq %nos %et %prog (j:%job t:%thread): ' keepalivet=5m runtime=-1 onerr=abort noprogt=30s noprogtt=5m notime=close,fsync end_delay=60 enable=secsdelay stopon=/var/tmp/stopit

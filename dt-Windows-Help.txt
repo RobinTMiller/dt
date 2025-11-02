@@ -556,4 +556,4 @@ Usage: dt.exe options...
 	iodir=forward, iomode=test, iotype=sequential, stats=full
 	iotseed=0x01010101, hdsize=32, maxbad=25
 
-    --> Date: October 30th, 2025, Version: 25.08, Author: Robin T. Miller <--
+    --> Date: November 1st, 2025, Version: 26.0, Author: Robin T. Miller <--

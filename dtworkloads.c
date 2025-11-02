@@ -32,6 +32,10 @@
  *
  * Modification History:
  * 
+ * November 1st, 2025 by Robin T. Miller
+ *      Change latency keepalive workload templates and add a pass latency
+ * keepalive template.
+ * 
  * October 30th, 2025 by Robin T. Miller
  *      Add latency keepalive workload templates.
  * 
@@ -107,7 +111,10 @@ workload_entry_t predefined_workloads[] =
 	"history=5 hdsize=128 enable=htiming alarm=3 noprogt=15 noprogtt=3m "
 	"disable=pstats keepalivet=5m threads=10"
     },
-    /* Note: If bs=random is used, rseed= is required when only reading! */
+    {	"many_dirs",
+	"Create many directories (~100k dirs)",
+	"bs=1 records=1 sdirs=1000 depth=10 threads=10 dispose=keep"
+    },
     {	"many_files",
 	"Populate directory with many files (requires ~1g space)",
 	"min=b max=1m incr=4k limit=1m files=100 sdirs=3 depth=3 dispose=keep "
@@ -305,19 +312,37 @@ workload_entry_t predefined_workloads[] =
 	"keepalive='%d stats: Mode: %i, Blocks: %l, %m Mbytes, "
 	"MB/sec: %mbps, IO/sec: %iops, Pass %p, Elapsed: %T'"
     },
-    {   "latency_brief",
+    {   "latency_keepalive",
         "Latency Brief Keepalive Message (template)",
         "keepalive='avg/min/max Total Latency: %latency/%latmin/%latmax, "
         "Read Latency: %rlatency/%rlatmin/%rlatmax, Write Latency: %wlatency/%wlatmin/%wlatmax'"
     },
-    {   "latency_verbose",
+    {   "platency_keepalive",
+        "Pass Latency Keepalive Message (template)",
+        "disable=pstats pkeepalive='Pass %p, avg/min/max Total Latency: %latency/%latmin/%latmax, "
+        "Read Latency: %rlatency/%rlatmin/%rlatmax, Write Latency: %wlatency/%wlatmin/%wlatmax'"
+    },
+    {   "tlatency_keepalive",
+        "Total Latency Keepalive (template)",
+        "workload=platency_keepalive stats=brief "
+        "tkeepalive='\\n"
+        "    Latency Statistics:\\n"
+        "\\tTotal Latency: "
+        "Average: %latency, Minimum: %latmin, Maximum: %latmax\\n"
+        "\\t Read Latency: "
+        "Average: %rlatency, Minimum: %rlatmin, Maximum: %rlatmax\\n"
+        "\\tWrite Latency: "
+        "Average: %wlatency, Minimum: %wlatmin, Maximum: %wlatmax'"
+    },
+    {   "vlatency_keepalive",
         "Latency Verbose Keepalive (template)",
         "keepalive='\\n"
-        "    Total Latency: "
+        "    Latency Statistics:\\n"
+        "\\tTotal Latency: "
         "Average: %latency, Minimum: %latmin, Maximum: %latmax\\n"
-        "     Read Latency: "
+        "\\t Read Latency: "
         "Average: %rlatency, Minimum: %rlatmin, Maximum: %rlatmax\\n"
-        "    Write Latency: "
+        "\\tWrite Latency: "
         "Average: %wlatency, Minimum: %wlatmin, Maximum: %wlatmax'"
     },
     /* -> Start of Deduplication Workloads <- */

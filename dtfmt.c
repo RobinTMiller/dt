@@ -308,6 +308,8 @@ FmtKeepAlive(struct dinfo *dip, char *keepalivefmt, char *buffer)
                     latency = (double)dip->di_total_latency / (double)dip->di_total_latency_ios;
                     scale_timer_value(latency, &scaled, &suffix, &precision);
                     to += Sprintf(to, "%.*f%s", precision, scaled, suffix);
+                } else {
+                    to += Sprintf(to, "na");
                 }
 		length -= 7;
 		from += 8;
@@ -319,6 +321,8 @@ FmtKeepAlive(struct dinfo *dip, char *keepalivefmt, char *buffer)
                     int precision = 0;
                     scale_timer_value((double)dip->di_min_latency, &scaled_min, &suffix, &precision);
                     to += Sprintf(to, "%.*f%s", precision, scaled_min, suffix);
+                } else {
+                    to += Sprintf(to, "na");
                 }
 		length -= 6;
 		from += 7;
@@ -330,6 +334,8 @@ FmtKeepAlive(struct dinfo *dip, char *keepalivefmt, char *buffer)
                     int precision = 0;
                     scale_timer_value((double)dip->di_max_latency, &scaled_max, &suffix, &precision);
                     to += Sprintf(to, "%.*f%s", precision, scaled_max, suffix);
+                } else {
+                    to += Sprintf(to, "na");
                 }
 		length -= 6;
 		from += 7;
@@ -342,6 +348,8 @@ FmtKeepAlive(struct dinfo *dip, char *keepalivefmt, char *buffer)
                     latency = (double)dip->di_read_latency / (double)dip->di_read_latency_ios;
                     scale_timer_value(latency, &scaled, &suffix, &precision);
                     to += Sprintf(to, "%.*f%s", precision, scaled, suffix);
+                } else {
+                    to += Sprintf(to, "na");
                 }
 		length -= 8;
 		from += 9;
@@ -353,6 +361,8 @@ FmtKeepAlive(struct dinfo *dip, char *keepalivefmt, char *buffer)
                     int precision = 0;
                     scale_timer_value((double)dip->di_min_read_latency, &scaled_min, &suffix, &precision);
                     to += Sprintf(to, "%.*f%s", precision, scaled_min, suffix);
+                } else {
+                    to += Sprintf(to, "na");
                 }
                 length -= 7;
                 from += 8;
@@ -364,6 +374,8 @@ FmtKeepAlive(struct dinfo *dip, char *keepalivefmt, char *buffer)
                     int precision = 0;
                     scale_timer_value((double)dip->di_max_read_latency, &scaled_max, &suffix, &precision);
                     to += Sprintf(to, "%.*f%s", precision, scaled_max, suffix);
+                } else {
+                    to += Sprintf(to, "na");
                 }
                 length -= 7;
                 from += 8;
@@ -376,25 +388,35 @@ FmtKeepAlive(struct dinfo *dip, char *keepalivefmt, char *buffer)
                     latency = (double)dip->di_write_latency / (double)dip->di_write_latency_ios;
                     scale_timer_value(latency, &scaled, &suffix, &precision);
                     to += Sprintf(to, "%.*f%s", precision, scaled, suffix);
+                } else {
+                    to += Sprintf(to, "na");
                 }
 		length -= 8;
 		from += 9;
 		continue;
             } else if (strncasecmp(key, "wlatmin", 7) == 0) {
+                if ( dip->di_write_latency_ios ) {
                 double scaled_min;
                 char *suffix;
                 int precision = 0;
                 scale_timer_value((double)dip->di_min_write_latency, &scaled_min, &suffix, &precision);
                 to += Sprintf(to, "%.*f%s", precision, scaled_min, suffix);
+                } else {
+                    to += Sprintf(to, "na");
+                }
                 length -= 7;
                 from += 8;
                 continue;
             } else if (strncasecmp(key, "wlatmax", 7) == 0) {
+                if ( dip->di_write_latency_ios ) {
                 double scaled_max;
                 char *suffix;
                 int precision = 0;
                 scale_timer_value((double)dip->di_max_write_latency, &scaled_max, &suffix, &precision);
                 to += Sprintf(to, "%.*f%s", precision, scaled_max, suffix);
+                } else {
+                    to += Sprintf(to, "na");
+                }
                 length -= 7;
                 from += 8;
                 continue;
