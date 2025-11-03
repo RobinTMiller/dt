@@ -1,0 +1,3483 @@
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="----=_NextPart_01DC4CA2.1B284870"
+
+This document is a Single File Web Page, also known as a Web Archive file.  If you are seeing this message, your browser or editor doesn't support Web Archive files.  Please download a browser that supports Web Archive.
+
+------=_NextPart_01DC4CA2.1B284870
+Content-Location: file:///C:/8F195D13/dt+v26.0+ReleaseNotes.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="windows-1252"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:w=3D"urn:schemas-microsoft-com:office:word"
+xmlns:m=3D"http://schemas.microsoft.com/office/2004/12/omml"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dwindows-125=
+2">
+<meta name=3DProgId content=3DWord.Document>
+<meta name=3DGenerator content=3D"Microsoft Word 15">
+<meta name=3DOriginator content=3D"Microsoft Word 15">
+<link rel=3DFile-List href=3D"dt+v26.0+ReleaseNotes_files/filelist.xml">
+<link rel=3DEdit-Time-Data href=3D"dt+v26.0+ReleaseNotes_files/editdata.mso=
+">
+<!--[if !mso]>
+<style>
+v\:* {behavior:url(#default#VML);}
+o\:* {behavior:url(#default#VML);}
+w\:* {behavior:url(#default#VML);}
+.shape {behavior:url(#default#VML);}
+</style>
+<![endif]-->
+<title>DT Version 26.0 Release Notes</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Robin Miller</o:Author>
+  <o:LastAuthor>Robin Miller</o:LastAuthor>
+  <o:Revision>2</o:Revision>
+  <o:TotalTime>98</o:TotalTime>
+  <o:LastPrinted>2025-11-03T17:13:00Z</o:LastPrinted>
+  <o:Created>2025-11-03T17:13:00Z</o:Created>
+  <o:LastSaved>2025-11-03T17:13:00Z</o:LastSaved>
+  <o:Pages>5</o:Pages>
+  <o:Words>1355</o:Words>
+  <o:Characters>8527</o:Characters>
+  <o:Lines>174</o:Lines>
+  <o:Paragraphs>164</o:Paragraphs>
+  <o:CharactersWithSpaces>9718</o:CharactersWithSpaces>
+  <o:Version>16.00</o:Version>
+ </o:DocumentProperties>
+ <o:OfficeDocumentSettings>
+  <o:AllowPNG/>
+ </o:OfficeDocumentSettings>
+</xml><![endif]-->
+<link rel=3DthemeData href=3D"dt+v26.0+ReleaseNotes_files/themedata.thmx">
+<link rel=3DcolorSchemeMapping
+href=3D"dt+v26.0+ReleaseNotes_files/colorschememapping.xml">
+<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:TrackMoves>false</w:TrackMoves>
+  <w:TrackFormatting/>
+  <w:PunctuationKerning/>
+  <w:ValidateAgainstSchemas/>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:DoNotPromoteQF/>
+  <w:LidThemeOther>EN-US</w:LidThemeOther>
+  <w:LidThemeAsian>X-NONE</w:LidThemeAsian>
+  <w:LidThemeComplexScript>X-NONE</w:LidThemeComplexScript>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+   <w:DontGrowAutofit/>
+   <w:SplitPgBreakAndParaMark/>
+   <w:EnableOpenTypeKerning/>
+   <w:DontFlipMirrorIndents/>
+   <w:OverrideTableStyleHps/>
+  </w:Compatibility>
+  <m:mathPr>
+   <m:mathFont m:val=3D"Cambria Math"/>
+   <m:brkBin m:val=3D"before"/>
+   <m:brkBinSub m:val=3D"&#45;-"/>
+   <m:smallFrac m:val=3D"off"/>
+   <m:dispDef/>
+   <m:lMargin m:val=3D"0"/>
+   <m:rMargin m:val=3D"0"/>
+   <m:defJc m:val=3D"centerGroup"/>
+   <m:wrapIndent m:val=3D"1440"/>
+   <m:intLim m:val=3D"subSup"/>
+   <m:naryLim m:val=3D"undOvr"/>
+  </m:mathPr></w:WordDocument>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:LatentStyles DefLockedState=3D"false" DefUnhideWhenUsed=3D"false"
+  DefSemiHidden=3D"false" DefQFormat=3D"false" DefPriority=3D"99"
+  LatentStyleCount=3D"376">
+  <w:LsdException Locked=3D"false" Priority=3D"0" QFormat=3D"true" Name=3D"=
+Normal"/>
+  <w:LsdException Locked=3D"false" Priority=3D"9" QFormat=3D"true" Name=3D"=
+heading 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"9" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"heading 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"9" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"heading 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"9" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"heading 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"9" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"heading 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"9" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"heading 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"9" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"heading 7"/>
+  <w:LsdException Locked=3D"false" Priority=3D"9" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"heading 8"/>
+  <w:LsdException Locked=3D"false" Priority=3D"9" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"heading 9"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index 4"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index 5"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index 6"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index 7"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index 8"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index 9"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"toc 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"toc 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"toc 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"toc 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"toc 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"toc 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"toc 7"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"toc 8"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"toc 9"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Normal Indent"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"footnote text"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"annotation text"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"header"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"footer"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"index heading"/>
+  <w:LsdException Locked=3D"false" Priority=3D"35" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"caption"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"table of figures"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"envelope address"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"envelope return"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"footnote reference"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"annotation reference"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"line number"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"page number"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"endnote reference"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"endnote text"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"table of authorities"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"macro"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"toa heading"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Bullet"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Number"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List 4"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List 5"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Bullet 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Bullet 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Bullet 4"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Bullet 5"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Number 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Number 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Number 4"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Number 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"10" QFormat=3D"true" Name=3D=
+"Title"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Closing"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Signature"/>
+  <w:LsdException Locked=3D"false" Priority=3D"1" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"Default Paragraph Font"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Body Text"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Body Text Indent"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Continue"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Continue 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Continue 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Continue 4"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"List Continue 5"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Message Header"/>
+  <w:LsdException Locked=3D"false" Priority=3D"11" QFormat=3D"true" Name=3D=
+"Subtitle"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Salutation"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Date"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Body Text First Indent"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Body Text First Indent 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Note Heading"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Body Text 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Body Text 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Body Text Indent 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Body Text Indent 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Block Text"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Hyperlink"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"FollowedHyperlink"/>
+  <w:LsdException Locked=3D"false" Priority=3D"22" QFormat=3D"true" Name=3D=
+"Strong"/>
+  <w:LsdException Locked=3D"false" Priority=3D"20" QFormat=3D"true" Name=3D=
+"Emphasis"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Document Map"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Plain Text"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"E-mail Signature"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Top of Form"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Bottom of Form"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Normal (Web)"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Acronym"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Address"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Cite"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Code"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Definition"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Keyboard"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Preformatted"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Sample"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Typewriter"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"HTML Variable"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Normal Table"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"annotation subject"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"No List"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Outline List 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Outline List 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Outline List 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Simple 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Simple 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Simple 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Classic 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Classic 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Classic 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Classic 4"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Colorful 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Colorful 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Colorful 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Columns 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Columns 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Columns 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Columns 4"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Columns 5"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Grid 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Grid 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Grid 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Grid 4"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Grid 5"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Grid 6"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Grid 7"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Grid 8"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table List 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table List 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table List 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table List 4"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table List 5"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table List 6"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table List 7"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table List 8"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table 3D effects 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table 3D effects 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table 3D effects 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Contemporary"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Elegant"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Professional"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Subtle 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Subtle 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Web 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Web 2"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Web 3"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Balloon Text"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" Name=3D"Table Grid"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Table Theme"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" Name=3D"Placeholder =
+Text"/>
+  <w:LsdException Locked=3D"false" Priority=3D"1" QFormat=3D"true" Name=3D"=
+No Spacing"/>
+  <w:LsdException Locked=3D"false" Priority=3D"60" Name=3D"Light Shading"/>
+  <w:LsdException Locked=3D"false" Priority=3D"61" Name=3D"Light List"/>
+  <w:LsdException Locked=3D"false" Priority=3D"62" Name=3D"Light Grid"/>
+  <w:LsdException Locked=3D"false" Priority=3D"63" Name=3D"Medium Shading 1=
+"/>
+  <w:LsdException Locked=3D"false" Priority=3D"64" Name=3D"Medium Shading 2=
+"/>
+  <w:LsdException Locked=3D"false" Priority=3D"65" Name=3D"Medium List 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"66" Name=3D"Medium List 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"67" Name=3D"Medium Grid 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"68" Name=3D"Medium Grid 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"69" Name=3D"Medium Grid 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"70" Name=3D"Dark List"/>
+  <w:LsdException Locked=3D"false" Priority=3D"71" Name=3D"Colorful Shading=
+"/>
+  <w:LsdException Locked=3D"false" Priority=3D"72" Name=3D"Colorful List"/>
+  <w:LsdException Locked=3D"false" Priority=3D"73" Name=3D"Colorful Grid"/>
+  <w:LsdException Locked=3D"false" Priority=3D"60" Name=3D"Light Shading Ac=
+cent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"61" Name=3D"Light List Accen=
+t 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"62" Name=3D"Light Grid Accen=
+t 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"63" Name=3D"Medium Shading 1=
+ Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"64" Name=3D"Medium Shading 2=
+ Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"65" Name=3D"Medium List 1 Ac=
+cent 1"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" Name=3D"Revision"/>
+  <w:LsdException Locked=3D"false" Priority=3D"34" QFormat=3D"true"
+   Name=3D"List Paragraph"/>
+  <w:LsdException Locked=3D"false" Priority=3D"29" QFormat=3D"true" Name=3D=
+"Quote"/>
+  <w:LsdException Locked=3D"false" Priority=3D"30" QFormat=3D"true"
+   Name=3D"Intense Quote"/>
+  <w:LsdException Locked=3D"false" Priority=3D"66" Name=3D"Medium List 2 Ac=
+cent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"67" Name=3D"Medium Grid 1 Ac=
+cent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"68" Name=3D"Medium Grid 2 Ac=
+cent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"69" Name=3D"Medium Grid 3 Ac=
+cent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"70" Name=3D"Dark List Accent=
+ 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"71" Name=3D"Colorful Shading=
+ Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"72" Name=3D"Colorful List Ac=
+cent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"73" Name=3D"Colorful Grid Ac=
+cent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"60" Name=3D"Light Shading Ac=
+cent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"61" Name=3D"Light List Accen=
+t 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"62" Name=3D"Light Grid Accen=
+t 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"63" Name=3D"Medium Shading 1=
+ Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"64" Name=3D"Medium Shading 2=
+ Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"65" Name=3D"Medium List 1 Ac=
+cent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"66" Name=3D"Medium List 2 Ac=
+cent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"67" Name=3D"Medium Grid 1 Ac=
+cent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"68" Name=3D"Medium Grid 2 Ac=
+cent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"69" Name=3D"Medium Grid 3 Ac=
+cent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"70" Name=3D"Dark List Accent=
+ 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"71" Name=3D"Colorful Shading=
+ Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"72" Name=3D"Colorful List Ac=
+cent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"73" Name=3D"Colorful Grid Ac=
+cent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"60" Name=3D"Light Shading Ac=
+cent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"61" Name=3D"Light List Accen=
+t 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"62" Name=3D"Light Grid Accen=
+t 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"63" Name=3D"Medium Shading 1=
+ Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"64" Name=3D"Medium Shading 2=
+ Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"65" Name=3D"Medium List 1 Ac=
+cent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"66" Name=3D"Medium List 2 Ac=
+cent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"67" Name=3D"Medium Grid 1 Ac=
+cent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"68" Name=3D"Medium Grid 2 Ac=
+cent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"69" Name=3D"Medium Grid 3 Ac=
+cent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"70" Name=3D"Dark List Accent=
+ 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"71" Name=3D"Colorful Shading=
+ Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"72" Name=3D"Colorful List Ac=
+cent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"73" Name=3D"Colorful Grid Ac=
+cent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"60" Name=3D"Light Shading Ac=
+cent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"61" Name=3D"Light List Accen=
+t 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"62" Name=3D"Light Grid Accen=
+t 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"63" Name=3D"Medium Shading 1=
+ Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"64" Name=3D"Medium Shading 2=
+ Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"65" Name=3D"Medium List 1 Ac=
+cent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"66" Name=3D"Medium List 2 Ac=
+cent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"67" Name=3D"Medium Grid 1 Ac=
+cent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"68" Name=3D"Medium Grid 2 Ac=
+cent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"69" Name=3D"Medium Grid 3 Ac=
+cent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"70" Name=3D"Dark List Accent=
+ 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"71" Name=3D"Colorful Shading=
+ Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"72" Name=3D"Colorful List Ac=
+cent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"73" Name=3D"Colorful Grid Ac=
+cent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"60" Name=3D"Light Shading Ac=
+cent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"61" Name=3D"Light List Accen=
+t 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"62" Name=3D"Light Grid Accen=
+t 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"63" Name=3D"Medium Shading 1=
+ Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"64" Name=3D"Medium Shading 2=
+ Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"65" Name=3D"Medium List 1 Ac=
+cent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"66" Name=3D"Medium List 2 Ac=
+cent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"67" Name=3D"Medium Grid 1 Ac=
+cent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"68" Name=3D"Medium Grid 2 Ac=
+cent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"69" Name=3D"Medium Grid 3 Ac=
+cent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"70" Name=3D"Dark List Accent=
+ 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"71" Name=3D"Colorful Shading=
+ Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"72" Name=3D"Colorful List Ac=
+cent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"73" Name=3D"Colorful Grid Ac=
+cent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"60" Name=3D"Light Shading Ac=
+cent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"61" Name=3D"Light List Accen=
+t 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"62" Name=3D"Light Grid Accen=
+t 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"63" Name=3D"Medium Shading 1=
+ Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"64" Name=3D"Medium Shading 2=
+ Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"65" Name=3D"Medium List 1 Ac=
+cent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"66" Name=3D"Medium List 2 Ac=
+cent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"67" Name=3D"Medium Grid 1 Ac=
+cent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"68" Name=3D"Medium Grid 2 Ac=
+cent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"69" Name=3D"Medium Grid 3 Ac=
+cent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"70" Name=3D"Dark List Accent=
+ 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"71" Name=3D"Colorful Shading=
+ Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"72" Name=3D"Colorful List Ac=
+cent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"73" Name=3D"Colorful Grid Ac=
+cent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"19" QFormat=3D"true"
+   Name=3D"Subtle Emphasis"/>
+  <w:LsdException Locked=3D"false" Priority=3D"21" QFormat=3D"true"
+   Name=3D"Intense Emphasis"/>
+  <w:LsdException Locked=3D"false" Priority=3D"31" QFormat=3D"true"
+   Name=3D"Subtle Reference"/>
+  <w:LsdException Locked=3D"false" Priority=3D"32" QFormat=3D"true"
+   Name=3D"Intense Reference"/>
+  <w:LsdException Locked=3D"false" Priority=3D"33" QFormat=3D"true" Name=3D=
+"Book Title"/>
+  <w:LsdException Locked=3D"false" Priority=3D"37" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" Name=3D"Bibliography"/>
+  <w:LsdException Locked=3D"false" Priority=3D"39" SemiHidden=3D"true"
+   UnhideWhenUsed=3D"true" QFormat=3D"true" Name=3D"TOC Heading"/>
+  <w:LsdException Locked=3D"false" Priority=3D"41" Name=3D"Plain Table 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"42" Name=3D"Plain Table 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"43" Name=3D"Plain Table 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"44" Name=3D"Plain Table 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"45" Name=3D"Plain Table 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"40" Name=3D"Grid Table Light=
+"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46" Name=3D"Grid Table 1 Lig=
+ht"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"Grid Table 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"Grid Table 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"Grid Table 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"Grid Table 5 Dar=
+k"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51" Name=3D"Grid Table 6 Col=
+orful"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52" Name=3D"Grid Table 7 Col=
+orful"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"Grid Table 1 Light Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"Grid Table 2 Acc=
+ent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"Grid Table 3 Acc=
+ent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"Grid Table 4 Acc=
+ent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"Grid Table 5 Dar=
+k Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"Grid Table 6 Colorful Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"Grid Table 7 Colorful Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"Grid Table 1 Light Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"Grid Table 2 Acc=
+ent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"Grid Table 3 Acc=
+ent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"Grid Table 4 Acc=
+ent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"Grid Table 5 Dar=
+k Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"Grid Table 6 Colorful Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"Grid Table 7 Colorful Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"Grid Table 1 Light Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"Grid Table 2 Acc=
+ent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"Grid Table 3 Acc=
+ent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"Grid Table 4 Acc=
+ent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"Grid Table 5 Dar=
+k Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"Grid Table 6 Colorful Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"Grid Table 7 Colorful Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"Grid Table 1 Light Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"Grid Table 2 Acc=
+ent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"Grid Table 3 Acc=
+ent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"Grid Table 4 Acc=
+ent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"Grid Table 5 Dar=
+k Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"Grid Table 6 Colorful Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"Grid Table 7 Colorful Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"Grid Table 1 Light Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"Grid Table 2 Acc=
+ent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"Grid Table 3 Acc=
+ent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"Grid Table 4 Acc=
+ent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"Grid Table 5 Dar=
+k Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"Grid Table 6 Colorful Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"Grid Table 7 Colorful Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"Grid Table 1 Light Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"Grid Table 2 Acc=
+ent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"Grid Table 3 Acc=
+ent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"Grid Table 4 Acc=
+ent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"Grid Table 5 Dar=
+k Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"Grid Table 6 Colorful Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"Grid Table 7 Colorful Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46" Name=3D"List Table 1 Lig=
+ht"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"List Table 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"List Table 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"List Table 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"List Table 5 Dar=
+k"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51" Name=3D"List Table 6 Col=
+orful"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52" Name=3D"List Table 7 Col=
+orful"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"List Table 1 Light Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"List Table 2 Acc=
+ent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"List Table 3 Acc=
+ent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"List Table 4 Acc=
+ent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"List Table 5 Dar=
+k Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"List Table 6 Colorful Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"List Table 7 Colorful Accent 1"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"List Table 1 Light Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"List Table 2 Acc=
+ent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"List Table 3 Acc=
+ent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"List Table 4 Acc=
+ent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"List Table 5 Dar=
+k Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"List Table 6 Colorful Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"List Table 7 Colorful Accent 2"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"List Table 1 Light Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"List Table 2 Acc=
+ent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"List Table 3 Acc=
+ent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"List Table 4 Acc=
+ent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"List Table 5 Dar=
+k Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"List Table 6 Colorful Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"List Table 7 Colorful Accent 3"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"List Table 1 Light Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"List Table 2 Acc=
+ent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"List Table 3 Acc=
+ent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"List Table 4 Acc=
+ent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"List Table 5 Dar=
+k Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"List Table 6 Colorful Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"List Table 7 Colorful Accent 4"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"List Table 1 Light Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"List Table 2 Acc=
+ent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"List Table 3 Acc=
+ent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"List Table 4 Acc=
+ent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"List Table 5 Dar=
+k Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"List Table 6 Colorful Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"List Table 7 Colorful Accent 5"/>
+  <w:LsdException Locked=3D"false" Priority=3D"46"
+   Name=3D"List Table 1 Light Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"47" Name=3D"List Table 2 Acc=
+ent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"48" Name=3D"List Table 3 Acc=
+ent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"49" Name=3D"List Table 4 Acc=
+ent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"50" Name=3D"List Table 5 Dar=
+k Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"51"
+   Name=3D"List Table 6 Colorful Accent 6"/>
+  <w:LsdException Locked=3D"false" Priority=3D"52"
+   Name=3D"List Table 7 Colorful Accent 6"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Mention"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Smart Hyperlink"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Hashtag"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Unresolved Mention"/>
+  <w:LsdException Locked=3D"false" SemiHidden=3D"true" UnhideWhenUsed=3D"tr=
+ue"
+   Name=3D"Smart Link"/>
+ </w:LatentStyles>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Wingdings;
+	panose-1:5 0 0 0 0 0 0 0 0 0;
+	mso-font-charset:2;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:0 268435456 0 0 -2147483648 0;}
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:roman;
+	mso-font-pitch:variable;
+	mso-font-signature:-536869121 1107305727 33554432 0 415 0;}
+@font-face
+	{font-family:Aptos;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:536871559 3 0 0 415 0;}
+@font-face
+	{font-family:"Aptos Display";
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:536871559 3 0 0 415 0;}
+@font-face
+	{font-family:"Lucida Console";
+	panose-1:2 11 6 9 4 5 4 2 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:modern;
+	mso-font-pitch:fixed;
+	mso-font-signature:-2147482993 6144 0 0 31 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-parent:"";
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:8.0pt;
+	margin-left:0in;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+h1
+	{mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 1 Char";
+	mso-style-next:Normal;
+	margin-top:.25in;
+	margin-right:0in;
+	margin-bottom:4.0pt;
+	margin-left:.3in;
+	text-indent:-.3in;
+	line-height:115%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	mso-list:l0 level1 lfo1;
+	font-size:20.0pt;
+	font-family:"Aptos Display",sans-serif;
+	mso-ascii-font-family:"Aptos Display";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Aptos Display";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;
+	font-weight:normal;}
+h2
+	{mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 2 Char";
+	mso-style-next:Normal;
+	margin-top:8.0pt;
+	margin-right:0in;
+	margin-bottom:4.0pt;
+	margin-left:.4in;
+	text-indent:-.4in;
+	line-height:115%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	mso-list:l0 level2 lfo1;
+	font-size:16.0pt;
+	font-family:"Aptos Display",sans-serif;
+	mso-ascii-font-family:"Aptos Display";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Aptos Display";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;
+	font-weight:normal;}
+h3
+	{mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 3 Char";
+	mso-style-next:Normal;
+	margin-top:8.0pt;
+	margin-right:0in;
+	margin-bottom:4.0pt;
+	margin-left:.5in;
+	text-indent:-.5in;
+	line-height:115%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:3;
+	mso-list:l0 level3 lfo1;
+	font-size:14.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;
+	font-weight:normal;}
+h4
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 4 Char";
+	mso-style-next:Normal;
+	margin-top:4.0pt;
+	margin-right:0in;
+	margin-bottom:2.0pt;
+	margin-left:.6in;
+	text-indent:-.6in;
+	line-height:115%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:4;
+	mso-list:l0 level4 lfo1;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;
+	font-weight:normal;
+	font-style:italic;}
+h5
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 5 Char";
+	mso-style-next:Normal;
+	margin-top:4.0pt;
+	margin-right:0in;
+	margin-bottom:2.0pt;
+	margin-left:.7in;
+	text-indent:-.7in;
+	line-height:115%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:5;
+	mso-list:l0 level5 lfo1;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;
+	font-weight:normal;}
+h6
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 6 Char";
+	mso-style-next:Normal;
+	margin-top:2.0pt;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.8in;
+	text-indent:-.8in;
+	line-height:115%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:6;
+	mso-list:l0 level6 lfo1;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#595959;
+	mso-themecolor:text1;
+	mso-themetint:166;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;
+	font-weight:normal;
+	font-style:italic;}
+p.MsoHeading7, li.MsoHeading7, div.MsoHeading7
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 7 Char";
+	mso-style-next:Normal;
+	margin-top:2.0pt;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.9in;
+	text-indent:-.9in;
+	line-height:115%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:7;
+	mso-list:l0 level7 lfo1;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#595959;
+	mso-themecolor:text1;
+	mso-themetint:166;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoHeading8, li.MsoHeading8, div.MsoHeading8
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 8 Char";
+	mso-style-next:Normal;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:1.0in;
+	text-indent:-1.0in;
+	line-height:115%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:8;
+	mso-list:l0 level8 lfo1;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#272727;
+	mso-themecolor:text1;
+	mso-themetint:216;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;
+	font-style:italic;}
+p.MsoHeading9, li.MsoHeading9, div.MsoHeading9
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 9 Char";
+	mso-style-next:Normal;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:1.1in;
+	text-indent:-1.1in;
+	line-height:115%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:9;
+	mso-list:l0 level9 lfo1;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#272727;
+	mso-themecolor:text1;
+	mso-themetint:216;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoHeader, li.MsoHeader, div.MsoHeader
+	{mso-style-priority:99;
+	mso-style-link:"Header Char";
+	margin:0in;
+	mso-pagination:widow-orphan;
+	tab-stops:center 3.25in right 6.5in;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoFooter, li.MsoFooter, div.MsoFooter
+	{mso-style-priority:99;
+	mso-style-link:"Footer Char";
+	margin:0in;
+	mso-pagination:widow-orphan;
+	tab-stops:center 3.25in right 6.5in;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoTitle, li.MsoTitle, div.MsoTitle
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:4.0pt;
+	margin-left:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:28.0pt;
+	font-family:"Aptos Display",sans-serif;
+	mso-ascii-font-family:"Aptos Display";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Aptos Display";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoTitleCxSpFirst, li.MsoTitleCxSpFirst, div.MsoTitleCxSpFirst
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	mso-style-type:export-only;
+	margin:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:28.0pt;
+	font-family:"Aptos Display",sans-serif;
+	mso-ascii-font-family:"Aptos Display";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Aptos Display";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoTitleCxSpMiddle, li.MsoTitleCxSpMiddle, div.MsoTitleCxSpMiddle
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	mso-style-type:export-only;
+	margin:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:28.0pt;
+	font-family:"Aptos Display",sans-serif;
+	mso-ascii-font-family:"Aptos Display";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Aptos Display";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoTitleCxSpLast, li.MsoTitleCxSpLast, div.MsoTitleCxSpLast
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:4.0pt;
+	margin-left:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:28.0pt;
+	font-family:"Aptos Display",sans-serif;
+	mso-ascii-font-family:"Aptos Display";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Aptos Display";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoSubtitle, li.MsoSubtitle, div.MsoSubtitle
+	{mso-style-priority:11;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Subtitle Char";
+	mso-style-next:Normal;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:8.0pt;
+	margin-left:0in;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:14.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#595959;
+	mso-themecolor:text1;
+	mso-themetint:166;
+	letter-spacing:.75pt;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoListParagraph, li.MsoListParagraph, div.MsoListParagraph
+	{mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:8.0pt;
+	margin-left:.5in;
+	mso-add-space:auto;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoListParagraphCxSpFirst, li.MsoListParagraphCxSpFirst, div.MsoListParag=
+raphCxSpFirst
+	{mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	mso-add-space:auto;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoListParagraphCxSpMiddle, li.MsoListParagraphCxSpMiddle, div.MsoListPar=
+agraphCxSpMiddle
+	{mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	mso-add-space:auto;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagra=
+phCxSpLast
+	{mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:8.0pt;
+	margin-left:.5in;
+	mso-add-space:auto;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+p.MsoQuote, li.MsoQuote, div.MsoQuote
+	{mso-style-priority:29;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Quote Char";
+	mso-style-next:Normal;
+	margin-top:8.0pt;
+	margin-right:0in;
+	margin-bottom:8.0pt;
+	margin-left:0in;
+	text-align:center;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	color:#404040;
+	mso-themecolor:text1;
+	mso-themetint:191;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;
+	font-style:italic;}
+p.MsoIntenseQuote, li.MsoIntenseQuote, div.MsoIntenseQuote
+	{mso-style-priority:30;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Intense Quote Char";
+	mso-style-next:Normal;
+	margin-top:.25in;
+	margin-right:.6in;
+	margin-bottom:.25in;
+	margin-left:.6in;
+	text-align:center;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	border:none;
+	mso-border-top-alt:solid #0F4761 .5pt;
+	mso-border-top-themecolor:accent1;
+	mso-border-top-themeshade:191;
+	mso-border-bottom-alt:solid #0F4761 .5pt;
+	mso-border-bottom-themecolor:accent1;
+	mso-border-bottom-themeshade:191;
+	padding:0in;
+	mso-padding-alt:10.0pt 0in 10.0pt 0in;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;
+	font-style:italic;}
+span.MsoIntenseEmphasis
+	{mso-style-priority:21;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	font-style:italic;}
+span.MsoIntenseReference
+	{mso-style-priority:32;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	font-variant:small-caps;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	letter-spacing:.25pt;
+	font-weight:bold;}
+span.Heading1Char
+	{mso-style-name:"Heading 1 Char";
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 1";
+	mso-ansi-font-size:20.0pt;
+	mso-bidi-font-size:20.0pt;
+	font-family:"Aptos Display",sans-serif;
+	mso-ascii-font-family:"Aptos Display";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Aptos Display";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;}
+span.Heading2Char
+	{mso-style-name:"Heading 2 Char";
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 2";
+	mso-ansi-font-size:16.0pt;
+	mso-bidi-font-size:16.0pt;
+	font-family:"Aptos Display",sans-serif;
+	mso-ascii-font-family:"Aptos Display";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Aptos Display";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;}
+span.Heading3Char
+	{mso-style-name:"Heading 3 Char";
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 3";
+	mso-ansi-font-size:14.0pt;
+	mso-bidi-font-size:14.0pt;
+	font-family:"Times New Roman",serif;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;}
+span.Heading4Char
+	{mso-style-name:"Heading 4 Char";
+	mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 4";
+	font-family:"Times New Roman",serif;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	font-style:italic;}
+span.Heading5Char
+	{mso-style-name:"Heading 5 Char";
+	mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 5";
+	font-family:"Times New Roman",serif;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;}
+span.Heading6Char
+	{mso-style-name:"Heading 6 Char";
+	mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 6";
+	font-family:"Times New Roman",serif;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#595959;
+	mso-themecolor:text1;
+	mso-themetint:166;
+	font-style:italic;}
+span.Heading7Char
+	{mso-style-name:"Heading 7 Char";
+	mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 7";
+	font-family:"Times New Roman",serif;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#595959;
+	mso-themecolor:text1;
+	mso-themetint:166;}
+span.Heading8Char
+	{mso-style-name:"Heading 8 Char";
+	mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 8";
+	font-family:"Times New Roman",serif;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#272727;
+	mso-themecolor:text1;
+	mso-themetint:216;
+	font-style:italic;}
+span.Heading9Char
+	{mso-style-name:"Heading 9 Char";
+	mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 9";
+	font-family:"Times New Roman",serif;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#272727;
+	mso-themecolor:text1;
+	mso-themetint:216;}
+span.TitleChar
+	{mso-style-name:"Title Char";
+	mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:Title;
+	mso-ansi-font-size:28.0pt;
+	mso-bidi-font-size:28.0pt;
+	font-family:"Aptos Display",sans-serif;
+	mso-ascii-font-family:"Aptos Display";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Aptos Display";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;}
+span.SubtitleChar
+	{mso-style-name:"Subtitle Char";
+	mso-style-priority:11;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:Subtitle;
+	mso-ansi-font-size:14.0pt;
+	mso-bidi-font-size:14.0pt;
+	font-family:"Times New Roman",serif;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#595959;
+	mso-themecolor:text1;
+	mso-themetint:166;
+	letter-spacing:.75pt;}
+span.QuoteChar
+	{mso-style-name:"Quote Char";
+	mso-style-priority:29;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:Quote;
+	color:#404040;
+	mso-themecolor:text1;
+	mso-themetint:191;
+	font-style:italic;}
+span.IntenseQuoteChar
+	{mso-style-name:"Intense Quote Char";
+	mso-style-priority:30;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Intense Quote";
+	color:#0F4761;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	font-style:italic;}
+span.HeaderChar
+	{mso-style-name:"Header Char";
+	mso-style-priority:99;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:Header;}
+span.FooterChar
+	{mso-style-name:"Footer Char";
+	mso-style-priority:99;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:Footer;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	mso-default-props:yes;
+	font-size:12.0pt;
+	mso-ansi-font-size:12.0pt;
+	mso-bidi-font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Aptos;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+.MsoPapDefault
+	{mso-style-type:export-only;
+	margin-bottom:8.0pt;
+	line-height:115%;}
+ /* Page Definitions */
+ @page
+	{mso-footnote-separator:url("dt+v26.0+ReleaseNotes_files/header.htm") fs;
+	mso-footnote-continuation-separator:url("dt+v26.0+ReleaseNotes_files/heade=
+r.htm") fcs;
+	mso-endnote-separator:url("dt+v26.0+ReleaseNotes_files/header.htm") es;
+	mso-endnote-continuation-separator:url("dt+v26.0+ReleaseNotes_files/header=
+.htm") ecs;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-header:url("dt+v26.0+ReleaseNotes_files/header.htm") h1;
+	mso-footer:url("dt+v26.0+ReleaseNotes_files/header.htm") f1;
+	mso-paper-source:0;}
+div.WordSection1
+	{page:WordSection1;}
+ /* List Definitions */
+ @list l0
+	{mso-list-id:268201613;
+	mso-list-template-ids:67698725;}
+@list l0:level1
+	{mso-level-style-link:"Heading 1";
+	mso-level-text:%1;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	margin-left:.3in;
+	text-indent:-.3in;}
+@list l0:level2
+	{mso-level-style-link:"Heading 2";
+	mso-level-text:"%1\.%2";
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	margin-left:.4in;
+	text-indent:-.4in;}
+@list l0:level3
+	{mso-level-style-link:"Heading 3";
+	mso-level-text:"%1\.%2\.%3";
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	margin-left:.5in;
+	text-indent:-.5in;}
+@list l0:level4
+	{mso-level-style-link:"Heading 4";
+	mso-level-text:"%1\.%2\.%3\.%4";
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	margin-left:.6in;
+	text-indent:-.6in;}
+@list l0:level5
+	{mso-level-style-link:"Heading 5";
+	mso-level-text:"%1\.%2\.%3\.%4\.%5";
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	margin-left:.7in;
+	text-indent:-.7in;}
+@list l0:level6
+	{mso-level-style-link:"Heading 6";
+	mso-level-text:"%1\.%2\.%3\.%4\.%5\.%6";
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	margin-left:.8in;
+	text-indent:-.8in;}
+@list l0:level7
+	{mso-level-style-link:"Heading 7";
+	mso-level-text:"%1\.%2\.%3\.%4\.%5\.%6\.%7";
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	margin-left:.9in;
+	text-indent:-.9in;}
+@list l0:level8
+	{mso-level-style-link:"Heading 8";
+	mso-level-text:"%1\.%2\.%3\.%4\.%5\.%6\.%7\.%8";
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	margin-left:1.0in;
+	text-indent:-1.0in;}
+@list l0:level9
+	{mso-level-style-link:"Heading 9";
+	mso-level-text:"%1\.%2\.%3\.%4\.%5\.%6\.%7\.%8\.%9";
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	margin-left:1.1in;
+	text-indent:-1.1in;}
+@list l1
+	{mso-list-id:1147358744;
+	mso-list-type:hybrid;
+	mso-list-template-ids:1257408046 67698689 67698691 67698693 67698689 67698=
+691 67698693 67698689 67698691 67698693;}
+@list l1:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Symbol;}
+@list l1:level2
+	{mso-level-number-format:bullet;
+	mso-level-text:o;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:"Courier New";}
+@list l1:level3
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Wingdings;}
+@list l1:level4
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Symbol;}
+@list l1:level5
+	{mso-level-number-format:bullet;
+	mso-level-text:o;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:"Courier New";}
+@list l1:level6
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Wingdings;}
+@list l1:level7
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Symbol;}
+@list l1:level8
+	{mso-level-number-format:bullet;
+	mso-level-text:o;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:"Courier New";}
+@list l1:level9
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Wingdings;}
+@list l2
+	{mso-list-id:2010055237;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-1756495148 67698689 67698691 67698693 67698689 6769=
+8691 67698693 67698689 67698691 67698693;}
+@list l2:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Symbol;}
+@list l2:level2
+	{mso-level-number-format:bullet;
+	mso-level-text:o;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:"Courier New";}
+@list l2:level3
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Wingdings;}
+@list l2:level4
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Symbol;}
+@list l2:level5
+	{mso-level-number-format:bullet;
+	mso-level-text:o;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:"Courier New";}
+@list l2:level6
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Wingdings;}
+@list l2:level7
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Symbol;}
+@list l2:level8
+	{mso-level-number-format:bullet;
+	mso-level-text:o;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:"Courier New";}
+@list l2:level9
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	font-family:Wingdings;}
+ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-parent:"";
+	mso-padding-alt:0in 5.4pt 0in 5.4pt;
+	mso-para-margin-top:0in;
+	mso-para-margin-right:0in;
+	mso-para-margin-bottom:8.0pt;
+	mso-para-margin-left:0in;
+	line-height:115%;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ascii-font-family:Aptos;
+	mso-ascii-theme-font:minor-latin;
+	mso-hansi-font-family:Aptos;
+	mso-hansi-theme-font:minor-latin;
+	mso-font-kerning:1.0pt;
+	mso-ligatures:standardcontextual;}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext=3D"edit" spidmax=3D"2050"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext=3D"edit">
+  <o:idmap v:ext=3D"edit" data=3D"2"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=3DEN-US style=3D'tab-interval:.5in;word-wrap:break-word'>
+
+<div class=3DWordSection1>
+
+<h1 style=3D'mso-list:l0 level1 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:"Aptos Display";mso-fareast-theme-font:maj=
+or-latin;
+mso-bidi-font-family:"Aptos Display";mso-bidi-theme-font:major-latin'><span
+style=3D'mso-list:Ignore'>1<span style=3D'font:7.0pt "Times New Roman"'>&nb=
+sp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Overview</h1>
+
+<p class=3DMsoNormal>This release contains several bug fixes and enhancemen=
+ts,
+including:</p>
+
+<p class=3DMsoListParagraphCxSpFirst style=3D'text-indent:-.25in;mso-list:l=
+2 level1 lfo2'><![if !supportLists]><span
+style=3D'font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-fa=
+mily:
+Symbol'><span style=3D'mso-list:Ignore'>·<span style=3D'font:7.0pt "Times N=
+ew Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Fixes issue with variable file sizes and ran=
+dom
+percentages.</p>
+
+<p class=3DMsoListParagraphCxSpMiddle style=3D'text-indent:-.25in;mso-list:=
+l2 level1 lfo2'><![if !supportLists]><span
+style=3D'font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-fa=
+mily:
+Symbol'><span style=3D'mso-list:Ignore'>·<span style=3D'font:7.0pt "Times N=
+ew Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Collects and reports I/O latency information=
+.</p>
+
+<p class=3DMsoListParagraphCxSpLast style=3D'text-indent:-.25in;mso-list:l2=
+ level1 lfo2'><![if !supportLists]><span
+style=3D'font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-fa=
+mily:
+Symbol'><span style=3D'mso-list:Ignore'>·<span style=3D'font:7.0pt "Times N=
+ew Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>New predefined workloads.</p>
+
+<h1 style=3D'mso-list:l0 level1 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:"Aptos Display";mso-fareast-theme-font:maj=
+or-latin;
+mso-bidi-font-family:"Aptos Display";mso-bidi-theme-font:major-latin'><span
+style=3D'mso-list:Ignore'>2<span style=3D'font:7.0pt "Times New Roman"'>&nb=
+sp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Latency Information</h1>
+
+<p class=3DMsoNormal>The normal I/O paths have been updated to acquire read=
+ and
+write latency in microseconds. The read, write, and total latency is report=
+ed
+in the job or total statistics, but are not reported in the per pass
+statistics. Options exist to report latency via the keepalive messages, with
+predefined latency keepalive templates available.</p>
+
+<p class=3DMsoNormal>The minimum, maximum, and total latency <span class=3D=
+GramE>is</span>
+collected.</p>
+
+<p class=3DMsoNormal>The latency values are scaled to seconds, milliseconds=
+, or
+microseconds.</p>
+
+<p class=3DMsoNormal>Please Note: The Async I/O paths have <i>not</i> been
+updated.</p>
+
+<h2 style=3D'mso-list:l0 level2 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:"Aptos Display";mso-fareast-theme-font:maj=
+or-latin;
+mso-bidi-font-family:"Aptos Display";mso-bidi-theme-font:major-latin'><span
+style=3D'mso-list:Ignore'>2.1<span style=3D'font:7.0pt "Times New Roman"'>&=
+nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Latency Options</h2>
+
+<p class=3DMsoNormal>The following options have been added to control laten=
+cy
+information.</p>
+
+<h3 style=3D'mso-list:l0 level3 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:Aptos;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Aptos;mso-bidi-theme-font:minor-latin'><span
+style=3D'mso-list:Ignore'>2.1.1<span style=3D'font:7.0pt "Times New Roman"'=
+>&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Latency Frequency</h3>
+
+<p class=3DMsoNormal>This option controls how often to report read and write
+latency:</p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal;mso-layo=
+ut-grid-align:
+none;text-autospace:none'><span style=3D'font-size:9.0pt;font-family:"Lucid=
+a Console";
+mso-bidi-font-family:"Lucida Console";mso-font-kerning:0pt'><span
+style=3D'mso-spacerun:yes'>        </span><span class=3DSpellE>latfreq</spa=
+n>=3Dvalue<span
+style=3D'mso-spacerun:yes'>         </span>Report latency frequency (in rec=
+ords).<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal;mso-layo=
+ut-grid-align:
+none;text-autospace:none'><span style=3D'font-size:9.0pt;font-family:"Lucid=
+a Console";
+mso-bidi-font-family:"Lucida Console";mso-font-kerning:0pt'><span
+style=3D'mso-spacerun:yes'>                              </span>Note: This
+reports the per I/O latency.<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal;mso-layo=
+ut-grid-align:
+none;text-autospace:none'><span style=3D'font-size:9.0pt;font-family:"Lucid=
+a Console";
+mso-bidi-font-family:"Lucida Console";mso-font-kerning:0pt'><o:p>&nbsp;</o:=
+p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal;mso-layo=
+ut-grid-align:
+none;text-autospace:none'><span style=3D'mso-bidi-font-family:"Lucida Conso=
+le";
+mso-font-kerning:0pt'>A <i>value</i> of one (1) will report the latency of
+every I/O.<o:p></o:p></span></p>
+
+<h3 style=3D'mso-list:l0 level3 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:Aptos;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Aptos;mso-bidi-theme-font:minor-latin'><span
+style=3D'mso-list:Ignore'>2.1.2<span style=3D'font:7.0pt "Times New Roman"'=
+>&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Minimum Latency</h3>
+
+<p class=3DMsoNormal>This option defines the minimum latency, in microsecon=
+ds.
+When latency is less than this value, then I/O is reported as “(fast)”.</p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal;mso-layo=
+ut-grid-align:
+none;text-autospace:none'><span style=3D'font-size:9.0pt;font-family:"Lucid=
+a Console";
+mso-bidi-font-family:"Lucida Console";mso-font-kerning:0pt'><span
+style=3D'mso-spacerun:yes'>        </span><span class=3DSpellE>latmin</span=
+>=3Dvalue<span
+style=3D'mso-spacerun:yes'>          </span><span class=3DGramE>The</span> =
+minimum
+latency (in microseconds).<o:p></o:p></span></p>
+
+<h3 style=3D'mso-list:l0 level3 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:Aptos;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Aptos;mso-bidi-theme-font:minor-latin'><span
+style=3D'mso-list:Ignore'>2.1.3<span style=3D'font:7.0pt "Times New Roman"'=
+>&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Maximum Latency</h3>
+
+<p class=3DMsoNormal>This option defines the maximum latency, in microsecon=
+ds.
+When latency exceeds this value then I/O is reported <span class=3DGramE>as=
+”(</span>slow)”.</p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal;mso-layo=
+ut-grid-align:
+none;text-autospace:none'><span style=3D'font-size:9.0pt;font-family:"Lucid=
+a Console";
+mso-bidi-font-family:"Lucida Console";mso-font-kerning:0pt'><span
+style=3D'mso-spacerun:yes'>        </span><span class=3DSpellE>latmax</span=
+>=3Dvalue<span
+style=3D'mso-spacerun:yes'>          </span><span class=3DGramE>The</span> =
+maximum
+latency (in microseconds).<o:p></o:p></span></p>
+
+<h2 style=3D'mso-list:l0 level2 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:"Aptos Display";mso-fareast-theme-font:maj=
+or-latin;
+mso-bidi-font-family:"Aptos Display";mso-bidi-theme-font:major-latin'><span
+style=3D'mso-list:Ignore'>2.2<span style=3D'font:7.0pt "Times New Roman"'>&=
+nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Keepalive Format Control Strings</h2>
+
+<p class=3DMsoNormal>Keepalive strings are a user defined set of text and f=
+ormat
+control strings reported by the monitoring thread whenever the keepalive ti=
+me
+is reached.</p>
+
+<p class=3DMsoNormal>The following keepalive format control strings have be=
+en
+added:</p>
+
+<p class=3DMsoNormal><span style=3D'mso-spacerun:yes'>  </span>Latency Keyw=
+ords:</p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span
+style=3D'mso-spacerun:yes'>            </span><span style=3D'font-size:10.0=
+pt;
+line-height:115%;font-family:"Times New Roman",serif'>%latency =3D The aver=
+age
+total latency.<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>            </span>%<span class=3DSpellE>latmin<=
+/span> =3D
+The min total latency.<span style=3D'mso-spacerun:yes'>  </span>%<span
+class=3DSpellE>latmax</span> =3D The max total latency.<o:p></o:p></span></=
+p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>            </span>%<span class=3DSpellE>rlatenc=
+y</span>
+=3D The average read latency.<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>            </span>%<span class=3DSpellE>rlatmin=
+</span>
+=3D The min read latency.<span style=3D'mso-spacerun:yes'>  </span>%<span
+class=3DSpellE>rlatmax</span> =3D The max read latency.<o:p></o:p></span></=
+p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>            </span>%<span class=3DSpellE>wlatenc=
+y</span>
+=3D The average write latency.<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>            </span>%<span class=3DSpellE>wlatmin=
+</span>
+=3D The min write latency. %<span class=3DSpellE>wlatmax</span> =3D The max=
+ write
+latency.<o:p></o:p></span></p>
+
+<h2 style=3D'mso-list:l0 level2 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:"Aptos Display";mso-fareast-theme-font:maj=
+or-latin;
+mso-bidi-font-family:"Aptos Display";mso-bidi-theme-font:major-latin'><span
+style=3D'mso-list:Ignore'>2.3<span style=3D'font:7.0pt "Times New Roman"'>&=
+nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Keepalive Workload Templates</h2>
+
+<p class=3DMsoNormal>Workload templates are used in conjunction with other =
+<span
+class=3DGramE>workloads, and</span> are used to define a set of options use=
+ful to
+most folks and to save them from specifying long command lines. Standard and
+verbose keepalive, pass, and total keepalive templates were added.</p>
+
+<p class=3DMsoNormal>The latency workload templates are:</p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>    </span><span class=3DSpellE><b>latency_keepa=
+live</b></span>:
+Latency Brief Keepalive Message (template)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>        </span>keepalive=3D'avg/min/max Total La=
+tency:
+%latency/%<span class=3DSpellE>latmin</span>/%<span class=3DSpellE>latmax</=
+span>,
+Read Latency: %<span class=3DSpellE>rlatency</span>/%<span class=3DSpellE>r=
+latmin</span>/%<span
+class=3DSpellE>rlatmax</span>, Write Latency: %<span class=3DSpellE>wlatenc=
+y</span>/%<span
+class=3DSpellE><span class=3DGramE>wlatmin</span></span><span class=3DGramE=
+>/%</span><span
+class=3DSpellE>wlatmax</span>'<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>    </span><span class=3DSpellE><b>platency_keep=
+alive</b></span>:
+Pass Latency Keepalive Message (template)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>        </span>disable=3D<span class=3DSpellE>ps=
+tats</span>
+<span class=3DSpellE>pkeepalive</span>=3D'Pass %p, avg/min/max Total Latenc=
+y:
+%latency/%<span class=3DSpellE><span class=3DGramE>latmin</span></span><span
+class=3DGramE>/%</span><span class=3DSpellE>latmax</span>, Read Latency: %<=
+span
+class=3DSpellE>rlatency</span>/%<span class=3DSpellE>rlatmin</span>/%<span
+class=3DSpellE>rlatmax</span>, Write Latency: %<span class=3DSpellE>wlatenc=
+y</span>/%<span
+class=3DSpellE>wlatmin</span>/%<span class=3DSpellE>wlatmax</span>'<o:p></o=
+:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>    </span><span class=3DSpellE><b>tlatency_keep=
+alive</b></span>:
+Total Latency Keepalive (template)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>        </span>workload=3D<span class=3DSpellE>p=
+latency_keepalive</span>
+stats=3Dbrief <span class=3DSpellE>tkeepalive</span>=3D'\n<span
+style=3D'mso-spacerun:yes'>    </span>Latency Statistics:\n\<span class=3DS=
+pellE>tTotal</span>
+Latency: Average: %latency, Minimum: %<span class=3DSpellE>latmin</span>,
+Maximum: %<span class=3DSpellE>latmax</span>\n\t Read Latency: Average: %<s=
+pan
+class=3DSpellE>rlatency</span>, Minimum: %<span class=3DSpellE>rlatmin</spa=
+n>,
+Maximum: %<span class=3DSpellE>rlatmax</span>\n\<span class=3DSpellE>tWrite=
+</span>
+Latency: Average: %<span class=3DSpellE>wlatency</span>, Minimum: %<span
+class=3DSpellE>wlatmin</span>, Maximum: %<span class=3DSpellE>wlatmax</span=
+>'<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>    </span><span class=3DSpellE><b>vlatency_keep=
+alive</b></span>:
+Latency Verbose Keepalive (template)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>        </span>keepalive=3D'\n<span
+style=3D'mso-spacerun:yes'>    </span>Latency Statistics:\n\<span class=3DS=
+pellE>tTotal</span>
+Latency: Average: %latency, Minimum: %<span class=3DSpellE>latmin</span>,
+Maximum: %<span class=3DSpellE>latmax</span>\n\t Read Latency: Average: %<s=
+pan
+class=3DSpellE>rlatency</span>, Minimum: %<span class=3DSpellE>rlatmin</spa=
+n>,
+Maximum: %<span class=3DSpellE>rlatmax</span>\n\<span class=3DSpellE>tWrite=
+</span>
+Latency: Average: %<span class=3DSpellE>wlatency</span>, Minimum: %<span
+class=3DSpellE>wlatmin</span>, Maximum: %<span class=3DSpellE>wlatmax</span=
+>'<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></sp=
+an></p>
+
+<h1 style=3D'mso-list:l0 level1 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:"Aptos Display";mso-fareast-theme-font:maj=
+or-latin;
+mso-bidi-font-family:"Aptos Display";mso-bidi-theme-font:major-latin'><span
+style=3D'mso-list:Ignore'>3<span style=3D'font:7.0pt "Times New Roman"'>&nb=
+sp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>New Workload</h1>
+
+<p class=3DMsoNormal>A workload was added to create many directories, rathe=
+r than
+many files. <span class=3DGramE>Actually, a</span> single file in each dire=
+ctory
+must be created with the current logic employed in dt.</p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><b><span style=3D'font-s=
+ize:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>    </span><span class=3DSpellE>many_dirs</span>=
+</span></b><span
+style=3D'font-size:10.0pt;line-height:115%;font-family:"Times New Roman",se=
+rif'>:
+Create many directories (~100k <span class=3DSpellE>dirs</span>)<o:p></o:p>=
+</span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:6.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span
+style=3D'mso-spacerun:yes'>        </span>bs=3D1 records=3D1 <span class=3D=
+SpellE>sdirs</span>=3D1000
+depth=3D10 threads=3D10 dispose=3Dkeep<o:p></o:p></span></p>
+
+<p class=3DMsoNormal>Notes:</p>
+
+<p class=3DMsoListParagraphCxSpFirst style=3D'text-indent:-.25in;mso-list:l=
+1 level1 lfo3'><![if !supportLists]><span
+style=3D'font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-fa=
+mily:
+Symbol'><span style=3D'mso-list:Ignore'>·<span style=3D'font:7.0pt "Times N=
+ew Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Ten threads consumed 100% of the CPU on my
+system, so adjust as required.</p>
+
+<p class=3DMsoListParagraphCxSpLast style=3D'text-indent:-.25in;mso-list:l1=
+ level1 lfo3'><![if !supportLists]><span
+style=3D'font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-fa=
+mily:
+Symbol'><span style=3D'mso-list:Ignore'>·<span style=3D'font:7.0pt "Times N=
+ew Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>On Windows the default path length is 260
+characters, thus the depth above being set to 10, since 100 exceeded the pa=
+th
+length. The <span class=3DSpellE>LongPathsEnabled</span> file system regist=
+ry
+setting can be enabled if longer paths are desired:</p>
+
+<p class=3DMsoNormal style=3D'margin-left:.25in'><span style=3D'font-size:1=
+0.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>[HKEY_LOCAL_MACHINE\S=
+YSTEM\<span
+class=3DSpellE>CurrentControlSet</span>\Control\<span class=3DSpellE>FileSy=
+stem</span>]<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-left:.25in'><span style=3D'font-size:1=
+0.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>&quot;<span class=3DS=
+pellE><b>LongPathsEnabled</b></span>&quot;=3Ddword:00000001<o:p></o:p></spa=
+n></p>
+
+<h1 style=3D'mso-list:l0 level1 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:"Aptos Display";mso-fareast-theme-font:maj=
+or-latin;
+mso-bidi-font-family:"Aptos Display";mso-bidi-theme-font:major-latin'><span
+style=3D'mso-list:Ignore'>4<span style=3D'font:7.0pt "Times New Roman"'>&nb=
+sp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Many Directories Example</h1>
+
+<p class=3DMsoNormal>As most know, I like to teach by example, so these exa=
+mples will
+help guide you: <span style=3D'font-family:"Segoe UI Emoji",sans-serif;
+mso-ascii-font-family:Aptos;mso-ascii-theme-font:minor-latin;mso-hansi-font=
+-family:
+Aptos;mso-hansi-theme-font:minor-latin;mso-char-type:symbol-ext;mso-symbol-=
+font-family:
+"Segoe UI Emoji"'>&#128522;</span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span class=3DGramE><span
+style=3D'font-size:10.0pt;line-height:115%;font-family:"Times New Roman",se=
+rif'>$
+<b>.</b></span></span><b><span style=3D'font-size:10.0pt;line-height:115%;
+font-family:"Times New Roman",serif'>/dt of=3Df workload=3D<span class=3DSp=
+ellE>many_dirs</span>
+<span class=3DSpellE>keepalivet</span>=3D1m workload=3D<span class=3DSpellE=
+>latency_keepalive</span>
+<span class=3DSpellE>sdirs</span>=3D1000 depth=3D10 threads=3D10<o:p></o:p>=
+</span></b></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1):
+avg/min/max Total Latency: 822us/33us/144.86ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 822us/33us/144.86ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:2):
+avg/min/max Total Latency: 815us/34us/58.73ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 815us/34us/58.73ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:3):
+avg/min/max Total Latency: 727us/33us/20.37ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 727us/33us/20.37ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:4):
+avg/min/max Total Latency: 781us/31us/37.88ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 781us/31us/37.88ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:5):
+avg/min/max Total Latency: 815us/35us/16.92ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 815us/35us/16.92ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:6):
+avg/min/max Total Latency: 791us/32us/19.93ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 791us/32us/19.93ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:7):
+avg/min/max Total Latency: 829us/34us/148.49ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 829us/34us/148.49ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:8):
+avg/min/max Total Latency: 815us/32us/85.63ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 815us/32us/85.63ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:9):
+avg/min/max Total Latency: 902us/35us/173.99ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 902us/35us/173.99ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:10):
+avg/min/max Total Latency: 868us/34us/143.33ms, Read Latency: <span
+class=3DSpellE>na</span>/<span class=3DSpellE>na</span>/<span class=3DSpell=
+E>na</span>,
+Write Latency: 868us/34us/143.33ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span style=3D'mso-ta=
+b-count:
+1'>                </span>…<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9): Total Statistics:<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>        </span>Output device/file
+name: d0\j1t9\d1000\d2\d3\d4\d5\d6\d7\d8\d9\d10\f (device type=3Dregular)<o=
+:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>        </span>Type of I/<span
+class=3DGramE>O's</span> performed: sequential (forward)<o:p></o:p></span><=
+/p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>       </span>Job Information
+Reported: Job 1, Thread 9<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>        </span>Current Thread
+Reported: 9/10<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>      </span>Data pattern
+read/written: 0x26673333<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>             </span>Total records
+read: 10001<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>               </span>Total bytes
+read: 10001 (9.767 Kbytes, 0.010 Mbytes, 0.000 <span class=3DSpellE>Gbytes<=
+/span>)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>          </span>Total records
+written: 10001<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>            </span>Total bytes
+written: 10001 (9.767 Kbytes, 0.010 Mbytes, 0.000 <span class=3DSpellE>Gbyt=
+es</span>)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>        </span>Total records
+processed: 20002 @ 1 bytes/record (0.001 Kbytes)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>        </span>Total bytes
+transferred: 20002 (19.533 Kbytes, 0.019 Mbytes)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>         </span>Average transfer
+rates: 62 bytes/sec, 0.061 Kbytes/sec, 0.000 Mbytes/sec<o:p></o:p></span></=
+p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman";
+background:yellow;mso-highlight:yellow'>dt.exe (j:1 t:9):<span
+style=3D'mso-spacerun:yes'>           </span>Average read latency: 83us (min
+25us, max 11.72ms)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman";
+background:yellow;mso-highlight:yellow'>dt.exe (j:1 t:9):<span
+style=3D'mso-spacerun:yes'>          </span>Average write latency: 1.84ms (=
+min
+33us, max 173.99ms)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman";
+background:yellow;mso-highlight:yellow'>dt.exe (j:1 t:9):<span
+style=3D'mso-spacerun:yes'>          </span>Average total latency: 963us (m=
+in
+25us, max 173.99ms)</span><span style=3D'font-size:8.0pt;line-height:115%;
+font-family:"Lucida Console";mso-bidi-font-family:"Times New Roman"'><o:p><=
+/o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>        </span>Number I/<span
+class=3DGramE>O's</span> per second: 62.064<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>         </span>Number seconds p=
+er
+I/O: 0.0161 (16.11ms)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>         </span>Total passes
+completed: 1/1<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>          </span>Total files
+processed: 20002/20002<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>          </span>Total errors
+detected: 0/1<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>             </span>Total elapsed
+time: <b>05m22.00s<o:p></o:p></b></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>                  </span>Starting
+time: Sun <span class=3DGramE>Nov<span style=3D'mso-spacerun:yes'>  </span>=
+2</span>
+14:51:07 2025<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<span style=3D'mso-spacerun:yes'>                    </span>Ending
+time: Sun <span class=3DGramE>Nov<span style=3D'mso-spacerun:yes'>  </span>=
+2</span>
+14:56:29 2025<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Lucida Console";mso-bidi-font-family:"Times N=
+ew Roman"'>dt.exe
+(j:1 t:9):<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></sp=
+an></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>$ <o:p></o:p></span><=
+/p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'mso-bidi-=
+font-family:
+"Times New Roman"'>Please Note: My system disk is a PCIe NVME SSD, thus it =
+is
+very fast. But that said, the above workload takes much longer running in my
+Windows Ubuntu VM.<o:p></o:p></span></p>
+
+<h2 style=3D'mso-list:l0 level2 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:"Aptos Display";mso-fareast-theme-font:maj=
+or-latin;
+mso-bidi-font-family:"Aptos Display";mso-bidi-theme-font:major-latin'><span
+style=3D'mso-list:Ignore'>4.1<span style=3D'font:7.0pt "Times New Roman"'>&=
+nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Min/Max Latency Example</h2>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>$ </span><b><span
+style=3D'font-size:10.0pt;line-height:115%;font-family:"Times New Roman",se=
+rif'>dt
+of=3D<span class=3DSpellE>dt.data</span> bs=3Drandom limit=3D100m runtime=
+=3D5 <span
+class=3DSpellE>latmin</span>=3D60 <span class=3DSpellE>latmax</span>=3D1000
+flags=3Ddirect<o:p></o:p></span></b></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#8, Write Latency: 1.30ms (slow)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#13, Write Latency: 7.90ms (slow)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#14, Write Latency: 2.71ms (slow)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span style=3D'mso-ta=
+b-count:
+1'>                </span>…<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#2355, Write Latency: 52us (fast)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#2376, Write Latency: 54us (fast)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span style=3D'mso-ta=
+b-count:
+1'>                </span>…<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#2219, Read Latency: 1.01ms (slow)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#2254, Read Latency: 3.29ms (slow)<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span style=3D'mso-ta=
+b-count:
+1'>                </span>…<o:p></o:p></span></p>
+
+<h2 style=3D'mso-list:l0 level2 lfo1'><![if !supportLists]><span
+style=3D'mso-fareast-font-family:"Aptos Display";mso-fareast-theme-font:maj=
+or-latin;
+mso-bidi-font-family:"Aptos Display";mso-bidi-theme-font:major-latin'><span
+style=3D'mso-list:Ignore'>4.2<span style=3D'font:7.0pt "Times New Roman"'>&=
+nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Latency Frequency Examples</h2>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>$ <b>dt of=3D<span
+class=3DSpellE>dt.data</span> bs=3Drandom limit=3D100m runtime=3D5 <span cl=
+ass=3DSpellE>latfreq</span>=3D1000
+flags=3Ddirect disable=3Dstats<o:p></o:p></b></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#1000, Write Latency: 274us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#1000, Read Latency: 391us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#2000, Write Latency: 174us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#2000, Read Latency: 230us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): The
+runtime of 5 seconds has expired, terminating thread...<o:p></o:p></span></=
+p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><span style=3D'mso-ta=
+b-count:
+1'>                </span>…<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>$ <b>dt of=3D<span
+class=3DSpellE>dt.data</span> bs=3Drandom limit=3D100m records=3D10 <span c=
+lass=3DSpellE>latfreq</span>=3D1
+flags=3Ddirect disable=3Dstats<o:p></o:p></b></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#1, Write Latency: 1.83ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#2, Write Latency: 1.67ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#3, Write Latency: 707us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#4, Write Latency: 294us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#5, Write Latency: 650us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#6, Write Latency: 2.85ms<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#7, Write Latency: 737us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#8, Write Latency: 980us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#9, Write Latency: 756us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#10, Write Latency: 757us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1):
+Warning: The bytes written 5790208, is less than the data limit 104857600
+requested!<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#1, Read Latency: 420us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#2, Read Latency: 638us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#3, Read Latency: 522us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#4, Read Latency: 193us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#5, Read Latency: 345us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#6, Read Latency: 528us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#7, Read Latency: 378us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#8, Read Latency: 537us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#9, Read Latency: 421us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>dt.exe (j:1 t:1): Rec=
+ord
+#10, Read Latency: 285us<o:p></o:p></span></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'>$<o:p></o:p></span></=
+p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></sp=
+an></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></sp=
+an></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:8.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></sp=
+an></p>
+
+<p class=3DMsoNormal style=3D'margin-bottom:3.0pt'><span style=3D'font-size=
+:10.0pt;
+line-height:115%;font-family:"Times New Roman",serif'><o:p>&nbsp;</o:p></sp=
+an></p>
+
+<p class=3DMsoNormal><o:p>&nbsp;</o:p></p>
+
+</div>
+
+</body>
+
+</html>
+
+------=_NextPart_01DC4CA2.1B284870
+Content-Location: file:///C:/8F195D13/dt+v26.0+ReleaseNotes_files/themedata.thmx
+Content-Transfer-Encoding: base64
+Content-Type: application/vnd.ms-officetheme
+
+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
+daJeqdcP66Vq1K+Xmo1Kp9SL6v2oA0W7Pux85XsXChx2+/3hsBaV6j3AVYNOrdTpVnqlenPQjYbh
+oNoPAJyXnyt4igGbbWwBl4rXo/8CAAD//wMAUEsDBBQABgAIAAAAIQAN0ZCftgAAABsBAAAnAAAA
+dGhlbWUvdGhlbWUvX3JlbHMvdGhlbWVNYW5hZ2VyLnhtbC5yZWxzhI9NCsIwFIT3gncIb2/TuhCR
+Jt2I0K3UA4TkNQ02PyRR7O0NriwILodhvplpu5edyRNjMt4xaKoaCDrplXGawW247I5AUhZOidk7
+ZLBggo5vN+0VZ5FLKE0mJFIoLjGYcg4nSpOc0IpU+YCuOKOPVuQio6ZByLvQSPd1faDxmwF8xSS9
+YhB71QAZllCa/7P9OBqJZy8fFl3+UUFz2YUFKKLGzOAjm6pMBMpburrE3wAAAP//AwBQSwECLQAU
+AAYACAAAACEA6d4Pv/8AAAAcAgAAEwAAAAAAAAAAAAAAAAAAAAAAW0NvbnRlbnRfVHlwZXNdLnht
+bFBLAQItABQABgAIAAAAIQCl1qfnwAAAADYBAAALAAAAAAAAAAAAAAAAADABAABfcmVscy8ucmVs
+c1BLAQItABQABgAIAAAAIQBreZYWgwAAAIoAAAAcAAAAAAAAAAAAAAAAABkCAAB0aGVtZS90aGVt
+ZS90aGVtZU1hbmFnZXIueG1sUEsBAi0AFAAGAAgAAAAhANBVdpL6BwAADSIAABYAAAAAAAAAAAAA
+AAAA1gIAAHRoZW1lL3RoZW1lL3RoZW1lMS54bWxQSwECLQAUAAYACAAAACEADdGQn7YAAAAbAQAA
+JwAAAAAAAAAAAAAAAAAECwAAdGhlbWUvdGhlbWUvX3JlbHMvdGhlbWVNYW5hZ2VyLnhtbC5yZWxz
+UEsFBgAAAAAFAAUAXQEAAP8LAAAAAA==
+
+------=_NextPart_01DC4CA2.1B284870
+Content-Location: file:///C:/8F195D13/dt+v26.0+ReleaseNotes_files/colorschememapping.xml
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/xml
+
+<?xml version=3D"1.0" encoding=3D"UTF-8" standalone=3D"yes"?>
+<a:clrMap xmlns:a=3D"http://schemas.openxmlformats.org/drawingml/2006/main"=
+ bg1=3D"lt1" tx1=3D"dk1" bg2=3D"lt2" tx2=3D"dk2" accent1=3D"accent1" accent=
+2=3D"accent2" accent3=3D"accent3" accent4=3D"accent4" accent5=3D"accent5" a=
+ccent6=3D"accent6" hlink=3D"hlink" folHlink=3D"folHlink"/>
+------=_NextPart_01DC4CA2.1B284870
+Content-Location: file:///C:/8F195D13/dt+v26.0+ReleaseNotes_files/header.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="windows-1252"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:w=3D"urn:schemas-microsoft-com:office:word"
+xmlns:m=3D"http://schemas.microsoft.com/office/2004/12/omml"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dwindows-125=
+2">
+<meta name=3DProgId content=3DWord.Document>
+<meta name=3DGenerator content=3D"Microsoft Word 15">
+<meta name=3DOriginator content=3D"Microsoft Word 15">
+<link id=3DMain-File rel=3DMain-File href=3D"../dt+v26.0+ReleaseNotes.htm">
+<![if IE]>
+<base href=3D"file:///C:/8F195D13/dt+v26.0+ReleaseNotes_files/header.htm"
+id=3D"webarch_temp_base_tag">
+<![endif]><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext=3D"edit" spidmax=3D"2050"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext=3D"edit">
+  <o:idmap v:ext=3D"edit" data=3D"1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=3DEN-US>
+
+<div style=3D'mso-element:footnote-separator' id=3Dfs>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal'><span
+style=3D'mso-special-character:footnote-separator'><![if !supportFootnotes]>
+
+<hr align=3Dleft size=3D1 width=3D"33%">
+
+<![endif]></span></p>
+
+</div>
+
+<div style=3D'mso-element:footnote-continuation-separator' id=3Dfcs>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal'><span
+style=3D'mso-special-character:footnote-continuation-separator'><![if !supp=
+ortFootnotes]>
+
+<hr align=3Dleft size=3D1>
+
+<![endif]></span></p>
+
+</div>
+
+<div style=3D'mso-element:endnote-separator' id=3Des>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal'><span
+style=3D'mso-special-character:footnote-separator'><![if !supportFootnotes]>
+
+<hr align=3Dleft size=3D1 width=3D"33%">
+
+<![endif]></span></p>
+
+</div>
+
+<div style=3D'mso-element:endnote-continuation-separator' id=3Decs>
+
+<p class=3DMsoNormal style=3D'margin-bottom:0in;line-height:normal'><span
+style=3D'mso-special-character:footnote-continuation-separator'><![if !supp=
+ortFootnotes]>
+
+<hr align=3Dleft size=3D1>
+
+<![endif]></span></p>
+
+</div>
+
+<div style=3D'mso-element:header' id=3Dh1>
+
+<p class=3DMsoHeader><span style=3D'mso-no-proof:yes'><!--[if gte vml 1]><v=
+:rect
+ id=3D"Rectangle_x0020_200" o:spid=3D"_x0000_s1025" style=3D'position:absol=
+ute;
+ margin-left:0;margin-top:0;width:468.5pt;height:21.3pt;z-index:-251657216;
+ visibility:visible;mso-wrap-style:square;mso-width-percent:1000;
+ mso-height-percent:27;mso-top-percent:45;mso-wrap-distance-left:9.35pt;
+ mso-wrap-distance-top:0;mso-wrap-distance-right:9.35pt;
+ mso-wrap-distance-bottom:0;mso-position-horizontal:center;
+ mso-position-horizontal-relative:margin;mso-position-vertical-relative:pag=
+e;
+ mso-width-percent:1000;mso-height-percent:27;mso-top-percent:45;
+ mso-width-relative:margin;mso-height-relative:page;v-text-anchor:middle'
+ o:gfxdata=3D"UEsDBBQABgAIAAAAIQC2gziS/gAAAOEBAAATAAAAW0NvbnRlbnRfVHlwZXNdL=
+nhtbJSRQU7DMBBF
+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
+" o:allowoverlap=3D"f" fillcolor=3D"#156082 [3204]" stroked=3D"f" strokewei=
+ght=3D"1.5pt">
+ <v:textbox style=3D'mso-fit-shape-to-text:t'>
+  <![if !mso]>
+  <table cellpadding=3D0 cellspacing=3D0 width=3D"100%">
+   <tr>
+    <td><![endif]>
+    <div>
+    <p class=3DMsoHeader align=3Dcenter style=3D'text-align:center;tab-stop=
+s:.5in'><span
+    style=3D'color:white;mso-themecolor:background1;text-transform:uppercas=
+e'><w:Sdt
+     PrefixMappings=3D"xmlns:ns0=3D'http://purl.org/dc/elements/1.1/' xmlns=
+:ns1=3D'http://schemas.openxmlformats.org/package/2006/metadata/core-proper=
+ties' "
+     Xpath=3D"/ns1:coreProperties[1]/ns0:title[1]" Text=3D"t"
+     StoreItemID=3D"X_6C3C8BC8-F283-45AE-878A-BAB7291924A1" Title=3D"Title"
+     ID=3D"1189017394">DT Version 26.0 Release Notes</w:Sdt><o:p></o:p></sp=
+an></p>
+    </div>
+    <![if !mso]></td>
+   </tr>
+  </table>
+  <![endif]></v:textbox>
+ <w:wrap type=3D"square" anchorx=3D"margin" anchory=3D"page"/>
+</v:rect><![endif]--></span></p>
+
+</div>
+
+<div style=3D'mso-element:footer' id=3Df1>
+
+<p class=3DMsoNormal align=3Dright style=3D'margin-right:13.0pt;text-align:=
+right;
+tab-stops:center 227.5pt left 290.9pt'><span style=3D'color:#2C7FCE;mso-the=
+mecolor:
+text2;mso-themetint:153;letter-spacing:3.0pt'>Page</span><span
+style=3D'color:#2C7FCE;mso-themecolor:text2;mso-themetint:153'> </span><!--=
+[if supportFields]><span
+style=3D'color:#0A1D30;mso-themecolor:text2;mso-themeshade:191'><span
+style=3D'mso-element:field-begin'></span><span
+style=3D'mso-spacerun:yes'> </span>PAGE<span style=3D'mso-spacerun:yes'>  
+</span>\* MERGEFORMAT <span style=3D'mso-element:field-separator'></span></=
+span><![endif]--><span
+style=3D'color:#0A1D30;mso-themecolor:text2;mso-themeshade:191'><span
+style=3D'mso-no-proof:yes'>1</span></span><!--[if supportFields]><span
+style=3D'color:#0A1D30;mso-themecolor:text2;mso-themeshade:191'><span
+style=3D'mso-element:field-end'></span></span><![endif]--><span style=3D'co=
+lor:
+#0A1D30;mso-themecolor:text2;mso-themeshade:191'> | </span><!--[if supportF=
+ields]><span
+style=3D'color:#0A1D30;mso-themecolor:text2;mso-themeshade:191'><span
+style=3D'mso-element:field-begin'></span><span
+style=3D'mso-spacerun:yes'> </span>NUMPAGES<span style=3D'mso-spacerun:yes'=
+> 
+</span>\* Arabic<span style=3D'mso-spacerun:yes'>  </span>\* MERGEFORMAT <s=
+pan
+style=3D'mso-element:field-separator'></span></span><![endif]--><span
+style=3D'color:#0A1D30;mso-themecolor:text2;mso-themeshade:191'><span
+style=3D'mso-no-proof:yes'>1</span></span><!--[if supportFields]><span
+style=3D'color:#0A1D30;mso-themecolor:text2;mso-themeshade:191'><span
+style=3D'mso-element:field-end'></span></span><![endif]--><span style=3D'co=
+lor:
+#071320;mso-themecolor:text2;mso-themeshade:128'><o:p></o:p></span></p>
+
+<p class=3DMsoFooter><o:p>&nbsp;</o:p></p>
+
+</div>
+
+</body>
+
+</html>
+
+------=_NextPart_01DC4CA2.1B284870
+Content-Location: file:///C:/8F195D13/dt+v26.0+ReleaseNotes_files/filelist.xml
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/xml; charset="utf-8"
+
+<xml xmlns:o=3D"urn:schemas-microsoft-com:office:office">
+ <o:MainFile HRef=3D"../dt+v26.0+ReleaseNotes.htm"/>
+ <o:File HRef=3D"themedata.thmx"/>
+ <o:File HRef=3D"colorschememapping.xml"/>
+ <o:File HRef=3D"header.htm"/>
+ <o:File HRef=3D"filelist.xml"/>
+</xml>
+------=_NextPart_01DC4CA2.1B284870--
