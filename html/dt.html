@@ -44,6 +44,7 @@ Executable versions of <i>dt</i> is prebuilt for most OS's up until version 25.0
 </dl>
 <h2>Release Notes</h2>
 <dl>
+  <dd> <a href="../Documentation/dt+v26.0+ReleaseNotes.pdf">Release Notes for dt Version 26.0</a>
   <dd> <a href="../Documentation/dt+v25.02+Release+Notes.pdf">Release Notes for dt Version 25.02</a>
   <dd> <a href="../Documentation/dt+v24.01+Release+Notes.pdf">Release Notes for dt Version 24.01</a>
   <dd> <a href="../ReleaseNotes/ReleaseNotes-v23.13.html">Release Notes for dt Version 23.13</a>
@@ -55,12 +56,12 @@ Executable versions of <i>dt</i> is prebuilt for most OS's up until version 25.0
 <A HREF="mailto:Robin.T.Miller@gmail.com"><IMG SRC="images/mail_icon.gif" ALT="Mail"></A>
 Send mail to admin of this page: <EM>Robin.T.Miller@gmail.com</EM> 
 <P>
-Last modified: June 9th, 2023
+Last modified: November 10th, 2025
 <HR>
 <PRE>
 % ./dt help (Windows help text, may vary by operating system)
 
-Usage: dt.exe options...
+Usage: dt options...
 
     Where options are:
         if=filename           The input file to read.
@@ -134,6 +135,7 @@ Usage: dt.exe options...
         limit=value           The number of bytes to transfer (data limit).
     or  limit=random          Random data limits between 10485760 and 2147483648 bytes.
         incr_limit=value      Set the data limit increment.
+    or  incr_limit=variable   Enables variable file sizes.
         min_limit=value       Set the minumum data limit.
         max_limit=value       Set the maximum data limit.
         maxdata=value         The maximum data limit (all files).
@@ -143,6 +145,7 @@ Usage: dt.exe options...
         vflags=flags          Set/clear btag verify flags. {lba,offset,...}
         maxbad=value          Set maximum bad blocks to display. (Default: 25)
         onerr=action          Set error action: {abort, continue, or pause}.
+        nice=value            Apply the nice value to alter our priority.
         noprogt=value         Set the no progress time (in seconds).
         noprogtt=value        Set the no progress trigger time (secs).
         notime=optype         Disable timing of specified operation type.
@@ -212,6 +215,12 @@ Usage: dt.exe options...
             sio               The simple I/O (sio) behavior.
 
     For help on each I/O behavior use: "iobehavior=type help"
+
+    Latency Options:
+        latfreq=value         Report latency frequency (in records).
+                              Note: This reports per I/O latency.
+        latmin=value          The minimum latency (in microseconds).
+        latmax=value          The maximum latency (in microseconds).
 
     Block Tag Verify Flags: (prefix with ~ to clear flag)
         lba,offset,devid,inode,serial,hostname,signature,version
@@ -300,11 +309,7 @@ Usage: dt.exe options...
         retryDC_limit=value   The retry corruptions limit.  (Def: 1)
 
     Error Strings Accepted:
-        ERROR_BUSY (170), ERROR_DISK_FULL (112)
-        ERROR_IO_DEVICE (1117), ERROR_VC_DISCONNECTED (240)
-        ERROR_UNEXP_NET_ERR (59), ERROR_SEM_TIMEOUT (121)
-        ERROR_BAD_NETPATH (53), ERROR_NETNAME_DELETED (64)
-        ERROR_DEVICE_NOT_CONNECTED (1167), ERROR_NO_SYSTEM_RESOURCES (1450)
+        EIO (5), ENXIO (6), EBUSY (16), ENODEV (19), ENOSPC (28), ESTALE (116)
             OR
         retry_error='*' or -1 to retry all errors.
 
@@ -373,6 +378,7 @@ Usage: dt.exe options...
         microdelay       Microsecond delays.        (Default: disabled)
         msecsdelay       Millisecond delays.        (Default: disabled)
         secsdelay        Second delays.             (Default: disabled)
+        mmap             Memory mapped I/O.         (Default: disabled)
         mount_lookup     Mount device lookup.       (Default: enabled)
         multi            Multiple volumes.          (Default: disabled)
         noprog           No progress check.         (Default: disabled)
@@ -393,8 +399,7 @@ Usage: dt.exe options...
         savecorrupted    Save corrupted data.       (Default: enabled)
         scriptverify     Script verify display.     (Default: disabled)
         sighup           Hangup signal control.     (Default: enabled)
-        sparse           Sparse file attribute.     (Default: enabled)
-        prealloc         Preallocate w/o sparse.    (Default: enabled)
+        nvme_io          NVMe I/O operations.       (Default: disabled)
         scsi             SCSI operations.           (Default: enabled)
         scsi_info        SCSI information.          (Default: enabled)
         scsi_io          SCSI I/O operations.       (Default: disabled)
@@ -423,10 +428,14 @@ Usage: dt.exe options...
     Common Open Flags:
         none                  Clear all user set flags.
         excl (O_EXCL)         Exclusive open. (don't share)
+        ndelay (O_NDELAY)     Non-delay open. (don't block)
+        nonblock (O_NONBLOCK) Non-blocking open/read/write.
         direct (O_DIRECT)     Direct disk access. (don't cache data).
-        direct (NO_BUFFERING) Direct disk access. (don't cache data).
         nodirect              Cache data (disables Direct I/O).
+        fsync (O_FSYNC)       Sync both read/write data with disk file.
+        rsync (O_RSYNC)       Synchronize read operations.
         sync (O_SYNC)         Sync updates for data/file attributes.
+        large (O_LARGEFILE)   Enable large (64-bit) file system support.
 
     Output Open Flags:
         none                  Clear all user set flags.
@@ -495,6 +504,16 @@ Usage: dt.exe options...
             %i = The I/O mode (read/write)    %u = The user (login) name.
             %w = Records written this pass.   %W = Total records written this test.
 
+    Latency Keywords:
+            %latency = The average total latency.
+            %latmin = The min total latency.  %latmax = The max total latency.
+            %rlatency = The average read latency.
+            %rlatmin = The min read latency.  %rlatmax = The max read latency.
+            %wlatency = The average write latency.
+            %wlatmin = The min write latency. %wlatmax = The max write latency.
+
+        Please see the latency_keepalive workload template for an example.
+
     Performance Keywords:
             %bps  = The bytes per second.     %lbps = Logical blocks per second.
             %kbps = Kilobytes per second.     %mbps = The megabytes per second.
@@ -523,7 +542,7 @@ Usage: dt.exe options...
 
     Common Format Control Keywords:
             %array   = The array name or management IP.
-            %bufmode = The file buffer mode.  %dfs    = The directory separator ('\')
+            %bufmode = The file buffer mode.  %dfs    = The directory separator ('/')
             %dsf     = The device name.       %device = The device path.
             %sdsf    = The SCSI device name.  %tdsf   = The trigger device name.
             %file    = The file name.         %devnum = The device number.
@@ -601,7 +620,7 @@ Usage: dt.exe options...
         iodir=forward, iomode=test, iotype=sequential, stats=full
         iotseed=0x01010101, hdsize=32, maxbad=25
 
-    --> Date: February 9th, 2023, Version: 25.03, Author: Robin T. Miller <--
+    --> Date: November 1st, 2025, Version: 26.0, Author: Robin T. Miller <--
 
 % 
 </PRE>
