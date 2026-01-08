@@ -67,7 +67,8 @@ LINTLIBS=
 PORG      = -O3
 
 AWK=	awk
-CFLAGS+= $(PORG) -DAIO -DMMAP -DMacDarwin -DFreeBSD -D_BSD_SOURCE -D_LARGEFILE64_SOURCE
+CFLAGS+= $(PORG) -DAIO -DMMAP -DMacDarwin -DFreeBSD -D_BSD_SOURCE \
+	 -D_LARGEFILE64_SOURCE -Wno-parentheses -Wno-non-literal-null-conversion
 #CFLAGS+= $(PORG) -DMMAP -DTAPE -DMacDarwin -DFreeBSD -D_BSD_SOURCE
 CPP=	/usr/bin/cpp
 CPPOPTS= 
@@ -100,7 +101,6 @@ CFILES=		\
 		dtprocs.c	\
 		dtread.c	\
 		dtwrite.c	\
-		dtscsi.c	\
 		dtstats.c	\
 		dttape.c	\
                 dtunix.c        \
