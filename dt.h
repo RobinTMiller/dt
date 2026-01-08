@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2025			    *
+ *			  COPYRIGHT (c) 1988 - 2026			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -25,6 +25,9 @@
 /*
  * Modification History:
  * 
+ * January 8th, 2026 by Robin T. Miller
+ *	Minor updates for MacOS without SCSI support.
+ *
  * July 30th, 2021 by Robin T. Miller
  *      Adding initial support for NVMe disks.
  * 
@@ -1481,6 +1484,10 @@ typedef struct dinfo {
 	 */
 	unsigned char di_cdb[MAX_CDB];	/* Command descriptor block.	*/
 	unsigned char di_cdb_size;	/* The SCSI CDB size.		*/
+#else /* !defined(SCSI) */
+	char	*di_serial_number;	/* The device serial number.	*/
+	char	*di_spt_path;		/* Until spt is integrated.	*/
+	unmap_type_t di_unmap_type;	/* The Unmap type to execute.	*/
 #endif /* defined(SCSI) */
 	/* Always define these SCSI flags to reduce conditionalization. */
         hbool_t di_nvme_flag;           /* The NVMe control flag.       */

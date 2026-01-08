@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2021			    *
+ *			  COPYRIGHT (c) 2006 - 2026			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -766,7 +766,7 @@ os_ctime(time_t *timep, char *time_buffer, int timebuf_size)
     bp = ctime_r(timep, time_buffer);
     if (bp == NULL) {
 	//Perror(NULL, "ctime_r() failed");
-	(int)sprintf(time_buffer, "<no time available>");
+	sprintf(time_buffer, "<no time available>");
     } else {
 	if (bp = strrchr(time_buffer, '\n')) {
 	    *bp = '\0';

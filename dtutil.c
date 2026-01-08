@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2025			    *
+ *			  COPYRIGHT (c) 1988 - 2026			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,9 @@
  * 
  * Modification History:
  * 
+ * January 8th, 2026 by Robin T. Miller
+ *      Minor updates for MacOS without SCSI support.
+ *
  * October 24th, 2025 by Robin T. Miller
  *      Add scale_timer_value() function to scale microsecond values.
  * 
@@ -122,7 +125,11 @@
 /*
  * External References:
  */
+#if defined(SCSI)
 extern char *spt_path;		/* Defined in dtscsi.c */
+#else /* !defined(SCSI) */
+char *spt_path;			/* External path to spt */
+#endif /* defined(SCSI) */
 
 /*
  * Forward References:

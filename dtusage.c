@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2025			    *
+ *			  COPYRIGHT (c) 1988 - 2026			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -52,7 +52,7 @@
 #  define VARIANT ""
 #endif /* defined(WINDOWS_XP) */
 
-char *version_str = "Date: November 1st, 2025"VARIANT", Version: 26.0, Author: Robin T. Miller";
+char *version_str = "Date: January 8th, 2026"VARIANT", Version: 26.1, Author: Robin T. Miller";
 
 void
 dtusage(dinfo_t *dip)

@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 2006 - 2021			    *
+ *			  COPYRIGHT (c) 2006 - 2026			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -203,8 +203,8 @@ typedef volatile slarge_t       v_slarge;
 # define LLHXFMT	"%08lx"
 # define LLFXFMT	"%016lx"
 
-# define LLPXFMT	"0x%lx"
-# define LLPX0FMT	"0x%016lx"
+# define LLPXFMT	"0x%llx"
+# define LLPX0FMT	"0x%016llx"
 
 /* For displaying file offsets. */
 # define FUF     LDF

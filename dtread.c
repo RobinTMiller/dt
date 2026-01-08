@@ -1,6 +1,6 @@
 /****************************************************************************
  *									    *
- *			  COPYRIGHT (c) 1988 - 2025			    *
+ *			  COPYRIGHT (c) 1988 - 2026			    *
  *			   This Software Provided			    *
  *				     By					    *
  *			  Robin's Nest Software Inc.			    *
@@ -31,6 +31,9 @@
  *
  * Modification History:
  * 
+ * January 8th, 2026 by Robin T. Miller
+ *      Minor updates for MacOS without SCSI support.
+ *
  * October 24th, 2025 by Robin T. Miller
  *      Add I/O latency support.
  * 
@@ -1095,11 +1098,17 @@ retry:
 
     ENABLE_NOPROG(dip, READ_OP);
     highresolutiontime(&start_time, NULL);
+#if defined(NVME)
     if (dip->di_nvme_io_flag == True) {
 	count = nvmeReadData(dip, buffer, bsize, offset);
-    } else if (dip->di_scsi_io_flag == True) {
+    } else 
+#endif /* defined(NVME) */
+#if defined(SCSI)
+	if (dip->di_scsi_io_flag == True) {
 	count = scsiReadData(dip, buffer, bsize, offset);
-    } else if (dip->di_random_access == False) {
+    } else
+#endif /* defined(SCSI) */
+	if (dip->di_random_access == False) {
 	count = os_read_file(dip->di_fd, buffer, bsize);
     } else {
 	count = os_pread_file(dip->di_fd, buffer, bsize, offset);
