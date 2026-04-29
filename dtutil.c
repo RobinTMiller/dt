@@ -31,6 +31,11 @@
  * 
  * Modification History:
  * 
+ * April 29th, 2026 by Robin T. Miller
+ *      Fix issue with setting END_OF_FILE (254) exit status, so enable=eof
+ * will exit with EOF status for those desiring to detect an EOF condition.
+ * Note: This is historic behavior broken inadvertantly, and usually disabled.
+ *
  * January 8th, 2026 by Robin T. Miller
  *      Minor updates for MacOS without SCSI support.
  *
@@ -2279,6 +2284,8 @@ is_Eof(struct dinfo *dip, ssize_t count, size_t size, int *status)
 	    }
 	}
 #endif /* defined(TAPE) */
+        /* Support exiting with end of file (EOF) exit status. */
+        if (exit_status != FAILURE) exit_status = END_OF_FILE;
 	return(dip->di_end_of_file = True);
     }
     return(False);
