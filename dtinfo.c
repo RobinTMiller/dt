@@ -1,6 +1,6 @@
 /****************************************************************************
  *      								    *
- *      		  COPYRIGHT (c) 1988 - 2023     		    *
+ *      		  COPYRIGHT (c) 1988 - 2026     		    *
  *      		   This Software Provided       		    *
  *      			     By 				    *
  *      		  Robin's Nest Software Inc.    		    *
@@ -31,6 +31,10 @@
  *      Setup device and/or system information for 'dt' program.
  * 
  * Modification History:
+ * 
+ * April 30th, 2026 by Robin T. Miller
+ *      When reading a file only. provide a way to force reading past end
+ * of file via "eof" setting (enable=eof), and using the user data limit.
  * 
  * September 20th, 2023 by Robin T. Miller
  *      When setting up device information, beware of overwriting the user
@@ -1318,8 +1322,13 @@ SetupRegularFile(struct dinfo *dip, large_t file_size)
 	}
     } else { /* Sequential I/O */
 	if ( (dip->di_ftype == INPUT_FILE) ) {
-	    /* When reading, we cannot go beyond the end of file. */
-	    dip->di_user_capacity = min(file_size, dip->di_data_limit);
+            /* Provide a method to force EOF conditions. */
+            if (dip->di_eof_status_flag && dip->di_data_limit) {
+                dip->di_user_capacity = dip->di_data_limit;
+            } else {
+                /* When reading, we cannot go beyond the end of file. */
+                dip->di_user_capacity = min(file_size, dip->di_data_limit);
+            }
 	} else {
 	    /* When writing, the file can be expanded based on options. */
 	    dip->di_user_capacity = max(user_data_limit, file_size);
